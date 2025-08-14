@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { Calculator, Sparkles, Clock } from "lucide-react";
 
 interface CalculatingScreenProps {
-  onComplete?: () => void;
+  onComplete: (result: any) => void;
 }
 
 export function CalculatingScreen({ onComplete }: CalculatingScreenProps) {
@@ -14,27 +14,24 @@ export function CalculatingScreen({ onComplete }: CalculatingScreenProps) {
   const [currentStep, setCurrentStep] = useState(0);
 
   const steps = [
-    "Analýza vstupních údajů",
-    "Výpočet základní ceny",
-    "Aplikace koeficientů",
-    "Výpočet slev a přirážek",
-    "Finální kalkulace ceny"
+    { icon: Calculator, text: "Načítám data formuláře..." },
+    { icon: Sparkles, text: "Počítám koeficienty..." },
+    { icon: Clock, text: "Generuji konečnou cenu..." },
   ];
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    // Animate progress bar
+    const progressTimer = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
-          clearInterval(timer);
-          setTimeout(() => {
-            onComplete?.();
-          }, 1000);
+          clearInterval(progressTimer);
           return 100;
         }
         return prev + 2;
       });
     }, 100);
 
+    // Animate steps
     const stepTimer = setInterval(() => {
       setCurrentStep((prev) => {
         if (prev >= steps.length - 1) {
@@ -45,11 +42,24 @@ export function CalculatingScreen({ onComplete }: CalculatingScreenProps) {
       });
     }, 800);
 
+    // Complete calculation after progress reaches 100%
+    const completionTimer = setTimeout(() => {
+      const mockResult = {
+        basePrice: 15000,
+        coefficients: -2500,
+        finalPrice: 12500,
+        currency: "Kč",
+        period: "měsíc"
+      };
+      onComplete(mockResult);
+    }, 5000);
+
     return () => {
-      clearInterval(timer);
+      clearInterval(progressTimer);
       clearInterval(stepTimer);
+      clearTimeout(completionTimer);
     };
-  }, [onComplete]);
+  }, [onComplete, steps.length]);
 
   return (
     <motion.div
@@ -131,7 +141,7 @@ export function CalculatingScreen({ onComplete }: CalculatingScreenProps) {
                       <span className="text-xs">{index + 1}</span>
                     )}
                   </div>
-                  <span className="text-sm font-medium">{step}</span>
+                  <span className="text-sm font-medium">{step.text}</span>
                   {index === currentStep && (
                     <motion.div
                       animate={{ opacity: [1, 0.5, 1] }}

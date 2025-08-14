@@ -3,7 +3,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -28,7 +27,8 @@ import React from "react";
 interface UniversalFormProps {
   config: FormConfig;
   onBack?: () => void;
-  onSubmit?: (data: any) => void;
+  onSubmit: (data: any) => void;
+  onFormChange?: () => void;
 }
 
 // Helper function to get icon component
@@ -179,7 +179,7 @@ function renderField(
                 <RadioGroupItem value={option.value.toString()} id={`${id}_${option.value}`} />
               </FormControl>
               <FormLabel htmlFor={`${id}_${option.value}`} className="font-normal cursor-pointer">
-                <span className="font-medium">{option.label}</span>
+                <span>{option.label}</span>
                 {option.note && (
                   <Badge 
                     variant={option.note === "frequent" ? "secondary" : "default"}
@@ -240,19 +240,18 @@ function renderField(
   }
 }
 
-export function UniversalForm({ config, onBack, onSubmit }: UniversalFormProps) {
+export function UniversalForm({ config, onBack, onSubmit, onFormChange }: UniversalFormProps) {
   // Create default values for all fields
   const createDefaultValues = () => {
     const defaults: any = {};
     config.sections.forEach(section => {
       section.fields.forEach(field => {
         if (field.type === "radio") {
-          // Check if the first option is numeric
           const firstOption = (field as any).options?.[0];
           if (firstOption && typeof firstOption.value === "number") {
             defaults[field.id] = undefined; // Don't set a default for numeric radio fields
           } else {
-            defaults[field.id] = ""; // Default to empty string for text fields
+            defaults[field.id] = "";
           }
         } else if (field.type === "select") {
           defaults[field.id] = "";
@@ -261,12 +260,7 @@ export function UniversalForm({ config, onBack, onSubmit }: UniversalFormProps) 
         } else if (field.type === "textarea") {
           defaults[field.id] = "";
         } else if (field.type === "conditional") {
-          // For conditional fields, we need to check if they should be required
           const conditionalField = field as any;
-          const conditionField = conditionalField.condition.field;
-          const conditionValue = conditionalField.condition.value;
-          
-          // Set defaults for conditional sub-fields
           conditionalField.fields.forEach((subField: any) => {
             if (subField.type === "radio") {
               const firstOption = subField.options?.[0];
@@ -292,7 +286,21 @@ export function UniversalForm({ config, onBack, onSubmit }: UniversalFormProps) 
   const form = useForm({
     resolver: zodResolver(config.validationSchema),
     defaultValues: createDefaultValues(),
+    // Removed mode: "onChange"
   });
+
+  // Track form changes for warning dialog
+  useEffect(() => {
+    if (onFormChange) {
+      const subscription = form.watch((value, { name, type }) => {
+        // Only call onFormChange if it's an actual field change, not form initialization
+        if (type === 'change' && name) {
+          onFormChange();
+        }
+      });
+      return () => subscription.unsubscribe();
+    }
+  }, [form, onFormChange]);
 
   // Scroll to first error when errors appear
   useEffect(() => {
@@ -330,7 +338,7 @@ export function UniversalForm({ config, onBack, onSubmit }: UniversalFormProps) 
       className="w-full max-w-4xl mx-auto"
     >
       <div className="text-center mb-12">
-        <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight text-balance text-foreground font-heading mb-6">
+        <h1 className="scroll-m-20 text-4xl font-bold tracking-tight text-balance text-foreground font-heading mb-6">
           {config.title}
         </h1>
         <p className="text-muted-foreground text-xl leading-7 font-sans max-w-2xl mx-auto">

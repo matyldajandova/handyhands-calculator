@@ -1,22 +1,18 @@
 import type { Metadata } from "next";
-import { Raleway, Open_Sans } from "next/font/google";
+import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
+import { AppProvider } from "./providers";
 
-const raleway = Raleway({
-  variable: "--font-raleway",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-});
-
-const openSans = Open_Sans({
-  variable: "--font-open-sans",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const poppins = Poppins({ 
+  subsets: ["latin"], 
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-heading" 
 });
 
 export const metadata: Metadata = {
   title: "Handy Hands Calculator",
-  description: "A beautiful, animated calculator built with Next.js, shadcn/ui, and Framer Motion",
+  description: "Kalkulátor úklidových služeb pro různé typy nemovitostí",
 };
 
 export default function RootLayout({
@@ -25,11 +21,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${raleway.variable} ${openSans.variable} antialiased`}
-      >
-        {children}
+    <html lang="cs" suppressHydrationWarning>
+      <body className={`${inter.variable} ${poppins.variable} font-sans antialiased`}>
+        <AppProvider>
+          {children}
+        </AppProvider>
       </body>
     </html>
   );

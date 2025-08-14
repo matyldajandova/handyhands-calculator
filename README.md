@@ -1,26 +1,51 @@
 # Handy Hands Calculator
 
-A beautiful, animated calculator built with Next.js, shadcn/ui, and motion.dev (Framer Motion).
+A Next.js-based maintenance price calculator for residential buildings and new constructions, built with shadcn/ui components and Framer Motion animations.
 
 ## Features
 
-- 🧮 Full-featured calculator with basic operations (+, -, ×, ÷)
-- 🎨 Modern UI using shadcn/ui components with CSS variables
-- ✨ Smooth animations powered by Framer Motion
-- 🌙 Dark theme with glassmorphism effects
-- 📱 Responsive design that works on all devices
-- ⚡ Built with Next.js 14 and TypeScript
+- **Service Type Selection**: Choose from various property types (currently only residential buildings implemented)
+- **Dynamic Form System**: JSON-driven form configuration for easy maintenance
+- **Real-time Validation**: Zod schema validation with custom error messages
+- **Responsive Design**: Mobile-first design with Tailwind CSS
+- **Dark Mode Support**: Full dark/light theme switching
+- **Deep Linking**: Direct access to specific forms via URL parameters
+- **PDF Export**: Download calculation results (mock implementation)
 
-## Tech Stack
+## Deep Linking
 
-- **Framework**: Next.js 14 with App Router
-- **Styling**: Tailwind CSS with CSS variables
-- **UI Components**: shadcn/ui
-- **Animations**: Framer Motion (motion.dev)
-- **Language**: TypeScript
-- **Styling System**: CSS Variables for theming
+The application supports deep linking to specific service forms using SEO-friendly URL slugs:
 
-## Getting Started
+### Available Deep Links
+
+- **Residential Buildings**: `/cinzovni-domy-novostavby`
+  - Direct access to the residential building calculator
+  - Form includes general cleaning, winter maintenance, and location options
+
+### Deep Link Structure
+
+```
+/{service_slug}
+```
+
+Where `service_slug` corresponds to the service type:
+- `cinzovni-domy-novostavby` = Činžovní domy, novostavby (Residential Buildings, New Constructions)
+- `rodinne-domy` = Rodinné domy (Family Homes) - Coming soon
+- `skladove-haly` = Skladové haly (Warehouse Halls) - Coming soon
+- `obchodni-prostory` = Obchodní prostory (Commercial Spaces) - Coming soon
+- `kancelarske-budovy` = Kancelářské budovy (Office Buildings) - Coming soon
+- `vyrobni-haly` = Výrobní haly (Production Halls) - Coming soon
+- `skoly-a-univerzity` = Školy a univerzity (Schools and Universities) - Coming soon
+- `administrativni-budovy` = Administrativní budovy (Administrative Buildings) - Coming soon
+
+### Security Features
+
+- **History Protection**: Users can navigate back to service selection using browser history
+- **Warning Dialog**: Prevents accidental data loss when users try to leave with unsaved changes
+- **Tab Close Protection**: Warns users before closing/refreshing tab with unsaved changes
+- **State Management**: Application state prevents unauthorized access to calculation results
+
+## Development
 
 ### Prerequisites
 
@@ -29,89 +54,62 @@ A beautiful, animated calculator built with Next.js, shadcn/ui, and motion.dev (
 
 ### Installation
 
-1. Clone the repository:
-```bash
-git clone <your-repo-url>
-cd handyhands-calculator
-```
-
-2. Install dependencies:
 ```bash
 npm install
 ```
 
-3. Run the development server:
+### Development Server
+
 ```bash
 npm run dev
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+The application will be available at `http://localhost:3000`
 
-## Project Structure
+### Building
 
-```
-src/
-├── app/
-│   ├── globals.css          # Global styles with CSS variables
-│   ├── layout.tsx           # Root layout
-│   └── page.tsx             # Main page with calculator
-├── components/
-│   ├── ui/                  # shadcn/ui components
-│   │   ├── button.tsx
-│   │   ├── card.tsx
-│   │   ├── input.tsx
-│   │   └── label.tsx
-│   └── calculator.tsx       # Main calculator component
-└── lib/
-    └── utils.ts             # Utility functions
+```bash
+npm run build
 ```
 
-## Calculator Features
+## Architecture
 
-- **Basic Operations**: Addition, subtraction, multiplication, division
-- **Additional Functions**: Percentage, sign change, clear all
-- **Decimal Support**: Full decimal number support
-- **Memory**: Remembers previous operations
-- **Responsive**: Works on desktop and mobile devices
+### Components
 
-## Animation Features
+- **ServiceTypeSelector**: Main service selection interface
+- **UniversalForm**: Dynamic form renderer based on JSON configuration
+- **CalculatingScreen**: Animated progress screen during calculation
+- **SuccessScreen**: Results display with PDF download option
 
-- **Entrance Animations**: Staggered fade-in effects
-- **Button Interactions**: Hover and tap animations
-- **Smooth Transitions**: CSS transitions for color changes
-- **Performance**: Optimized animations using Framer Motion
+### Configuration
 
-## Styling System
+- **Form Configs**: JSON-based form definitions in `src/config/forms/`
+- **Service Types**: Service definitions in `src/config/services.ts`
+- **Validation**: Zod schemas for type-safe form validation
 
-The project uses CSS variables for consistent theming:
+### State Management
 
-- **Color System**: Semantic color variables (primary, secondary, accent, etc.)
-- **Dark Mode**: Built-in dark theme support
-- **Glassmorphism**: Modern backdrop blur effects
-- **Responsive**: Mobile-first design approach
+The application uses a state machine approach with four main states:
+1. `service-selection` - Choose service type
+2. `form` - Fill out the selected form
+3. `calculating` - Show calculation progress
+4. `success` - Display results and download options
 
-## Available Scripts
+## Future Enhancements
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
+- Additional service types (family homes, commercial buildings, etc.)
+- Real PDF generation with jsPDF or similar
+- Backend integration for actual price calculations
+- User accounts and calculation history
+- Multi-language support
 
-## Contributing
+## Technologies Used
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## License
-
-This project is open source and available under the [MIT License](LICENSE).
-
-## Acknowledgments
-
-- [shadcn/ui](https://ui.shadcn.com/) for beautiful UI components
-- [Framer Motion](https://www.framer.com/motion/) for smooth animations
-- [Tailwind CSS](https://tailwindcss.com/) for utility-first CSS
-- [Next.js](https://nextjs.org/) for the React framework
+- **Next.js 15** - React framework with App Router
+- **TypeScript** - Type-safe development
+- **Tailwind CSS** - Utility-first CSS framework
+- **shadcn/ui** - Component library with CSS variables
+- **Framer Motion** - Animation library
+- **React Hook Form** - Form state management
+- **Zod** - Schema validation
+- **Lucide React** - Icon library

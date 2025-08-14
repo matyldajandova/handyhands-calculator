@@ -1,62 +1,57 @@
 "use client";
-
-import { useState } from "react";
 import { ServiceTypeSelector } from "@/components/service-type-selector";
 import { UniversalForm } from "@/components/universal-form";
 import { CalculatingScreen } from "@/components/calculating-screen";
+import { SuccessScreen } from "@/components/success-screen";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { getFormConfig, getServiceType } from "@/config/services";
+import { useAppContext } from "./providers";
 
 export default function Home() {
-  const [selectedService, setSelectedService] = useState<string>("");
-  const [isCalculating, setIsCalculating] = useState(false);
-  const [formData, setFormData] = useState<any>(null);
-
-  const handleServiceTypeSelect = (serviceType: string) => {
-    const service = getServiceType(serviceType);
-    if (service && service.formConfig) {
-      setSelectedService(serviceType);
-    }
-  };
-
-  const handleBackToServiceSelection = () => {
-    setSelectedService("");
-    setIsCalculating(false);
-    setFormData(null);
-  };
-
-  const handleFormSubmit = (data: any) => {
-    setFormData(data);
-    setIsCalculating(true);
-  };
-
-  const handleCalculationComplete = () => {
-    // TODO: Navigate to results page or show results
-    console.log("Calculation complete for:", formData);
-    // For now, go back to service selection
-    setTimeout(() => {
-      handleBackToServiceSelection();
-    }, 2000);
-  };
+  const {
+    appState,
+    selectedService,
+    formData,
+    showWarningDialog,
+    handleServiceTypeSelect,
+    handleBackToServiceSelection,
+    handleFormSubmit,
+    handleCalculationComplete,
+    handleFormChange,
+    handleWarningDialogConfirm,
+    handleWarningDialogCancel,
+    handleBackButtonClick,
+    getFormConfig,
+  } = useAppContext();
 
   const formConfig = getFormConfig(selectedService);
 
-  // Show calculating screen
-  if (isCalculating) {
+  // Render appropriate screen based on app state
+  if (appState === "calculating") {
     return <CalculatingScreen onComplete={handleCalculationComplete} />;
+  }
+
+  if (appState === "success") {
+    return (
+      <SuccessScreen
+        onBackToServices={handleBackToServiceSelection}
+        formData={formData}
+        serviceType={selectedService}
+      />
+    );
   }
 
   return (
     <>
       <ThemeToggle />
-      <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background px-4 py-12">
-        {!selectedService ? (
+      <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background py-12 px-4">
+        {appState === "service-selection" ? (
           <ServiceTypeSelector onServiceTypeSelect={handleServiceTypeSelect} />
-        ) : formConfig ? (
+        ) : appState === "form" && formConfig ? (
           <UniversalForm
             config={formConfig}
-            onBack={handleBackToServiceSelection}
+            onBack={handleBackButtonClick}
             onSubmit={handleFormSubmit}
+            onFormChange={handleFormChange}
           />
         ) : (
           <div className="text-center py-20">
@@ -75,6 +70,34 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* Warning Dialog */}
+      {showWarningDialog && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-card border rounded-lg shadow-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-2">
+              Neuložené změny
+            </h3>
+            <p className="text-muted-foreground mb-6">
+              Máte neuložené změny ve formuláři. Opravdu chcete odejít? Všechny vyplněné údaje budou ztraceny.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={handleWarningDialogCancel}
+                className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Zůstat
+              </button>
+              <button
+                onClick={handleWarningDialogConfirm}
+                className="px-4 py-2 text-sm font-medium text-destructive hover:text-destructive/90 transition-colors"
+              >
+                Odejít
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

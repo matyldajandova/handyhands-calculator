@@ -1,21 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  CheckCircle, 
-  Building, 
-  Home, 
-  Warehouse, 
-  Store, 
-  Building2, 
-  Factory, 
-  School, 
-  FileText 
-} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle, Building, Home, Warehouse, Store, Factory, School, FileText, Building2, Link } from "lucide-react";
 import { serviceTypes } from "@/config/services";
 
 interface ServiceTypeSelectorProps {
@@ -24,53 +15,86 @@ interface ServiceTypeSelectorProps {
 
 export function ServiceTypeSelector({ onServiceTypeSelect }: ServiceTypeSelectorProps) {
   const [selectedService, setSelectedService] = useState<string>("");
+  const [hasAnimated, setHasAnimated] = useState(false);
+
+  // Prevent animation from running multiple times
+  useEffect(() => {
+    if (!hasAnimated) {
+      setHasAnimated(true);
+    }
+  }, [hasAnimated]);
 
   const handleServiceSelect = (value: string) => {
     const selectedServiceType = serviceTypes.find(service => service.id === value);
-    
-    // Only allow selection of services with form configurations
     if (selectedServiceType && selectedServiceType.formConfig) {
       setSelectedService(value);
       onServiceTypeSelect(value);
     }
   };
 
+  const getIconComponent = (iconName: string) => {
+    const iconMap: { [key: string]: React.ComponentType<any> } = {
+      Building,
+      Home,
+      Warehouse,
+      Store,
+      Factory,
+      School,
+      FileText,
+      Building2
+    };
+    return iconMap[iconName] || Building;
+  };
+
+  const getServiceTitle = (serviceId: string) => {
+    const service = serviceTypes.find(s => s.id === serviceId);
+    return service?.title || serviceId;
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      className="w-full max-w-4xl mx-auto"
+      transition={{ duration: 0.5 }}
+      className="max-w-6xl mx-auto"
     >
       <div className="text-center mb-12">
-        <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight text-balance text-foreground font-heading mb-6">
-          Handy Hands Calculator
+        <h1 className="text-4xl font-bold text-foreground font-heading mb-4">
+          Kalkulátor úklidových služeb
         </h1>
-        <p className="text-muted-foreground text-xl leading-7 font-sans max-w-2xl mx-auto">
-          Vyberte typ služby, pro kterou chcete vypočítat cenu úklidových služeb
+        <p className="text-xl text-muted-foreground font-sans max-w-2xl mx-auto">
+          Vyberte typ nemovitosti a získejte přesnou kalkulaci úklidových služeb
         </p>
       </div>
 
       <RadioGroup
         value={selectedService}
         onValueChange={handleServiceSelect}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
       >
-        {serviceTypes.map((service) => {
+        {serviceTypes.map((service, index) => {
           const isDisabled = !service.formConfig;
+          const IconComponent = getIconComponent(service.icon);
           
           return (
             <motion.div
               key={service.id}
-              whileHover={!isDisabled ? { scale: 1.02 } : {}}
-              whileTap={!isDisabled ? { scale: 0.98 } : {}}
-              className="h-full relative"
+              initial={hasAnimated ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ 
+                duration: 0.5, 
+                delay: hasAnimated ? 0 : index * 0.05,
+                ease: "easeOut"
+              }}
+              whileHover={{ scale: isDisabled ? 1 : 1.02 }}
+              whileTap={{ scale: isDisabled ? 1 : 0.98 }}
+              className="relative"
             >
               <RadioGroupItem
                 value={service.id}
                 id={service.id}
-                className="peer sr-only"
                 disabled={isDisabled}
+                className="sr-only"
               />
               <Label
                 htmlFor={service.id}
@@ -78,13 +102,13 @@ export function ServiceTypeSelector({ onServiceTypeSelect }: ServiceTypeSelector
               >
                 <Card className={`peer-checked:ring-2 peer-checked:ring-accent peer-checked:border-accent transition-all duration-200 hover:shadow-lg h-full flex flex-col gap-2 ${
                   isDisabled 
-                    ? 'cursor-not-allowed' 
+                    ? 'cursor-not-allowed'
                     : 'peer-checked:ring-2 peer-checked:ring-accent peer-checked:border-accent hover:shadow-lg'
                 }`}>
                   <CardHeader className="flex-shrink-0 gap-3">
                     <div className="flex items-center justify-between">
                       <div className={`${isDisabled ? 'text-muted-foreground/70' : 'text-accent'}`}>
-                        {getIconComponent(service.icon)}
+                        <IconComponent className="h-8 w-8" />
                       </div>
                       {selectedService === service.id && !isDisabled && (
                         <CheckCircle className="h-6 w-6 text-accent" />
@@ -97,19 +121,17 @@ export function ServiceTypeSelector({ onServiceTypeSelect }: ServiceTypeSelector
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="flex-grow">
-                    <p className={`text-sm leading-relaxed font-sans ${
+                    <p className={`text-sm leading-relaxed font-sans mb-3 ${
                       isDisabled ? 'text-muted-foreground/70' : 'text-muted-foreground'
                     }`}>
                       {service.description}
                     </p>
                   </CardContent>
-                  
-                  {/* Coming Soon Overlay */}
                   {isDisabled && (
                     <div className="absolute inset-0 bg-background/40 backdrop-blur-[1px] rounded-lg flex items-start justify-end p-3">
-                      <div className="bg-accent text-accent-foreground px-3 py-1.5 rounded-full text-xs font-medium shadow-sm">
+                      <Badge className="bg-accent text-accent-foreground px-3 py-1.5 rounded-full text-xs font-medium shadow-sm">
                         Brzy k dispozici
-                      </div>
+                      </Badge>
                     </div>
                   )}
                 </Card>
@@ -120,20 +142,4 @@ export function ServiceTypeSelector({ onServiceTypeSelect }: ServiceTypeSelector
       </RadioGroup>
     </motion.div>
   );
-}
-
-// Helper function to get icon component
-function getIconComponent(iconName: string) {
-  const iconMap: Record<string, React.ReactNode> = {
-    Building: <Building className="h-6 w-6" />,
-    Home: <Home className="h-6 w-6" />,
-    Warehouse: <Warehouse className="h-6 w-6" />,
-    Store: <Store className="h-6 w-6" />,
-    Building2: <Building2 className="h-6 w-6" />,
-    Factory: <Factory className="h-6 w-6" />,
-    School: <School className="h-6 w-6" />,
-    FileText: <FileText className="h-6 w-6" />
-  };
-  
-  return iconMap[iconName] || <Building className="h-6 w-6" />;
 }

@@ -3,68 +3,68 @@ import { residentialBuildingFormConfig } from "./forms/residential-building";
 
 export const serviceTypes: ServiceType[] = [
   {
-    id: "a",
+    id: "residential-building",
     title: "Činžovní domy, novostavby",
-    description: "Kalkulátor úklidových služeb pro bytové domy a novostavby",
+    description: "Kalkulátor cen za údržbu činžovních domů a novostaveb. Zahrnuje vše od základního úklidu po zimní údržbu.",
     icon: "Building",
-    formConfig: residentialBuildingFormConfig
+    formConfig: residentialBuildingFormConfig,
   },
   {
-    id: "b",
+    id: "family-homes",
     title: "Rodinné domy",
-    description: "Kalkulátor úklidových služeb pro rodinné domy",
+    description: "Kalkulátor cen za údržbu rodinných domů. Optimalizováno pro menší objekty s individuálním přístupem.",
     icon: "Home",
-    formConfig: null // TODO: Add form config
+    formConfig: null, // Will be implemented later
   },
   {
-    id: "c",
+    id: "office-buildings",
     title: "Kancelářské budovy",
-    description: "Kalkulátor úklidových služeb pro kancelářské prostory",
+    description: "Kalkulátor cen za údržbu kancelářských budov. Zahrnuje specializované služby pro komerční prostory.",
     icon: "Building2",
-    formConfig: null // TODO: Add form config
+    formConfig: null, // Will be implemented later
   },
   {
-    id: "d",
-    title: "Obchodní prostory",
-    description: "Kalkulátor úklidových služeb pro obchody a nákupní centra",
-    icon: "Store",
-    formConfig: null // TODO: Add form config
-  },
-  {
-    id: "e",
-    title: "Průmyslové objekty",
-    description: "Kalkulátor úklidových služeb pro továrny a sklady",
-    icon: "Factory",
-    formConfig: null // TODO: Add form config
-  },
-  {
-    id: "f",
-    title: "Školy a vzdělávací zařízení",
-    description: "Kalkulátor úklidových služeb pro školy a univerzity",
-    icon: "School",
-    formConfig: null // TODO: Add form config
-  },
-  {
-    id: "g",
-    title: "Zdravotnická zařízení",
-    description: "Kalkulátor úklidových služeb pro nemocnice a kliniky",
+    id: "warehouses",
+    title: "Sklady a logistické centra",
+    description: "Kalkulátor cen za údržbu skladů a logistických center. Optimalizováno pro velké plochy.",
     icon: "Warehouse",
-    formConfig: null // TODO: Add form config
+    formConfig: null, // Will be implemented later
   },
   {
-    id: "i",
-    title: "Individuální cenová nabídka",
-    description: "Nahrajte dokument a získejte individuální cenovou nabídku",
+    id: "retail-spaces",
+    title: "Prodejní prostory",
+    description: "Kalkulátor cen za údržbu prodejních prostor. Zahrnuje specializované služby pro retail.",
+    icon: "Store",
+    formConfig: null, // Will be implemented later
+  },
+  {
+    id: "industrial-facilities",
+    title: "Průmyslové objekty",
+    description: "Kalkulátor cen za údržbu průmyslových objektů. Optimalizováno pro náročné prostředí.",
+    icon: "Factory",
+    formConfig: null, // Will be implemented later
+  },
+  {
+    id: "educational-institutions",
+    title: "Vzdělávací instituce",
+    description: "Kalkulátor cen za údržbu škol a univerzit. Zahrnuje specializované služby pro vzdělávací prostředí.",
+    icon: "School",
+    formConfig: null, // Will be implemented later
+  },
+  {
+    id: "healthcare-facilities",
+    title: "Zdravotnická zařízení",
+    description: "Kalkulátor cen za údržbu nemocnic a klinik. Zahrnuje hygienické standardy a dezinfekci.",
     icon: "FileText",
-    formConfig: null // TODO: Add form config
-  }
+    formConfig: null, // Will be implemented later
+  },
 ];
 
-export function getServiceType(id: string): ServiceType | undefined {
-  return serviceTypes.find(service => service.id === id);
+export function getServiceType(idOrSlug: string): ServiceType | undefined {
+  return serviceTypes.find(service => service.id === idOrSlug);
 }
 
-export function getFormConfig(serviceId: string) {
-  const service = getServiceType(serviceId);
+export function getFormConfig(serviceIdOrSlug: string) {
+  const service = getServiceType(serviceIdOrSlug);
   return service?.formConfig || null;
 }
