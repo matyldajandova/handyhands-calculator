@@ -5,7 +5,7 @@ import { ServiceTypeSelector } from "@/components/service-type-selector";
 import { UniversalForm } from "@/components/universal-form";
 import { CalculatingScreen } from "@/components/calculating-screen";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { getFormConfig } from "@/config/services";
+import { getFormConfig, getServiceType } from "@/config/services";
 
 export default function Home() {
   const [selectedService, setSelectedService] = useState<string>("");
@@ -13,7 +13,10 @@ export default function Home() {
   const [formData, setFormData] = useState<any>(null);
 
   const handleServiceTypeSelect = (serviceType: string) => {
-    setSelectedService(serviceType);
+    const service = getServiceType(serviceType);
+    if (service && service.formConfig) {
+      setSelectedService(serviceType);
+    }
   };
 
   const handleBackToServiceSelection = () => {
@@ -46,7 +49,7 @@ export default function Home() {
   return (
     <>
       <ThemeToggle />
-      <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background p-4">
+      <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background px-4 py-12">
         {!selectedService ? (
           <ServiceTypeSelector onServiceTypeSelect={handleServiceTypeSelect} />
         ) : formConfig ? (

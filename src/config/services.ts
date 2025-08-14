@@ -1,6 +1,5 @@
 import { ServiceType } from "@/types/form-types";
 import { residentialBuildingFormConfig } from "./forms/residential-building";
-import { familyHomesFormConfig } from "./forms/family-homes";
 
 export const serviceTypes: ServiceType[] = [
   {
@@ -15,7 +14,7 @@ export const serviceTypes: ServiceType[] = [
     title: "Rodinné domy",
     description: "Kalkulátor úklidových služeb pro rodinné domy",
     icon: "Home",
-    formConfig: familyHomesFormConfig
+    formConfig: null // TODO: Add form config
   },
   {
     id: "c",

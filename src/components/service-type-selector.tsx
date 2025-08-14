@@ -26,8 +26,13 @@ export function ServiceTypeSelector({ onServiceTypeSelect }: ServiceTypeSelector
   const [selectedService, setSelectedService] = useState<string>("");
 
   const handleServiceSelect = (value: string) => {
-    setSelectedService(value);
-    onServiceTypeSelect(value);
+    const selectedServiceType = serviceTypes.find(service => service.id === value);
+    
+    // Only allow selection of services with form configurations
+    if (selectedServiceType && selectedServiceType.formConfig) {
+      setSelectedService(value);
+      onServiceTypeSelect(value);
+    }
   };
 
   return (
@@ -51,45 +56,67 @@ export function ServiceTypeSelector({ onServiceTypeSelect }: ServiceTypeSelector
         onValueChange={handleServiceSelect}
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
       >
-        {serviceTypes.map((service) => (
-          <motion.div
-            key={service.id}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="h-full"
-          >
-            <RadioGroupItem
-              value={service.id}
-              id={service.id}
-              className="peer sr-only"
-            />
-            <Label
-              htmlFor={service.id}
-              className="block cursor-pointer h-full"
+        {serviceTypes.map((service) => {
+          const isDisabled = !service.formConfig;
+          
+          return (
+            <motion.div
+              key={service.id}
+              whileHover={!isDisabled ? { scale: 1.02 } : {}}
+              whileTap={!isDisabled ? { scale: 0.98 } : {}}
+              className="h-full relative"
             >
-              <Card className="peer-checked:ring-2 peer-checked:ring-accent peer-checked:border-accent transition-all duration-200 hover:shadow-lg h-full flex flex-col">
-                <CardHeader className="pb-3 flex-shrink-0">
-                  <div className="flex items-center justify-between">
-                    <div className="text-accent">
-                      {getIconComponent(service.icon)}
+              <RadioGroupItem
+                value={service.id}
+                id={service.id}
+                className="peer sr-only"
+                disabled={isDisabled}
+              />
+              <Label
+                htmlFor={service.id}
+                className={`block cursor-pointer h-full ${isDisabled ? 'cursor-not-allowed' : ''}`}
+              >
+                <Card className={`peer-checked:ring-2 peer-checked:ring-accent peer-checked:border-accent transition-all duration-200 hover:shadow-lg h-full flex flex-col gap-2 ${
+                  isDisabled 
+                    ? 'cursor-not-allowed' 
+                    : 'peer-checked:ring-2 peer-checked:ring-accent peer-checked:border-accent hover:shadow-lg'
+                }`}>
+                  <CardHeader className="flex-shrink-0 gap-3">
+                    <div className="flex items-center justify-between">
+                      <div className={`${isDisabled ? 'text-muted-foreground/70' : 'text-accent'}`}>
+                        {getIconComponent(service.icon)}
+                      </div>
+                      {selectedService === service.id && !isDisabled && (
+                        <CheckCircle className="h-6 w-6 text-accent" />
+                      )}
                     </div>
-                    {selectedService === service.id && (
-                      <CheckCircle className="h-6 w-6 text-accent" />
-                    )}
-                  </div>
-                  <CardTitle className="text-lg font-semibold text-foreground font-heading">
-                    {service.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <p className="text-sm text-muted-foreground font-sans leading-relaxed">
-                    {service.description}
-                  </p>
-                </CardContent>
-              </Card>
-            </Label>
-          </motion.div>
-        ))}
+                    <CardTitle className={`text-lg font-semibold font-heading ${
+                      isDisabled ? 'text-foreground/80' : 'text-foreground'
+                    }`}>
+                      {service.title}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex-grow">
+                    <p className={`text-sm leading-relaxed font-sans ${
+                      isDisabled ? 'text-muted-foreground/70' : 'text-muted-foreground'
+                    }`}>
+                      {service.description}
+                    </p>
+                  </CardContent>
+                  
+                  {/* Coming Soon Overlay */}
+                  {isDisabled && (
+                    <div className="absolute inset-0 bg-background/40 backdrop-blur-[1px] rounded-lg flex items-start justify-end p-3">
+                      <div className="bg-accent text-accent-foreground px-3 py-1.5 rounded-full text-xs font-medium shadow-sm">
+                        Brzy k dispozici
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              </Label>
+            </motion.div>
+          );
+        })}
       </RadioGroup>
     </motion.div>
   );

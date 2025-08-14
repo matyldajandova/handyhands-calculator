@@ -23,6 +23,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FormConfig, FormField as FormFieldType } from "@/types/form-types";
 import * as Icons from "lucide-react";
+import React from "react";
 
 interface UniversalFormProps {
   config: FormConfig;
@@ -78,71 +79,73 @@ function renderConditionalFields(field: FormFieldType, form: any) {
   const conditionValue = conditionalField.condition.value;
   const shouldShow = form.watch(conditionField) === conditionValue;
 
-  if (!shouldShow) return null;
-
-  // Custom validation function for conditional fields
-  const validateConditionalField = (fieldId: string, value: any, condition: any) => {
-    if (condition && condition.field && condition.value) {
-      const conditionValue = form.watch(condition.field);
-      if (conditionValue === condition.value) {
-        // Field should be visible and required
-        if (!value || value === "" || value === undefined) {
-          return `Pole je povinné`;
-        }
-      }
-    }
-    return undefined;
-  };
-
   return (
-    <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: "auto" }}
-      exit={{ opacity: 0, height: 0 }}
-      className="space-y-6 pl-6 border-l-2 border-accent/20"
-    >
-      {conditionalField.fields.map((subField: FormFieldType, index: number) => (
-        <div key={subField.id}>
-          <FormField
-            control={form.control}
-            name={subField.id as any}
-            render={({ field: subFormField }) => (
-              <FormItem className="space-y-2">
-                {subField.type !== "radio" && subField.label && (
-                  <FormLabel>
-                    {subField.label}
-                    {!subField.required && <span className="text-muted-foreground ml-2">(volitelné)</span>}
-                  </FormLabel>
+    <AnimatePresence mode="wait" initial={false}>
+      {shouldShow && (
+        <motion.div
+          key="conditional-fields"
+          initial={{ opacity: 0, height: 0, overflow: "hidden" }}
+          animate={{ opacity: 1, height: "auto", overflow: "visible" }}
+          exit={{ 
+            opacity: 0, 
+            height: 0, 
+            overflow: "hidden"
+          }}
+          transition={{ 
+            duration: 0.3, 
+            ease: "easeInOut"
+          }}
+          className="mt-6 space-y-6 pl-6 border-l-2 border-accent/20"
+        >
+          {conditionalField.fields.map((subField: FormFieldType, index: number) => (
+            <motion.div
+              key={subField.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2, delay: index * 0.1 }}
+            >
+              <FormField
+                control={form.control}
+                name={subField.id as any}
+                render={({ field: subFormField }) => (
+                  <FormItem className="space-y-2">
+                    {subField.type !== "radio" && subField.label && (
+                      <FormLabel>
+                        {subField.label}
+                        {!subField.required && <span className="text-muted-foreground ml-2">(volitelné)</span>}
+                      </FormLabel>
+                    )}
+                    {subField.type === "radio" && subField.label && (
+                      <FormLabel>
+                        {subField.label}
+                        {!subField.required && <span className="text-muted-foreground ml-2">(volitelné)</span>}
+                      </FormLabel>
+                    )}
+                    <FormControl>
+                      {renderField(subField, subFormField)}
+                    </FormControl>
+                    {subField.description && (
+                      <p className="text-xs text-muted-foreground">
+                        {subField.description}
+                      </p>
+                    )}
+                    <AnimatedErrorMessage error={
+                      form.formState.errors[subField.id]?.message as string | undefined
+                    } />
+                  </FormItem>
                 )}
-                {subField.type === "radio" && subField.label && (
-                  <FormLabel>
-                    {subField.label}
-                    {!subField.required && <span className="text-muted-foreground ml-2">(volitelné)</span>}
-                  </FormLabel>
-                )}
-                <FormControl>
-                  {renderField(subField, subFormField)}
-                </FormControl>
-                {subField.description && (
-                  <p className="text-xs text-muted-foreground">
-                    {subField.description}
-                  </p>
-                )}
-                <AnimatedErrorMessage error={
-                  form.formState.errors[subField.id]?.message as string | undefined ||
-                  validateConditionalField(subField.id, form.watch(subField.id), conditionalField.condition)
-                } />
-              </FormItem>
-            )}
-          />
-          
-          {/* Add separator between conditional sub-fields (but not after the last one) */}
-          {index < conditionalField.fields.length - 1 && (
-            <Separator className="my-4" />
-          )}
-        </div>
-      ))}
-    </motion.div>
+              />
+              
+              {/* Add separator between conditional sub-fields (but not after the last one) */}
+              {index < conditionalField.fields.length - 1 && (
+                <Separator className="my-4 bg-muted/40" />
+              )}
+            </motion.div>
+          ))}
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -171,7 +174,7 @@ function renderField(
           className={radioField.layout === "vertical" ? "flex flex-col gap-3" : "flex gap-6"}
         >
           {radioField.options.map((option: any) => (
-            <FormItem key={option.value} className="flex items-center gap-3">
+            <FormItem key={option.value} className="flex items-center gap-2">
               <FormControl>
                 <RadioGroupItem value={option.value.toString()} id={`${id}_${option.value}`} />
               </FormControl>
@@ -283,7 +286,6 @@ export function UniversalForm({ config, onBack, onSubmit }: UniversalFormProps) 
   const form = useForm({
     resolver: zodResolver(config.validationSchema),
     defaultValues: createDefaultValues(),
-    mode: "onChange", // Enable real-time validation
   });
 
   // Scroll to first error when errors appear
@@ -298,30 +300,6 @@ export function UniversalForm({ config, onBack, onSubmit }: UniversalFormProps) 
       }
     }
   }, [form.formState.errors]);
-
-  // Real-time validation for conditional fields
-  useEffect(() => {
-    const subscription = form.watch((value, { name }) => {
-      // Trigger validation for conditional fields when their condition changes
-      config.sections.forEach(section => {
-        section.fields.forEach(field => {
-          if (field.type === "conditional") {
-            const conditionalField = field as any;
-            const conditionField = conditionalField.condition.field;
-            
-            if (name === conditionField) {
-              // Trigger validation for all conditional sub-fields
-              conditionalField.fields.forEach((subField: any) => {
-                form.trigger(subField.id as any);
-              });
-            }
-          }
-        });
-      });
-    });
-    
-    return () => subscription.unsubscribe();
-  }, [form, config]);
 
   const handleSubmit = (values: any) => {
     if (onSubmit) {
@@ -369,9 +347,9 @@ export function UniversalForm({ config, onBack, onSubmit }: UniversalFormProps) 
                   </p>
                 )}
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent>
                 {section.fields.map((field, index) => (
-                  <div key={field.id}>
+                  <React.Fragment key={field.id}>
                     <FormField
                       control={form.control}
                       name={field.id as any}
@@ -398,11 +376,7 @@ export function UniversalForm({ config, onBack, onSubmit }: UniversalFormProps) 
                             </p>
                           )}
                           <AnimatedErrorMessage error={
-                            form.formState.errors[field.id]?.message as string | undefined ||
-                            (field.type === "conditional" ? 
-                              undefined : 
-                              undefined
-                            )
+                            form.formState.errors[field.id]?.message as string | undefined
                           } />
                           
                           {/* Render conditional fields if this is a conditional field */}
@@ -411,11 +385,15 @@ export function UniversalForm({ config, onBack, onSubmit }: UniversalFormProps) 
                       )}
                     />
                     
-                    {/* Add separator between fields (but not after the last one) */}
-                    {index < section.fields.length - 1 && (
-                      <Separator className="my-6" />
+                    {/* Add separator between fields (but not after the last one, after conditional fields, or before conditional fields) */}
+                    {index < section.fields.length - 1 && 
+                     field.type !== "conditional" && 
+                     section.fields[index + 1]?.type !== "conditional" && 
+                     !(field.type === "radio" && section.fields[index + 1]?.type === "conditional" && 
+                       (section.fields[index + 1] as any)?.condition?.field === field.id) && (
+                      <Separator className="my-6 bg-muted/40" />
                     )}
-                  </div>
+                  </React.Fragment>
                 ))}
               </CardContent>
             </Card>
