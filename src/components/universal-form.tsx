@@ -181,7 +181,13 @@ function renderField(
               <FormLabel htmlFor={`${id}_${option.value}`} className="font-normal cursor-pointer">
                 <span className="font-medium">{option.label}</span>
                 {option.note && (
-                  <Badge className="ml-2">{option.note}</Badge>
+                  <Badge 
+                    variant={option.note === "frequent" ? "secondary" : "default"}
+                    className={option.note === "frequent" ? "bg-muted text-muted-foreground" : ""}
+                  >
+                    {option.note === "frequent" ? "Nejběžnější" : 
+                     option.note === "recommended" ? "Doporučeno" : option.note}
+                  </Badge>
                 )}
               </FormLabel>
             </FormItem>

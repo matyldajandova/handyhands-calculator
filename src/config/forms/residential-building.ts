@@ -110,8 +110,8 @@ export const residentialBuildingFormConfig: FormConfig = {
           required: true,
           layout: "vertical",
           options: [
-            { value: "weekly", label: "1x týdně", coefficient: 1.0, note: "Nejběžnější" },
-            { value: "biweekly", label: "1x za 14 dní", coefficient: 0.85, note: "Doporučeno" },
+            { value: "weekly", label: "1x týdně", coefficient: 1.0, note: "frequent" },
+            { value: "biweekly", label: "1x za 14 dní", coefficient: 0.85, note: "recommended" },
             { value: "monthly", label: "1x za měsíc", coefficient: 0.69 },
             { value: "quarterly", label: "1x za 3 měsíce", coefficient: 0.52 },
             { value: "semiannual", label: "1x za 6 měsíců", coefficient: 0.35 },
@@ -236,7 +236,7 @@ export const residentialBuildingFormConfig: FormConfig = {
               required: true,
               layout: "vertical",
               options: [
-                { value: "all-floors", label: "ve všech nadzemních patrech", note: "doporučeno" },
+                { value: "all-floors", label: "ve všech nadzemních patrech", note: "recommended" },
                 { value: "ground-floor", label: "pouze v přízemí" },
                 { value: "selected-floors", label: "v konkrétních patrech" }
               ]

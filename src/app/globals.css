@@ -95,41 +95,41 @@
 
 .dark {
   /* shadcn/ui Semantic Colors - Dark Theme */
-  --background: var(--smoky-anthracite);
-  --foreground: var(--vanilla-snow);
-  --card: var(--roasted-cocoa);
-  --card-foreground: var(--vanilla-snow);
-  --popover: var(--roasted-cocoa);
-  --popover-foreground: var(--vanilla-snow);
+  --background: #0a0a0a;
+  --foreground: #fafafa;
+  --card: #1a1a1a;
+  --card-foreground: #fafafa;
+  --popover: #1a1a1a;
+  --popover-foreground: #fafafa;
   --primary: var(--peach-sorbet);
-  --primary-foreground: var(--smoky-anthracite);
-  --secondary: var(--roasted-cocoa);
-  --secondary-foreground: var(--vanilla-snow);
-  --muted: var(--roasted-cocoa);
-  --muted-foreground: var(--light-sand);
+  --primary-foreground: #0a0a0a;
+  --secondary: #262626;
+  --secondary-foreground: #fafafa;
+  --muted: #262626;
+  --muted-foreground: #a3a3a3;
   --accent: var(--grapefruit-accent);
-  --accent-foreground: var(--vanilla-snow);
+  --accent-foreground: #fafafa;
   --destructive: var(--grapefruit-accent);
-  --destructive-foreground: var(--vanilla-snow);
-  --border: var(--roasted-cocoa);
-  --input: var(--roasted-cocoa);
+  --destructive-foreground: #fafafa;
+  --border: #404040;
+  --input: #525252;
   --ring: var(--peach-sorbet);
   
   /* Chart Colors - Dark Theme */
   --chart-1: var(--peach-sorbet);
   --chart-2: var(--grapefruit-accent);
   --chart-3: var(--light-sand);
-  --chart-4: var(--roasted-cocoa);
-  --chart-5: var(--smoky-anthracite);
+  --chart-4: #404040;
+  --chart-5: #525252;
   
   /* Sidebar Colors - Dark Theme */
-  --sidebar: var(--roasted-cocoa);
-  --sidebar-foreground: var(--vanilla-snow);
+  --sidebar: #1a1a1a;
+  --sidebar-foreground: #fafafa;
   --sidebar-primary: var(--peach-sorbet);
-  --sidebar-primary-foreground: var(--smoky-anthracite);
-  --sidebar-accent: var(--roasted-cocoa);
-  --sidebar-accent-foreground: var(--vanilla-snow);
-  --sidebar-border: var(--roasted-cocoa);
+  --sidebar-primary-foreground: #0a0a0a;
+  --sidebar-accent: #262626;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: #404040;
   --sidebar-ring: var(--peach-sorbet);
 }
 
@@ -143,5 +143,37 @@
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-raleway), system-ui, sans-serif;
+  }
+  
+  /* Ensure inputs are visible in dark mode */
+  .dark input,
+  .dark textarea,
+  .dark select {
+    background-color: hsl(var(--input));
+    border-color: hsl(var(--border));
+    color: hsl(var(--foreground));
+  }
+  
+  .dark input:focus,
+  .dark textarea:focus,
+  .dark select:focus {
+    border-color: hsl(var(--ring));
+    box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
+  }
+  
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    color: hsl(var(--muted-foreground));
+  }
+  
+  /* Muted badge styling for "nejběžnější" */
+  .bg-muted.text-muted-foreground {
+    opacity: 0.8;
+    font-weight: 500;
+  }
+  
+  .dark .bg-muted.text-muted-foreground {
+    opacity: 0.7;
+    background-color: hsl(var(--muted) / 0.6);
   }
 }

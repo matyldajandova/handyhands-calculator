@@ -20,6 +20,8 @@ export interface FormData {
 // Form configuration types
 export type FieldType = 'radio' | 'select' | 'input' | 'textarea' | 'conditional';
 
+export type NoteType = 'frequent' | 'recommended';
+
 export interface BaseField {
   id: string;
   type: FieldType;
@@ -41,7 +43,7 @@ export interface RadioField extends BaseField {
   options: Array<{
     value: string | number;
     label: string;
-    note?: string;
+    note?: NoteType;
     coefficient?: number;
   }>;
   layout?: 'horizontal' | 'vertical';
