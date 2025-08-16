@@ -340,6 +340,20 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange }: Univer
       transition={{ duration: 0.6 }}
       className="w-full max-w-4xl mx-auto"
     >
+      {/* Back Button at Top */}
+      {onBack && (
+        <div className="mb-8 items-center flex justify-center">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={handleBack}
+          >
+            <Icons.ArrowLeft className="h-5 w-5" />
+            Zpět na výběr služby
+          </Button>
+        </div>
+      )}
+
       <div className="text-center mb-12">
         <h1 className="scroll-m-20 text-4xl font-bold tracking-tight text-balance text-foreground font-heading mb-6">
           {config.title}
@@ -416,22 +430,11 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange }: Univer
             </Card>
           ))}
 
-          {/* Action Buttons */}
-          <div className="flex justify-between items-center">
-            {onBack && (
-              <button
-                type="button"
-                onClick={handleBack}
-                className="px-6 py-3 bg-muted hover:bg-muted/80 text-muted-foreground rounded-lg font-medium transition-colors"
-              >
-                ← Zpět na výběr služby
-              </button>
-            )}
-
+          {/* Calculate Button - Centered and Larger */}
+          <div className="flex justify-center pt-4">
             <Button
               type="submit"
               size="lg"
-              className="px-8 py-3 text-lg font-medium bg-accent hover:bg-accent/90 text-accent-foreground"
             >
               Vypočítat cenu
             </Button>
