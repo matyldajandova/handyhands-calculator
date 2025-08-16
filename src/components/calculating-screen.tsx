@@ -4,9 +4,10 @@ import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
 import { useState, useEffect } from "react";
 import { Calculator, Sparkles, Clock } from "lucide-react";
+import { CalculationResult } from "@/types/form-types";
 
 interface CalculatingScreenProps {
-  onComplete: (result: any) => void;
+  onComplete: (result: CalculationResult) => void;
 }
 
 export function CalculatingScreen({ onComplete }: CalculatingScreenProps) {
@@ -44,7 +45,7 @@ export function CalculatingScreen({ onComplete }: CalculatingScreenProps) {
 
     // Complete calculation after progress reaches 100%
     const completionTimer = setTimeout(() => {
-      const mockResult = {
+      const mockResult: CalculationResult = {
         basePrice: 15000,
         coefficients: -2500,
         finalPrice: 12500,

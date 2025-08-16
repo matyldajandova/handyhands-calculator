@@ -1,17 +1,5 @@
 import { z } from "zod";
 import { FormConfig } from "@/types/form-types";
-import { 
-  Calendar, 
-  Building, 
-  Warehouse, 
-  Home, 
-  ArrowUpDown, 
-  Droplets, 
-  Sparkles, 
-  Snowflake,
-  MapPin,
-  Info
-} from "lucide-react";
 
 // Validation schema
 const residentialBuildingSchema = z.object({

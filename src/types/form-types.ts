@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export interface FormData {
   cleaningFrequency: string;
   aboveGroundFloors: number;
@@ -34,7 +36,7 @@ export interface BaseField {
     min?: number;
     max?: number;
     pattern?: string;
-    custom?: (value: any, formData: any) => boolean | string;
+    custom?: (value: unknown, formData: Record<string, unknown>) => boolean | string;
   };
 }
 
@@ -95,7 +97,7 @@ export interface FormConfig {
   title: string;
   description: string;
   sections: FormSection[];
-  validationSchema: any; // Zod schema
+  validationSchema: z.ZodSchema<Record<string, unknown>>; // More specific than any
 }
 
 // Service type definitions
@@ -106,3 +108,15 @@ export interface ServiceType {
   icon: string;
   formConfig: FormConfig | null;
 }
+
+// Calculation result types
+export interface CalculationResult {
+  basePrice: number;
+  coefficients: number;
+  finalPrice: number;
+  currency: string;
+  period: string;
+}
+
+// Form submission data type
+export type FormSubmissionData = Record<string, string | number | undefined>;

@@ -1,25 +1,26 @@
 "use client";
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
-import { getFormConfig, getServiceType } from "@/config/services";
+import { getServiceType } from "@/config/services";
+import { FormSubmissionData, CalculationResult, FormConfig } from "@/types/form-types";
 
 export type AppState = "service-selection" | "form" | "calculating" | "success";
 
 interface AppContextType {
   appState: AppState;
   selectedService: string;
-  formData: any;
-  calculationResult: any;
+  formData: FormSubmissionData | null;
+  calculationResult: CalculationResult | null;
   hasFormChanges: boolean;
   showWarningDialog: boolean;
   handleServiceTypeSelect: (serviceType: string) => void;
   handleBackToServiceSelection: () => void;
-  handleFormSubmit: (data: any) => void;
-  handleCalculationComplete: (result: any) => void;
+  handleFormSubmit: (data: FormSubmissionData) => void;
+  handleCalculationComplete: (result: CalculationResult) => void;
   handleFormChange: () => void;
   handleWarningDialogConfirm: () => void;
   handleWarningDialogCancel: () => void;
   handleBackButtonClick: () => void;
-  getFormConfig: (serviceType: string) => any;
+  getFormConfig: (serviceType: string) => FormConfig | null;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -39,8 +40,8 @@ interface AppProviderProps {
 export function AppProvider({ children }: AppProviderProps) {
   const [appState, setAppState] = useState<AppState>("service-selection");
   const [selectedService, setSelectedService] = useState<string>("");
-  const [formData, setFormData] = useState<any>(null);
-  const [calculationResult, setCalculationResult] = useState<any>(null);
+  const [formData, setFormData] = useState<FormSubmissionData | null>(null);
+  const [calculationResult, setCalculationResult] = useState<CalculationResult | null>(null);
   const [hasFormChanges, setHasFormChanges] = useState(false);
   const [showWarningDialog, setShowWarningDialog] = useState(false);
 
@@ -69,14 +70,14 @@ export function AppProvider({ children }: AppProviderProps) {
     setHasFormChanges(false);
   }, []);
 
-  const handleFormSubmit = useCallback((data: any) => {
+  const handleFormSubmit = useCallback((data: FormSubmissionData) => {
     console.log("handleFormSubmit called with:", data);
     
     setFormData(data);
     setAppState("calculating");
   }, []);
 
-  const handleCalculationComplete = useCallback((result: any) => {
+  const handleCalculationComplete = useCallback((result: CalculationResult) => {
     console.log("handleCalculationComplete called with:", result);
     
     setCalculationResult(result);
@@ -92,7 +93,7 @@ export function AppProvider({ children }: AppProviderProps) {
   const handleWarningDialogConfirm = useCallback(() => {
     setShowWarningDialog(false);
     handleBackToServiceSelection();
-  }, []);
+  }, [handleBackToServiceSelection]);
 
   const handleWarningDialogCancel = useCallback(() => {
     setShowWarningDialog(false);
@@ -104,9 +105,9 @@ export function AppProvider({ children }: AppProviderProps) {
     } else {
       handleBackToServiceSelection();
     }
-  }, [hasFormChanges]);
+  }, [hasFormChanges, handleBackToServiceSelection]);
 
-  const getFormConfig = useCallback((serviceType: string) => {
+  const getFormConfig = useCallback((serviceType: string): FormConfig | null => {
     const service = getServiceType(serviceType);
     return service?.formConfig || null;
   }, []);

@@ -1,12 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, UseFormReturn, ControllerRenderProps } from "react-hook-form";
 import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -20,14 +20,14 @@ import {
   FormLabel,
 } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FormConfig, FormField as FormFieldType } from "@/types/form-types";
+import { FormConfig, FormField as FormFieldType, FormSubmissionData, ConditionalField, RadioField, SelectField, InputField, TextareaField } from "@/types/form-types";
 import * as Icons from "lucide-react";
 import React from "react";
 
 interface UniversalFormProps {
   config: FormConfig;
   onBack?: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: FormSubmissionData) => void;
   onFormChange?: () => void;
 }
 
@@ -71,10 +71,10 @@ function AnimatedErrorMessage({ error }: { error: string | undefined }) {
 }
 
 // Helper function to render conditional fields
-function renderConditionalFields(field: FormFieldType, form: any) {
+function renderConditionalFields(field: FormFieldType, form: UseFormReturn<FormSubmissionData>) {
   if (field.type !== "conditional") return null;
   
-  const conditionalField = field as any;
+  const conditionalField = field as ConditionalField;
   const conditionField = conditionalField.condition.field;
   const conditionValue = conditionalField.condition.value;
   const shouldShow = form.watch(conditionField) === conditionValue;
@@ -107,7 +107,7 @@ function renderConditionalFields(field: FormFieldType, form: any) {
             >
               <FormField
                 control={form.control}
-                name={subField.id as any}
+                name={subField.id as keyof FormSubmissionData}
                 render={({ field: subFormField }) => (
                   <FormItem className="space-y-2">
                     {subField.type !== "radio" && subField.label && (
@@ -123,7 +123,7 @@ function renderConditionalFields(field: FormFieldType, form: any) {
                       </FormLabel>
                     )}
                     <FormControl>
-                      {renderField(subField, subFormField)}
+                      {renderField(subField, subFormField, form.formState)}
                     </FormControl>
                     {subField.description && (
                       <p className="text-xs text-muted-foreground">
@@ -149,16 +149,13 @@ function renderConditionalFields(field: FormFieldType, form: any) {
   );
 }
 
-// Helper function to render field based on type
-function renderField(
-  field: FormFieldType,
-  formField: any
-) {
-  const { id, type, label, required, placeholder, description, validation } = field;
+// Helper function to render individual fields
+function renderField(field: FormFieldType, formField: ControllerRenderProps<FormSubmissionData>, formState: any) {
+  const { placeholder } = field;
 
-  switch (type) {
+  switch (field.type) {
     case "radio":
-      const radioField = field as any;
+      const radioField = field as RadioField;
       return (
         <RadioGroup
           value={formField.value?.toString() || ""}
@@ -173,20 +170,23 @@ function renderField(
           }}
           className={radioField.layout === "vertical" ? "flex flex-col gap-3" : "flex gap-6"}
         >
-          {radioField.options.map((option: any) => (
+          {radioField.options.map((option: { value: string | number; label: string; note?: 'frequent' | 'recommended' }) => (
             <FormItem key={option.value} className="flex items-center gap-2">
               <FormControl>
-                <RadioGroupItem value={option.value.toString()} id={`${id}_${option.value}`} />
+                <RadioGroupItem value={option.value.toString()} id={`${field.id}_${option.value}`} />
               </FormControl>
-              <FormLabel htmlFor={`${id}_${option.value}`} className="font-normal cursor-pointer">
+              <FormLabel htmlFor={`${field.id}_${option.value}`} className="font-normal cursor-pointer">
                 <span>{option.label}</span>
                 {option.note && (
                   <Badge 
-                    variant={option.note === "frequent" ? "secondary" : "default"}
-                    className={option.note === "frequent" ? "bg-muted text-muted-foreground" : ""}
+                    variant={option.note === 'frequent' ? 'secondary' : 'default'}
+                    className={`text-xs ml-2 ${
+                      option.note === 'frequent' 
+                        ? 'bg-muted text-muted-foreground' 
+                        : 'bg-accent text-accent-foreground'
+                    }`}
                   >
-                    {option.note === "frequent" ? "Nejběžnější" : 
-                     option.note === "recommended" ? "Doporučeno" : option.note}
+                    {option.note === 'frequent' ? 'nejběžnější' : 'doporučeno'}
                   </Badge>
                 )}
               </FormLabel>
@@ -196,14 +196,14 @@ function renderField(
       );
 
     case "select":
-      const selectField = field as any;
+      const selectField = field as SelectField;
       return (
-        <Select value={formField.value} onValueChange={formField.onChange}>
+        <Select value={formField.value?.toString() || ""} onValueChange={formField.onChange}>
           <SelectTrigger>
             <SelectValue placeholder={placeholder || "Vyberte možnost"} />
           </SelectTrigger>
           <SelectContent>
-            {selectField.options.map((option: any) => (
+            {selectField.options.map((option: { value: string; label: string }) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
               </SelectItem>
@@ -213,7 +213,7 @@ function renderField(
       );
 
     case "input":
-      const inputField = field as any;
+      const inputField = field as InputField;
       return (
         <Input
           type={inputField.inputType}
@@ -221,16 +221,18 @@ function renderField(
           max={inputField.max}
           step={inputField.step}
           placeholder={placeholder}
+          className={formField.name && formState.errors[formField.name] ? "border-destructive" : ""}
           {...formField}
         />
       );
 
     case "textarea":
-      const textareaField = field as any;
+      const textareaField = field as TextareaField;
       return (
         <Textarea
           placeholder={placeholder}
           rows={textareaField.rows || 4}
+          className={formField.name && formState.errors[formField.name] ? "border-destructive" : ""}
           {...formField}
         />
       );
@@ -242,12 +244,12 @@ function renderField(
 
 export function UniversalForm({ config, onBack, onSubmit, onFormChange }: UniversalFormProps) {
   // Create default values for all fields
-  const createDefaultValues = () => {
-    const defaults: any = {};
+  const createDefaultValues = (): FormSubmissionData => {
+    const defaults: FormSubmissionData = {};
     config.sections.forEach(section => {
       section.fields.forEach(field => {
         if (field.type === "radio") {
-          const firstOption = (field as any).options?.[0];
+          const firstOption = (field as RadioField).options?.[0];
           if (firstOption && typeof firstOption.value === "number") {
             defaults[field.id] = undefined; // Don't set a default for numeric radio fields
           } else {
@@ -260,10 +262,10 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange }: Univer
         } else if (field.type === "textarea") {
           defaults[field.id] = "";
         } else if (field.type === "conditional") {
-          const conditionalField = field as any;
-          conditionalField.fields.forEach((subField: any) => {
+          const conditionalField = field as ConditionalField;
+          conditionalField.fields.forEach((subField: FormFieldType) => {
             if (subField.type === "radio") {
-              const firstOption = subField.options?.[0];
+              const firstOption = (subField as RadioField).options?.[0];
               if (firstOption && typeof firstOption.value === "number") {
                 defaults[subField.id] = undefined;
               } else {
@@ -283,8 +285,9 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange }: Univer
     return defaults;
   };
 
-  const form = useForm({
-    resolver: zodResolver(config.validationSchema),
+  const form = useForm<FormSubmissionData>({
+    // This any type is necessary due to Zod v3 + react-hook-form compatibility issues
+    resolver: zodResolver(config.validationSchema as any),
     defaultValues: createDefaultValues(),
     // Removed mode: "onChange"
   });
@@ -315,7 +318,7 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange }: Univer
     }
   }, [form.formState.errors]);
 
-  const handleSubmit = (values: any) => {
+  const handleSubmit = (values: FormSubmissionData) => {
     if (onSubmit) {
       onSubmit(values);
     } else {
@@ -362,11 +365,11 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange }: Univer
                 )}
               </CardHeader>
               <CardContent>
-                {section.fields.map((field, index) => (
+                {section.fields.map((field: FormFieldType, index: number) => (
                   <React.Fragment key={field.id}>
                     <FormField
                       control={form.control}
-                      name={field.id as any}
+                      name={field.id as keyof FormSubmissionData}
                       render={({ field: formField }) => (
                         <FormItem className="space-y-2">
                           {field.type !== "conditional" && field.type !== "radio" && field.label && (
@@ -382,7 +385,7 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange }: Univer
                             </FormLabel>
                           )}
                           <FormControl>
-                            {renderField(field, formField)}
+                            {renderField(field, formField, form.formState)}
                           </FormControl>
                           {field.description && (
                             <p className="text-xs text-muted-foreground">
@@ -404,7 +407,7 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange }: Univer
                      field.type !== "conditional" && 
                      section.fields[index + 1]?.type !== "conditional" && 
                      !(field.type === "radio" && section.fields[index + 1]?.type === "conditional" && 
-                       (section.fields[index + 1] as any)?.condition?.field === field.id) && (
+                       (section.fields[index + 1] as ConditionalField)?.condition?.field === field.id) && (
                       <Separator className="my-6 bg-muted/40" />
                     )}
                   </React.Fragment>

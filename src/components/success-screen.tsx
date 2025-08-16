@@ -3,10 +3,11 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Download, FileText, Calculator, Building } from "lucide-react";
+import { FormSubmissionData } from "@/types/form-types";
 
 interface SuccessScreenProps {
   onBackToServices: () => void;
-  formData: any;
+  formData: FormSubmissionData | null;
   serviceType: string;
 }
 

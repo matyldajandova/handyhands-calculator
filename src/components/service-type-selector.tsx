@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Building, Home, Warehouse, Store, Factory, School, FileText, Building2, Link } from "lucide-react";
+import { CheckCircle, Building, Home, Warehouse, Store, Factory, School, FileText, Building2 } from "lucide-react";
 import { serviceTypes } from "@/config/services";
 
 interface ServiceTypeSelectorProps {
@@ -33,7 +33,7 @@ export function ServiceTypeSelector({ onServiceTypeSelect }: ServiceTypeSelector
   };
 
   const getIconComponent = (iconName: string) => {
-    const iconMap: { [key: string]: React.ComponentType<any> } = {
+    const iconMap: { [key: string]: React.ComponentType<{ className?: string }> } = {
       Building,
       Home,
       Warehouse,
@@ -44,11 +44,6 @@ export function ServiceTypeSelector({ onServiceTypeSelect }: ServiceTypeSelector
       Building2
     };
     return iconMap[iconName] || Building;
-  };
-
-  const getServiceTitle = (serviceId: string) => {
-    const service = serviceTypes.find(s => s.id === serviceId);
-    return service?.title || serviceId;
   };
 
   return (
