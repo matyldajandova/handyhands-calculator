@@ -1,4 +1,5 @@
 import { FormSubmissionData, FormConfig, FormField, RadioField, SelectField, CalculationResult } from "@/types/form-types";
+import { calculateOfficeCleaningPrice } from "./office-cleaning-calculation";
 
 // Helper function to find a field in the form configuration
 function findFieldInConfig(config: FormConfig, fieldId: string): FormField | null {
@@ -42,6 +43,24 @@ function getCoefficientFromConfig(config: FormConfig, fieldId: string, value: st
 
 // Main calculation function - now generic for any form configuration
 export function calculatePrice(formData: FormSubmissionData, formConfig: FormConfig): CalculationResult {
+  // Check if this is the office cleaning calculator
+  if (formConfig.id === "office-cleaning") {
+    const officeResult = calculateOfficeCleaningPrice(formData, formConfig.basePrice || 2450);
+    
+    // Convert office cleaning result to standard CalculationResult format
+    return {
+      regularCleaningPrice: officeResult.finalPrice,
+      generalCleaningPrice: undefined, // Office cleaning includes general cleaning in the base price
+      generalCleaningFrequency: "2x ročně", // Office cleaning includes 2x yearly general cleaning
+      totalMonthlyPrice: officeResult.finalPrice,
+      calculationDetails: {
+        basePrice: officeResult.calculationDetails.basePrice,
+        appliedCoefficients: officeResult.appliedCoefficients,
+        finalCoefficient: officeResult.calculationDetails.finalCoefficient
+      }
+    };
+  }
+
   const basePrice = formConfig.basePrice || 1500; // Use config base price or default to 1500
   let finalCoefficient = 1.0;
   const appliedCoefficients: Array<{

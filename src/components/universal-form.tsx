@@ -222,7 +222,16 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
           step={inputField.step}
           placeholder={placeholder}
           className={formField.name && formState.errors[formField.name] ? "border-destructive" : ""}
-          {...formField}
+          value={formField.value?.toString() || ""}
+          onChange={(e) => {
+            const value = e.target.value;
+            if (inputField.inputType === 'number') {
+              // For number inputs, always keep as string in form state, convert to number only when needed
+              formField.onChange(value);
+            } else {
+              formField.onChange(value);
+            }
+          }}
         />
       );
 
@@ -258,7 +267,12 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange }: Univer
         } else if (field.type === "select") {
           defaults[field.id] = "";
         } else if (field.type === "input") {
-          defaults[field.id] = "";
+          const inputField = field as InputField;
+          if (inputField.inputType === 'number') {
+            defaults[field.id] = "";
+          } else {
+            defaults[field.id] = "";
+          }
         } else if (field.type === "textarea") {
           defaults[field.id] = "";
         } else if (field.type === "conditional") {
@@ -267,14 +281,19 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange }: Univer
             if (subField.type === "radio") {
               const firstOption = (subField as RadioField).options?.[0];
               if (firstOption && typeof firstOption.value === "number") {
-                defaults[subField.id] = undefined;
+                defaults[subField.id] = "";
               } else {
                 defaults[subField.id] = "";
               }
             } else if (subField.type === "select") {
               defaults[subField.id] = "";
             } else if (subField.type === "input") {
-              defaults[subField.id] = "";
+              const subInputField = subField as InputField;
+              if (subInputField.inputType === 'number') {
+                defaults[subField.id] = "";
+              } else {
+                defaults[subField.id] = "";
+              }
             } else if (subField.type === "textarea") {
               defaults[subField.id] = "";
             }

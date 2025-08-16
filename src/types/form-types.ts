@@ -132,3 +132,39 @@ export interface CalculationResult {
 
 // Form submission data type
 export type FormSubmissionData = Record<string, string | number | undefined>;
+
+// Office cleaning specific types
+export interface OfficeCleaningFormData {
+  cleaningFrequency: string;
+  calculationMethod: string;
+  hoursPerCleaning?: number;
+  officeArea?: number;
+  floorType: string;
+  generalCleaning: string;
+  generalCleaningWindows?: string;
+  windowAreaBoth?: number;
+  windowCountBoth?: number;
+  windowAreaInside?: number;
+  windowCountInside?: number;
+  dishwashing: string;
+  toiletCleaning: string;
+  afterHours: string;
+  location: string;
+  notes?: string;
+}
+
+// Office cleaning calculation result
+export interface OfficeCleaningCalculationResult {
+  finalPrice: number;
+  appliedCoefficients: Array<{
+    field: string;
+    label: string;
+    coefficient: number;
+    impact: number;
+  }>;
+  calculationDetails: {
+    basePrice: number;
+    finalCoefficient: number;
+    method: string;
+  };
+}
