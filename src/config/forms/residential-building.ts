@@ -1,6 +1,37 @@
 import { z } from "zod";
 import { FormConfig } from "@/types/form-types";
 
+// Base prices and inflation
+const BASE_PRICES = {
+  regularCleaning: 1500, // Base price per month for regular cleaning
+  generalCleaning: {
+    standard: 2300, // 2x ročně
+    annual: 2900,   // 1x ročně
+    quarterly: 2050 // 4x ročně
+  }
+};
+
+const INFLATION_RATE = 0.04; // 4% annual inflation
+const INFLATION_START_YEAR = 2026;
+
+// Calculate inflation-adjusted prices
+function getInflationAdjustedPrice(basePrice: number, targetYear: number = new Date().getFullYear()): number {
+  if (targetYear < INFLATION_START_YEAR) return basePrice;
+  const yearsDiff = targetYear - INFLATION_START_YEAR;
+  return basePrice * Math.pow(1 + INFLATION_RATE, yearsDiff);
+}
+
+// Get current year's prices
+const currentYear = new Date().getFullYear();
+const CURRENT_PRICES = {
+  regularCleaning: getInflationAdjustedPrice(BASE_PRICES.regularCleaning, currentYear),
+  generalCleaning: {
+    standard: getInflationAdjustedPrice(BASE_PRICES.generalCleaning.standard, currentYear),
+    annual: getInflationAdjustedPrice(BASE_PRICES.generalCleaning.annual, currentYear),
+    quarterly: getInflationAdjustedPrice(BASE_PRICES.generalCleaning.quarterly, currentYear)
+  }
+};
+
 // Validation schema
 const residentialBuildingSchema = z.object({
   cleaningFrequency: z.string().min(1, "Vyberte četnost úklidu"),
@@ -12,7 +43,7 @@ const residentialBuildingSchema = z.object({
   generalCleaning: z.string().min(1, "Vyberte, zda požadujete generální úklid"),
   generalCleaningType: z.string().optional(),
   windowsPerFloor: z.number().optional(),
-  floorsWithWindows: z.number().optional(),
+  floorsWithWindows: z.union([z.string(), z.number()]).optional(), // Can be "all" or number
   windowType: z.string().optional(),
   basementCleaning: z.string().optional(),
   winterMaintenance: z.string().min(1, "Vyberte, zda požadujete zimní údržbu"),
@@ -83,8 +114,13 @@ const residentialBuildingSchema = z.object({
 export const residentialBuildingFormConfig: FormConfig = {
   id: "residential-building",
   title: "Činžovní domy, novostavby",
-  description: "Vyplňte údaje pro výpočet ceny úklidových služeb. Všechny údaje jsou důležité pro přesný výpočet.",
+  description: `Vyplňte údaje pro výpočet ceny úklidových služeb. Všechny údaje jsou důležité pro přesný výpočet. Ceny jsou aktualizovány s inflací ${(INFLATION_RATE * 100).toFixed(1)}% od roku ${INFLATION_START_YEAR}.`,
   validationSchema: residentialBuildingSchema,
+  basePrice: CURRENT_PRICES.regularCleaning,
+  conditions: [
+    "Dostupnost alespoň studené vody v domě",
+    "Uzamykatelná místnost nebo uzamykatelná část domu (místo) na úklidové náčiní a úklidovou chemii"
+  ],
   sections: [
     {
       id: "cleaning-frequency",
@@ -99,11 +135,12 @@ export const residentialBuildingFormConfig: FormConfig = {
           layout: "vertical",
           options: [
             { value: "weekly", label: "1x týdně", coefficient: 1.0, note: "frequent" },
-            { value: "biweekly", label: "1x za 14 dní", coefficient: 0.85, note: "recommended" },
-            { value: "monthly", label: "1x za měsíc", coefficient: 0.69 },
-            { value: "quarterly", label: "1x za 3 měsíce", coefficient: 0.52 },
-            { value: "semiannual", label: "1x za 6 měsíců", coefficient: 0.35 },
-            { value: "annual", label: "1x za rok", coefficient: 0.18 }
+            { value: "twice-weekly", label: "2x týdně", coefficient: 1.67 },
+            { value: "biweekly", label: "1x za 14 dní", coefficient: 0.75 },
+            { value: "daily", label: "každý den", coefficient: 3.67 },
+            { value: "mixed-weekly", label: "1x týdně nadzemní patra a 2x týdně přízemí", coefficient: 1.45 },
+            { value: "seasonal", label: "1x týdně v letním období a 2x týdně v zimním období", coefficient: 1.35, note: "recommended" },
+            { value: "monthly", label: "1x za měsíc", coefficient: 0.69 }
           ]
         }
       ]
@@ -120,18 +157,14 @@ export const residentialBuildingFormConfig: FormConfig = {
           required: true,
           layout: "vertical",
           options: [
-            { value: 1, label: "1 patro (přízemí)" },
-            { value: 2, label: "2 patra" },
-            { value: 3, label: "3 patra" },
-            { value: 4, label: "4 patra" },
-            { value: 5, label: "5 pater" },
-            { value: 6, label: "6 pater" },
-            { value: 7, label: "7 pater" },
-            { value: 8, label: "8 pater" },
-            { value: 9, label: "9 pater" },
-            { value: 10, label: "10 pater" },
-            { value: 11, label: "11 pater" },
-            { value: 12, label: "12 pater" }
+            { value: 1, label: "1 (tedy přízemní objekt)", coefficient: 0.4 },
+            { value: 2, label: "2", coefficient: 0.6 },
+            { value: 3, label: "3", coefficient: 0.82 },
+            { value: 4, label: "4", coefficient: 0.93 },
+            { value: 5, label: "5", coefficient: 1.0 },
+            { value: 6, label: "6", coefficient: 1.07 },
+            { value: 7, label: "7", coefficient: 1.12 },
+            { value: 8, label: "8 a více pater", coefficient: 1.17 }
           ]
         },
         {
@@ -141,11 +174,9 @@ export const residentialBuildingFormConfig: FormConfig = {
           required: true,
           layout: "vertical",
           options: [
-            { value: 0, label: "Žádné" },
-            { value: 1, label: "1 patro" },
-            { value: 2, label: "2 patra" },
-            { value: 3, label: "3 patra" },
-            { value: 4, label: "4 patra" }
+            { value: 0, label: "Žádné", coefficient: 0.97 },
+            { value: 1, label: "1", coefficient: 1.02 },
+            { value: 2, label: "2", coefficient: 1.06 }
           ]
         },
         {
@@ -155,12 +186,9 @@ export const residentialBuildingFormConfig: FormConfig = {
           required: true,
           layout: "vertical",
           options: [
-            { value: "1-2", label: "1-2 byty" },
-            { value: "3-4", label: "3-4 byty" },
-            { value: "5-6", label: "5-6 bytů" },
-            { value: "7-8", label: "7-8 bytů" },
-            { value: "9-10", label: "9-10 bytů" },
-            { value: "11+", label: "11+ bytů" }
+            { value: "less-than-3", label: "méně než 3 byty", coefficient: 0.95 },
+            { value: "3", label: "3 byty", coefficient: 1.0 },
+            { value: "more-than-3", label: "více jak 3 byty", coefficient: 1.11 }
           ]
         }
       ]
@@ -177,19 +205,19 @@ export const residentialBuildingFormConfig: FormConfig = {
           required: true,
           layout: "horizontal",
           options: [
-            { value: "yes", label: "Ano" },
-            { value: "no", label: "Ne" }
+            { value: "yes", label: "Ano", coefficient: 0.97 },
+            { value: "no", label: "Ne", coefficient: 1.05 }
           ]
         },
         {
           id: "hasHotWater",
           type: "radio",
-          label: "Teplá voda v úklidové místnosti",
+          label: "Teplá voda v úklidové místnosti (nebo v domě pro potřeby úklidu)",
           required: true,
           layout: "horizontal",
           options: [
-            { value: "yes", label: "Ano" },
-            { value: "no", label: "Ne, pro potřeby úklidu pouze studená voda" }
+            { value: "yes", label: "Ano", coefficient: 0.99 },
+            { value: "no", label: "Ne, pro potřeby úklidu pouze studená voda", coefficient: 1.03 }
           ]
         }
       ]
@@ -207,7 +235,7 @@ export const residentialBuildingFormConfig: FormConfig = {
           layout: "horizontal",
           options: [
             { value: "yes", label: "Ano" },
-            { value: "no", label: "Ne" }
+            { value: "no", label: "Ne", coefficient: 1.0 }
           ]
         },
         {
@@ -224,9 +252,9 @@ export const residentialBuildingFormConfig: FormConfig = {
               required: true,
               layout: "vertical",
               options: [
-                { value: "all-floors", label: "ve všech nadzemních patrech", note: "recommended" },
-                { value: "ground-floor", label: "pouze v přízemí" },
-                { value: "selected-floors", label: "v konkrétních patrech" }
+                { value: "annual", label: `generální úklid domu 1x ročně`, coefficient: 1.0 },
+                { value: "standard", label: `standardní generální úklid domu 2x ročně`, coefficient: 1.0, note: "recommended" },
+                { value: "quarterly", label: `generální úklid domu 4x ročně`, coefficient: 1.0 }
               ]
             },
             {
@@ -236,11 +264,11 @@ export const residentialBuildingFormConfig: FormConfig = {
               required: true,
               layout: "vertical",
               options: [
-                { value: 1, label: "1-5 oken" },
-                { value: 2, label: "6-10 oken" },
-                { value: 3, label: "11-15 oken" },
-                { value: 4, label: "16-20 oken" },
-                { value: 5, label: "21+ oken" }
+                { value: 1, label: "1", coefficient: 0.9 },
+                { value: 2, label: "2", coefficient: 1.0 },
+                { value: 3, label: "3", coefficient: 1.02 },
+                { value: 4, label: "4", coefficient: 1.1 },
+                { value: 5, label: "5-10", coefficient: 1.35 }
               ]
             },
             {
@@ -250,11 +278,14 @@ export const residentialBuildingFormConfig: FormConfig = {
               required: true,
               layout: "vertical",
               options: [
-                { value: 1, label: "1 patro" },
-                { value: 2, label: "2 patra" },
-                { value: 3, label: "3 patra" },
-                { value: 4, label: "4 patra" },
-                { value: 5, label: "5+ pater" }
+                { value: "all", label: "ve všech nadzemních patrech", coefficient: 1.0 },
+                { value: 1, label: "1", coefficient: 0.97 },
+                { value: 2, label: "2", coefficient: 0.98 },
+                { value: 3, label: "3", coefficient: 1.0 },
+                { value: 4, label: "4", coefficient: 1.0 },
+                { value: 5, label: "5", coefficient: 1.02 },
+                { value: 6, label: "6", coefficient: 1.04 },
+                { value: 7, label: "7", coefficient: 1.06 }
               ]
             },
             {
@@ -264,10 +295,9 @@ export const residentialBuildingFormConfig: FormConfig = {
               required: true,
               layout: "vertical",
               options: [
-                { value: "standard", label: "standardní okna" },
-                { value: "large", label: "velká okna" },
-                { value: "balcony", label: "balkónové dveře" },
-                { value: "skylight", label: "střešní okna" }
+                { value: "new", label: "nová plastová nebo dřevěná", coefficient: 1.0 },
+                { value: "original", label: "původní dřevěná nebo hliníková", coefficient: 1.1 },
+                { value: "hard-to-reach", label: "některá jsou hůře dostupná z podlahy (nutno použít např. štafle nebo teleskopické tyče)", coefficient: 1.3 }
               ]
             },
             {
@@ -277,8 +307,8 @@ export const residentialBuildingFormConfig: FormConfig = {
               required: true,
               layout: "vertical",
               options: [
-                { value: "general", label: "rámci generálního úklidu" },
-                { value: "regular", label: "rámci pravidelného úklidu" }
+                { value: "general", label: "rámci generálního úklidu", coefficient: 1.0 },
+                { value: "regular", label: "rámci pravidelného úklidu", coefficient: 1.0 }
               ]
             }
           ]
@@ -334,20 +364,20 @@ export const residentialBuildingFormConfig: FormConfig = {
           label: "",
           required: true,
           options: [
-            { value: "prague", label: "Praha" },
-            { value: "brno", label: "Brno" },
-            { value: "ostrava", label: "Ostrava" },
-            { value: "plzen", label: "Plzeň" },
-            { value: "liberec", label: "Liberec" },
-            { value: "olomouc", label: "Olomouc" },
-            { value: "usti", label: "Ústí nad Labem" },
-            { value: "hradec", label: "Hradec Králové" },
-            { value: "ceske-budejovice", label: "České Budějovice" },
-            { value: "pardubice", label: "Pardubice" },
-            { value: "zlin", label: "Zlín" },
-            { value: "jihlava", label: "Jihlava" },
-            { value: "karlovy-vary", label: "Karlovy Vary" },
-            { value: "other", label: "Jiné město" }
+            { value: "prague", label: "Praha (PSČ 110 00 atd.)", coefficient: 1.0 },
+            { value: "stredocesky", label: "Středočeský kraj", coefficient: 0.96078 },
+            { value: "karlovarsky", label: "Karlovarský kraj", coefficient: 0.72549 },
+            { value: "plzensky", label: "Plzeňský kraj", coefficient: 0.75686 },
+            { value: "ustecky", label: "Ústecký kraj", coefficient: 0.69019 },
+            { value: "jihocesky", label: "Jihočeský kraj", coefficient: 0.75294 },
+            { value: "liberecky", label: "Liberecký kraj", coefficient: 0.76863 },
+            { value: "kralovehradecky", label: "Královéhradecký kraj", coefficient: 0.75294 },
+            { value: "pardubicky", label: "Pardubický kraj", coefficient: 0.75294 },
+            { value: "vysocina", label: "Kraj Vysočina", coefficient: 0.68235 },
+            { value: "jihomoravsky", label: "Jihomoravský kraj", coefficient: 0.82352 },
+            { value: "olomoucky", label: "Olomoucký kraj", coefficient: 0.71372 },
+            { value: "zlinsky", label: "Zlínský kraj", coefficient: 0.71372 },
+            { value: "moravskoslezsky", label: "Moravskoslezský kraj", coefficient: 0.65098 }
           ]
         }
       ]
@@ -369,3 +399,6 @@ export const residentialBuildingFormConfig: FormConfig = {
     }
   ]
 };
+
+// Export the calculation functions and prices for use in the calculation logic
+export { BASE_PRICES, CURRENT_PRICES, getInflationAdjustedPrice, INFLATION_RATE, INFLATION_START_YEAR };

@@ -5,25 +5,31 @@ import { Progress } from "@/components/ui/progress";
 import { useState, useEffect } from "react";
 import { Calculator, Sparkles, Clock } from "lucide-react";
 import { CalculationResult } from "@/types/form-types";
+import { calculatePrice } from "@/utils/calculation";
+import { FormSubmissionData, FormConfig } from "@/types/form-types";
 
 interface CalculatingScreenProps {
   onComplete: (result: CalculationResult) => void;
+  formData: FormSubmissionData;
+  formConfig: FormConfig;
 }
 
-export function CalculatingScreen({ onComplete }: CalculatingScreenProps) {
+export function CalculatingScreen({ onComplete, formData, formConfig }: CalculatingScreenProps) {
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
 
   const steps = [
-    { icon: Calculator, text: "Načítám data formuláře..." },
-    { icon: Sparkles, text: "Počítám koeficienty..." },
-    { icon: Clock, text: "Generuji konečnou cenu..." },
+    "Analýza požadavků",
+    "Výpočet koeficientů",
+    "Aplikace lokálních sazeb",
+    "Kontrola inflace",
+    "Finální kalkulace"
   ];
 
   useEffect(() => {
     // Animate progress bar
     const progressTimer = setInterval(() => {
-      setProgress((prev) => {
+      setProgress(prev => {
         if (prev >= 100) {
           clearInterval(progressTimer);
           return 100;
@@ -32,9 +38,9 @@ export function CalculatingScreen({ onComplete }: CalculatingScreenProps) {
       });
     }, 100);
 
-    // Animate steps
+    // Animate calculation steps
     const stepTimer = setInterval(() => {
-      setCurrentStep((prev) => {
+      setCurrentStep(prev => {
         if (prev >= steps.length - 1) {
           clearInterval(stepTimer);
           return steps.length - 1;
@@ -45,14 +51,9 @@ export function CalculatingScreen({ onComplete }: CalculatingScreenProps) {
 
     // Complete calculation after progress reaches 100%
     const completionTimer = setTimeout(() => {
-      const mockResult: CalculationResult = {
-        basePrice: 15000,
-        coefficients: -2500,
-        finalPrice: 12500,
-        currency: "Kč",
-        period: "měsíc"
-      };
-      onComplete(mockResult);
+      // Use the real calculation utility instead of mock data
+      const realResult = calculatePrice(formData, formConfig);
+      onComplete(realResult);
     }, 5000);
 
     return () => {
@@ -60,7 +61,7 @@ export function CalculatingScreen({ onComplete }: CalculatingScreenProps) {
       clearInterval(stepTimer);
       clearTimeout(completionTimer);
     };
-  }, [onComplete, steps.length]);
+  }, [onComplete, steps.length, formData, formConfig]);
 
   return (
     <motion.div
@@ -142,7 +143,7 @@ export function CalculatingScreen({ onComplete }: CalculatingScreenProps) {
                       <span className="text-xs">{index + 1}</span>
                     )}
                   </div>
-                  <span className="text-sm font-medium">{step.text}</span>
+                  <span className="text-sm font-medium">{step}</span>
                   {index === currentStep && (
                     <motion.div
                       animate={{ opacity: [1, 0.5, 1] }}

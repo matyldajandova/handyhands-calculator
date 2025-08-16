@@ -10,7 +10,7 @@ export interface FormData {
   generalCleaning: string;
   generalCleaningType?: string;
   windowsPerFloor?: number;
-  floorsWithWindows?: string;
+  floorsWithWindows?: string | number; // Can be "all" or number
   windowType?: string;
   basementCleaning?: string;
   winterMaintenance: string;
@@ -56,6 +56,7 @@ export interface SelectField extends BaseField {
   options: Array<{
     value: string;
     label: string;
+    coefficient?: number;
   }>;
 }
 
@@ -98,6 +99,8 @@ export interface FormConfig {
   description: string;
   sections: FormSection[];
   validationSchema: z.ZodSchema<Record<string, unknown>>; // More specific than any
+  basePrice?: number; // Base price for the service (optional, defaults to 1500)
+  conditions?: string[]; // Pricing conditions (optional)
 }
 
 // Service type definitions
@@ -111,11 +114,20 @@ export interface ServiceType {
 
 // Calculation result types
 export interface CalculationResult {
-  basePrice: number;
-  coefficients: number;
-  finalPrice: number;
-  currency: string;
-  period: string;
+  regularCleaningPrice: number;
+  generalCleaningPrice?: number;
+  generalCleaningFrequency?: string;
+  totalMonthlyPrice: number;
+  calculationDetails: {
+    basePrice: number;
+    appliedCoefficients: Array<{
+      field: string;
+      label: string;
+      coefficient: number;
+      impact: number;
+    }>;
+    finalCoefficient: number;
+  };
 }
 
 // Form submission data type

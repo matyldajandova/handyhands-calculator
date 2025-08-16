@@ -4,13 +4,15 @@ import { UniversalForm } from "@/components/universal-form";
 import { CalculatingScreen } from "@/components/calculating-screen";
 import { SuccessScreen } from "@/components/success-screen";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { useAppContext } from "./providers";
+import { useAppContext } from "@/app/providers";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   const {
     appState,
     selectedService,
     formData,
+    calculationResult,
     showWarningDialog,
     handleServiceTypeSelect,
     handleBackToServiceSelection,
@@ -27,15 +29,36 @@ export default function Home() {
 
   // Render appropriate screen based on app state
   if (appState === "calculating") {
-    return <CalculatingScreen onComplete={handleCalculationComplete} />;
+    if (!formConfig) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background p-4 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-4">Chyba při načítání konfigurace</h1>
+            <p className="text-muted-foreground mb-6">Konfigurace formuláře nebyla nalezena.</p>
+            <Button onClick={handleBackToServiceSelection} variant="outline">
+              ← Zpět na výběr služby
+            </Button>
+          </div>
+        </div>
+      );
+    }
+    
+    return (
+      <CalculatingScreen 
+        onComplete={handleCalculationComplete}
+        formData={formData || {}}
+        formConfig={formConfig}
+      />
+    );
   }
 
   if (appState === "success") {
     return (
       <SuccessScreen
         onBackToServices={handleBackToServiceSelection}
-        formData={formData}
         serviceType={selectedService}
+        calculationResult={calculationResult}
+        formConfig={formConfig}
       />
     );
   }

@@ -3,35 +3,40 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Download, FileText, Calculator, Building } from "lucide-react";
-import { FormSubmissionData } from "@/types/form-types";
+import { CalculationResult, FormConfig } from "@/types/form-types";
+import * as Icons from "lucide-react";
 
 interface SuccessScreenProps {
   onBackToServices: () => void;
-  formData: FormSubmissionData | null;
   serviceType: string;
+  calculationResult: CalculationResult | null;
+  formConfig: FormConfig | null;
 }
 
-export function SuccessScreen({ onBackToServices, formData, serviceType }: SuccessScreenProps) {
+export function SuccessScreen({ onBackToServices, serviceType, calculationResult, formConfig }: SuccessScreenProps) {
   const handleDownloadPDF = () => {
-    // Mock PDF download - in real implementation, this would generate and download a PDF
-    console.log("Downloading PDF for:", { formData, serviceType });
+    if (!calculationResult || !roundedResults || !formConfig) return;
     
-    // Create a mock PDF content (in real app, use a library like jsPDF or react-pdf)
-    const mockPDFContent = `
+    // Create PDF content with actual calculation results (rounded to 10 Kč)
+    const pdfContent = `
       Kalkulace úklidových služeb
       Služba: ${serviceType}
       Datum: ${new Date().toLocaleDateString('cs-CZ')}
       
       Výsledek kalkulace:
-      - Základní cena: 15,000 Kč/měsíc
-      - Aplikované koeficienty: -2,500 Kč
-      - Finální cena: 12,500 Kč/měsíc
+      - Cena za pravidelný úklid domu: ${roundedResults.totalMonthlyPrice.toLocaleString('cs-CZ')} Kč/měsíc
+      ${roundedResults.generalCleaningPrice ? `- Cena za generální úklid domu ${calculationResult.generalCleaningFrequency}: ${roundedResults.generalCleaningPrice.toLocaleString('cs-CZ')} Kč za provedený úklid` : ''}
+      
+      ${formConfig.conditions && formConfig.conditions.length > 0 ? `Podmínky uvedené ceny:
+      ${formConfig.conditions.map(condition => `- ${condition}`).join('\n')}
+      
+      ` : ''}* Cena je zaokrouhlena na celé desetikoruny
       
       Detaily služby byly úspěšně vypočítány.
     `;
     
     // Create and download file
-    const blob = new Blob([mockPDFContent], { type: 'text/plain' });
+    const blob = new Blob([pdfContent], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -41,6 +46,34 @@ export function SuccessScreen({ onBackToServices, formData, serviceType }: Succe
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
   };
+
+  // Format currency for display - round to whole 10 Kč (desetikoruny)
+  const formatCurrency = (amount: number) => {
+    const roundedAmount = Math.round(amount / 10) * 10; // Round to nearest 10 Kč
+    return `${roundedAmount.toLocaleString('cs-CZ')} Kč`;
+  };
+
+  // Round calculation results to whole 10 Kč
+  const roundedResults = calculationResult ? {
+    regularCleaningPrice: Math.round(calculationResult.regularCleaningPrice / 10) * 10,
+    generalCleaningPrice: calculationResult.generalCleaningPrice ? 
+      Math.round(calculationResult.generalCleaningPrice / 10) * 10 : undefined,
+    totalMonthlyPrice: Math.round(calculationResult.totalMonthlyPrice / 10) * 10
+  } : null;
+
+  if (!calculationResult || !roundedResults) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background p-4 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-foreground mb-4">Chyba při načítání výsledků</h1>
+          <p className="text-muted-foreground mb-6">Výsledky kalkulace nebyly nalezeny.</p>
+          <Button onClick={onBackToServices} variant="outline">
+            ← Zpět na výběr služby
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -95,25 +128,52 @@ export function SuccessScreen({ onBackToServices, formData, serviceType }: Succe
                 Výsledek kalkulace
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-                <div className="p-4 bg-muted/20 rounded-lg">
-                  <div className="text-2xl font-bold text-foreground">15,000 Kč</div>
-                  <div className="text-sm text-muted-foreground">Základní cena</div>
+            <CardContent className="space-y-6">
+              {/* Main Price Display */}
+              <div className="text-center">
+                <div className="text-4xl font-bold text-accent mb-2">
+                  {formatCurrency(roundedResults.totalMonthlyPrice)}
                 </div>
-                <div className="p-4 bg-muted/20 rounded-lg">
-                  <div className="text-2xl font-bold text-foreground">-2,500 Kč</div>
-                  <div className="text-sm text-muted-foreground">Koeficienty</div>
+                <div className="text-lg text-muted-foreground">
+                  za měsíc
                 </div>
-                <div className="p-4 bg-accent/20 rounded-lg border-2 border-accent">
-                  <div className="text-2xl font-bold text-accent">12,500 Kč</div>
-                  <div className="text-sm text-accent-foreground">Finální cena/měsíc</div>
+                <div className="text-sm text-muted-foreground mt-2">
+                  Cena za pravidelný úklid domu bez 21 % DPH
                 </div>
               </div>
+
+              {/* General Cleaning Price (if applicable) */}
+              {roundedResults.generalCleaningPrice && (
+                <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="text-center">
+                    <div className="text-lg font-semibold text-blue-700 dark:text-blue-300 mb-2">
+                      Generální úklid domu
+                    </div>
+                    <div className="text-2xl font-bold text-blue-800 dark:text-blue-200">
+                      {formatCurrency(roundedResults.generalCleaningPrice)}
+                    </div>
+                    <div className="text-sm text-blue-600 dark:text-blue-400">
+                      {calculationResult.generalCleaningFrequency} za provedený úklid
+                    </div>
+                  </div>
+                </div>
+              )}
               
-              <div className="text-sm text-muted-foreground">
-                * Cena je orientační a může se lišit podle konkrétních podmínek
-              </div>
+              {/* Conditions */}
+              {formConfig?.conditions && formConfig.conditions.length > 0 && (
+                <div className="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <div className="text-left">
+                    <h4 className="font-semibold text-amber-800 dark:text-amber-200 mb-2">
+                      Podmínky uvedené ceny:
+                    </h4>
+                    <ul className="text-sm text-amber-700 dark:text-amber-300 space-y-1">
+                      {formConfig.conditions.map((condition, index) => (
+                        <li key={index}>• {condition}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -147,10 +207,11 @@ export function SuccessScreen({ onBackToServices, formData, serviceType }: Succe
         >
           <Button
             onClick={onBackToServices}
-            variant="outline"
-            size="lg"
+            variant="ghost"
+            
           >
-            ← Zpět na výběr služby
+            <Icons.ArrowLeft className="h-5 w-5" />
+            Zpět na výběr služby
           </Button>
         </motion.div>
       </div>
