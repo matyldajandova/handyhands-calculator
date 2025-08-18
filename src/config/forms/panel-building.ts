@@ -120,7 +120,7 @@ export const panelBuildingFormConfig: FormConfig = {
             { value: "twice-weekly", label: "2x týdně", coefficient: 1.67 },
             { value: "biweekly", label: "1x za 14 dní", coefficient: 0.75 },
             { value: "mixed-weekly", label: "1x týdně nadzemní patra a 2x týdně přízemí", coefficient: 1.45 },
-            { value: "seasonal", label: "1x týdně v letním období a 2x týdně v zimním období*", coefficient: 1.35, note: "recommended" }
+            { value: "seasonal", label: "1x týdně v letním období a 2x týdně v zimním období", coefficient: 1.35, note: "recommended" }
           ]
         }
       ]

@@ -20,6 +20,7 @@ import {
   FormLabel,
 } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { FormConfig, FormField as FormFieldType, FormSubmissionData, ConditionalField, RadioField, SelectField, InputField, TextareaField } from "@/types/form-types";
 import * as Icons from "lucide-react";
 import React from "react";
@@ -72,6 +73,28 @@ function AnimatedErrorMessage({ error }: { error: string | undefined }) {
   );
 }
 
+// Custom field label component with info icon and tooltip
+function FieldLabel({ field }: { field: FormFieldType }) {
+  return (
+    <div className="flex items-center gap-2">
+      <FormLabel>
+        {field.label}
+        {!field.required && <span className="text-muted-foreground ml-2">(volitelné)</span>}
+      </FormLabel>
+      {field.note && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Icons.Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-accent transition-colors" />
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-xs">
+            <p className="text-sm">{field.note}</p>
+          </TooltipContent>
+        </Tooltip>
+      )}
+    </div>
+  );
+}
+
 // Helper function to render conditional fields
 function renderConditionalFields(field: FormFieldType, form: UseFormReturn<FormSubmissionData>) {
   if (field.type !== "conditional") return null;
@@ -112,17 +135,8 @@ function renderConditionalFields(field: FormFieldType, form: UseFormReturn<FormS
                 name={subField.id as keyof FormSubmissionData}
                 render={({ field: subFormField }) => (
                   <FormItem className="space-y-2">
-                    {subField.type !== "radio" && subField.label && (
-                      <FormLabel>
-                        {subField.label}
-                        {!subField.required && <span className="text-muted-foreground ml-2">(volitelné)</span>}
-                      </FormLabel>
-                    )}
-                    {subField.type === "radio" && subField.label && (
-                      <FormLabel>
-                        {subField.label}
-                        {!subField.required && <span className="text-muted-foreground ml-2">(volitelné)</span>}
-                      </FormLabel>
+                    {subField.label && (
+                      <FieldLabel field={subField} />
                     )}
                     <FormControl>
                       {renderField(subField, subFormField, form.formState)}
@@ -170,27 +184,39 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
               formField.onChange(value);
             }
           }}
-          className={radioField.layout === "vertical" ? "flex flex-col gap-3" : "flex gap-6"}
+          className="flex flex-col gap-3"
         >
-          {radioField.options.map((option: { value: string | number; label: string; note?: 'frequent' | 'recommended' }) => (
+          {radioField.options.map((option: { value: string | number; label: string; note?: 'frequent' | 'recommended'; tooltip?: string }) => (
             <FormItem key={option.value} className="flex items-center gap-2">
               <FormControl>
                 <RadioGroupItem value={option.value.toString()} id={`${field.id}_${option.value}`} />
               </FormControl>
               <FormLabel htmlFor={`${field.id}_${option.value}`} className="font-normal cursor-pointer">
                 <span>{option.label}</span>
-                {option.note && (
-                  <Badge 
-                    variant={option.note === 'frequent' ? 'secondary' : 'default'}
-                    className={`text-xs ml-2 ${
-                      option.note === 'frequent' 
-                        ? 'bg-muted text-muted-foreground' 
-                        : 'bg-accent text-accent-foreground'
-                    }`}
-                  >
-                    {option.note === 'frequent' ? 'nejběžnější' : 'doporučeno'}
-                  </Badge>
-                )}
+                <div className="flex items-center gap-2">
+                  {option.note && (
+                    <Badge 
+                      variant={option.note === 'frequent' ? 'secondary' : 'default'}
+                      className={`text-xs ${
+                        option.note === 'frequent' 
+                          ? 'bg-muted text-muted-foreground' 
+                          : 'bg-accent text-accent-foreground'
+                      }`}
+                    >
+                      {option.note === 'frequent' ? 'nejběžnější' : 'doporučeno'}
+                    </Badge>
+                  )}
+                  {option.tooltip && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Icons.Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-accent transition-colors" />
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs">
+                        <p className="text-sm">{option.tooltip}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
               </FormLabel>
             </FormItem>
           ))}
@@ -205,9 +231,21 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
             <SelectValue placeholder={placeholder || "Vyberte možnost"} />
           </SelectTrigger>
           <SelectContent>
-            {selectField.options.map((option: { value: string; label: string }) => (
+            {selectField.options.map((option: { value: string; label: string; note?: string }) => (
               <SelectItem key={option.value} value={option.value}>
-                {option.label}
+                <div className="flex items-center justify-between w-full">
+                  <span>{option.label}</span>
+                  {option.note && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Icons.Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-accent transition-colors ml-2" />
+                      </TooltipTrigger>
+                      <TooltipContent side="left" className="max-w-xs">
+                        <p className="text-sm">{option.note}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
               </SelectItem>
             ))}
           </SelectContent>
@@ -385,7 +423,7 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange }: Univer
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
           {config.sections.map((section) => (
             <Card key={section.id} id={section.id}>
               <CardHeader>
@@ -407,18 +445,9 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange }: Univer
                       name={field.id as keyof FormSubmissionData}
                       render={({ field: formField }) => (
                         <FormItem className="space-y-2">
-                          {field.type !== "conditional" && field.type !== "radio" && field.label && (
-                            <FormLabel>
-                              {field.label}
-                              {!field.required && <span className="text-muted-foreground ml-2">(volitelné)</span>}
-                            </FormLabel>
-                          )}
-                          {field.type === "radio" && field.label && (
-                            <FormLabel>
-                              {field.label}
-                              {!field.required && <span className="text-muted-foreground ml-2">(volitelné)</span>}
-                            </FormLabel>
-                          )}
+                                              {field.type !== "conditional" && field.label && (
+                      <FieldLabel field={field} />
+                    )}
                           <FormControl>
                             {renderField(field, formField, form.formState)}
                           </FormControl>

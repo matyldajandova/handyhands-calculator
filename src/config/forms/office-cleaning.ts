@@ -164,8 +164,8 @@ export const officeCleaningFormConfig: FormConfig = {
           required: true,
           layout: "horizontal",
           options: [
-            { value: "hourly", label: "Varianta A - hodinová" },
-            { value: "area", label: "Varianta B - plošná" }
+            { value: "hourly", label: "Hodinová" },
+            { value: "area", label: "Plošná" }
           ]
         },
         {

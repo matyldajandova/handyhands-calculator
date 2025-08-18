@@ -65,7 +65,7 @@ export function ServiceTypeSelector({ onServiceTypeSelect }: ServiceTypeSelector
       <RadioGroup
         value={selectedService}
         onValueChange={handleServiceSelect}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
       >
         {serviceTypes.map((service, index) => {
           const isDisabled = !service.formConfig;
@@ -116,7 +116,7 @@ export function ServiceTypeSelector({ onServiceTypeSelect }: ServiceTypeSelector
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="flex-grow">
-                    <p className={`text-sm leading-relaxed font-sans font-normal mb-2 ${
+                    <p className={`text-sm leading-relaxed font-sans font-normal ${
                       isDisabled ? 'text-muted-foreground/70' : 'text-muted-foreground'
                     }`}>
                       {service.description}

@@ -108,8 +108,8 @@ export const commercialSpacesFormConfig: FormConfig = {
           required: true,
           layout: "horizontal",
           options: [
-            { value: "hourly", label: "Varianta A - hodinová" },
-            { value: "area", label: "Varianta B - plošná" }
+            { value: "hourly", label: "Hodinová" },
+            { value: "area", label: "Plošná" }
           ]
         },
         {
@@ -221,7 +221,8 @@ export const commercialSpacesFormConfig: FormConfig = {
         {
           id: "afterHours",
           type: "radio",
-          label: "Úklidové práce budou probíhat mimo pracovní dobu v nebytových prostorech (brzo ráno před 8:00 hod nebo večer po 17:00 hod a pracovník úklidu bude mít od prostor klíče nebo čipy)",
+          label: "Úklidové práce budou probíhat mimo pracovní dobu v nebytových prostorech",
+          note: "Brzo ráno před 8:00 hod nebo večer po 17:00 hod a pracovník úklidu bude mít od prostor klíče nebo čipy",
           required: true,
           layout: "vertical",
           options: [

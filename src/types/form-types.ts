@@ -31,6 +31,7 @@ export interface BaseField {
   required: boolean;
   icon?: string;
   description?: string;
+  note?: string; // Info note to display under info icon
   placeholder?: string;
   validation?: {
     min?: number;
@@ -45,7 +46,8 @@ export interface RadioField extends BaseField {
   options: Array<{
     value: string | number;
     label: string;
-    note?: NoteType;
+    note?: NoteType; // Special note: 'frequent' or 'recommended'
+    tooltip?: string; // Custom tooltip text
     coefficient?: number;
     fixedAddon?: number; // Fixed price addon in Kč
   }>;
@@ -57,6 +59,7 @@ export interface SelectField extends BaseField {
   options: Array<{
     value: string;
     label: string;
+    note?: string; // Custom note for tooltip
     coefficient?: number;
     fixedAddon?: number; // Fixed price addon in Kč
   }>;

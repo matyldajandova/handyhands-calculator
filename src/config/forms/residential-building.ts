@@ -160,13 +160,14 @@ export const residentialBuildingFormConfig: FormConfig = {
           label: "",
           required: true,
           layout: "vertical",
+          note: "Četnost úklidu výrazně ovlivňuje celkovou cenu. Denní úklid je nejdražší, ale poskytuje nejvyšší úroveň čistoty.",
           options: [
             { value: "weekly", label: "1x týdně", coefficient: 1.0, note: "frequent" },
             { value: "twice-weekly", label: "2x týdně", coefficient: 1.67 },
             { value: "biweekly", label: "1x za 14 dní", coefficient: 0.75 },
-            { value: "daily", label: "každý den", coefficient: 3.67 },
+            { value: "daily", label: "každý den", coefficient: 3.67, tooltip: "Nejvyšší úroveň čistoty, ale také nejdražší varianta. Vhodné pro prostory s vysokými hygienickými požadavky." },
             { value: "mixed-weekly", label: "1x týdně nadzemní patra a 2x týdně přízemí", coefficient: 1.45 },
-            { value: "seasonal", label: "1x týdně v letním období a 2x týdně v zimním období", coefficient: 1.35, note: "recommended" },
+            { value: "seasonal", label: "1x týdně v letním období a 2x týdně v zimním období", coefficient: 1.35, note: "recommended", tooltip: "Letní období se rozumí období od 1. dubna do 30. září a zimním období se myslí období od 1. října do 30. března." },
             { value: "monthly", label: "1x za měsíc", coefficient: 0.69 }
           ]
         }
@@ -183,6 +184,7 @@ export const residentialBuildingFormConfig: FormConfig = {
           label: "Počet nadzemních pater v domě včetně přízemí",
           required: true,
           layout: "vertical",
+          note: "Počet pater ovlivňuje náročnost úklidu a tím i cenu. Více pater = vyšší cena kvůli nutnosti přemisťování mezi patry.",
           options: [
             { value: 1, label: "1 (tedy přízemní objekt)", coefficient: 0.4 },
             { value: 2, label: "2", coefficient: 0.6 },
