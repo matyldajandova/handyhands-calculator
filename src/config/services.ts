@@ -2,6 +2,7 @@ import { ServiceType } from "@/types/form-types";
 import { residentialBuildingFormConfig } from "./forms/residential-building";
 import { officeCleaningFormConfig } from "./forms/office-cleaning";
 import { panelBuildingFormConfig } from "./forms/panel-building";
+import { commercialSpacesFormConfig } from "./forms/commercial-spaces";
 
 export const serviceTypes: ServiceType[] = [
   {
@@ -24,6 +25,13 @@ export const serviceTypes: ServiceType[] = [
     description: "Kalkulátor cen za pravidelný úklid panelových domů. Zahrnuje všechny specifické koeficienty pro panelové stavby.",
     icon: "Building",
     formConfig: panelBuildingFormConfig,
+  },
+  {
+    id: "commercial-spaces",
+    title: "Pravidelný úklid komerčních nebytových prostorů",
+    description: "Kalkulátor cen za pravidelný úklid komerčních nebytových prostorů (prodejny, sklady, fitness, kadeřnictví, ordinace, školky, restaurace, bary, kavárny…).",
+    icon: "Store",
+    formConfig: commercialSpacesFormConfig,
   },
   {
     id: "family-homes",
