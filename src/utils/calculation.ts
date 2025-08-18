@@ -41,6 +41,26 @@ function getCoefficientFromConfig(config: FormConfig, fieldId: string, value: st
   return 1.0;
 }
 
+// Helper function to get fixed addon from form configuration
+function getFixedAddonFromConfig(config: FormConfig, fieldId: string, value: string | number): number {
+  const field = findFieldInConfig(config, fieldId);
+  if (!field) return 0;
+
+  if (field.type === 'radio') {
+    const radioField = field as RadioField;
+    const option = radioField.options.find(opt => opt.value === value);
+    return option?.fixedAddon || 0;
+  }
+
+  if (field.type === 'select') {
+    const selectField = field as SelectField;
+    const option = selectField.options.find(opt => opt.value === value);
+    return option?.fixedAddon || 0;
+  }
+
+  return 0;
+}
+
 // Main calculation function - now generic for any form configuration
 export function calculatePrice(formData: FormSubmissionData, formConfig: FormConfig): CalculationResult {
   // Check if this is the office cleaning calculator
@@ -61,6 +81,8 @@ export function calculatePrice(formData: FormSubmissionData, formConfig: FormCon
     };
   }
 
+
+
   const basePrice = formConfig.basePrice || 1500; // Use config base price or default to 1500
   let finalCoefficient = 1.0;
   const appliedCoefficients: Array<{
@@ -76,12 +98,15 @@ export function calculatePrice(formData: FormSubmissionData, formConfig: FormCon
     return field?.label || fieldId;
   }
 
-  // Apply coefficients for all form fields
+  // Apply coefficients and fixed addons for all form fields
+  let totalFixedAddons = 0;
+  
   for (const [fieldId, value] of Object.entries(formData)) {
     if (value !== undefined && value !== null && value !== '') {
       const coefficient = getCoefficientFromConfig(formConfig, fieldId, value);
+      const fixedAddon = getFixedAddonFromConfig(formConfig, fieldId, value);
       
-      // Only apply coefficient if it's different from 1.0 (has an effect)
+      // Apply coefficient if it's different from 1.0 (has an effect)
       if (coefficient !== 1.0) {
         finalCoefficient *= coefficient;
         appliedCoefficients.push({
@@ -91,11 +116,22 @@ export function calculatePrice(formData: FormSubmissionData, formConfig: FormCon
           impact: (coefficient - 1) * 100
         });
       }
+      
+      // Add fixed addon if present
+      if (fixedAddon && fixedAddon > 0) {
+        totalFixedAddons += fixedAddon;
+        appliedCoefficients.push({
+          field: fieldId,
+          label: getFieldLabel(fieldId),
+          coefficient: 1, // Fixed addons don't affect the coefficient
+          impact: fixedAddon
+        });
+      }
     }
   }
 
-  // Calculate regular cleaning price
-  const regularCleaningPrice = Math.round(basePrice * finalCoefficient * 10) / 10; // Round to 0.1 Kč
+  // Calculate regular cleaning price (including fixed addons)
+  const regularCleaningPrice = Math.round((basePrice * finalCoefficient + totalFixedAddons) * 10) / 10; // Round to 0.1 Kč
 
   // Calculate general cleaning price if applicable
   let generalCleaningPrice: number | undefined;

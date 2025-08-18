@@ -4,6 +4,7 @@ import { officeCleaningFormConfig } from "./forms/office-cleaning";
 import { panelBuildingFormConfig } from "./forms/panel-building";
 import { commercialSpacesFormConfig } from "./forms/commercial-spaces";
 import { homeCleaningFormConfig } from "./forms/home-cleaning";
+import { oneTimeCleaningFormConfig } from "./forms/one-time-cleaning";
 
 export const serviceTypes: ServiceType[] = [
   {
@@ -40,6 +41,13 @@ export const serviceTypes: ServiceType[] = [
     description: "Kalkulátor cen za pravidelný úklid domácností. Jednoduchý výpočet pro individuální zákazníky.",
     icon: "Home",
     formConfig: homeCleaningFormConfig,
+  },
+  {
+    id: "one-time-cleaning",
+    title: "Jednorázový úklid",
+    description: "Kalkulátor cen za jednorázový úklid. Hodinová sazba s minimálními cenami podle plochy a dopravou.",
+    icon: "Clock",
+    formConfig: oneTimeCleaningFormConfig,
   },
   {
     id: "family-homes",

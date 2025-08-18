@@ -47,6 +47,7 @@ export interface RadioField extends BaseField {
     label: string;
     note?: NoteType;
     coefficient?: number;
+    fixedAddon?: number; // Fixed price addon in Kč
   }>;
   layout?: 'horizontal' | 'vertical';
 }
@@ -57,6 +58,7 @@ export interface SelectField extends BaseField {
     value: string;
     label: string;
     coefficient?: number;
+    fixedAddon?: number; // Fixed price addon in Kč
   }>;
 }
 
