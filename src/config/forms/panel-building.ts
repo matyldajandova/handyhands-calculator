@@ -25,15 +25,34 @@ const CURRENT_PRICES = {
 // Validation schema
 const panelBuildingSchema = z.object({
   cleaningFrequency: z.string().min(1, "Vyberte četnost úklidu panelového domu"),
-  aboveGroundFloors: z.number().min(1, "Vyberte počet nadzemních pater"),
+  aboveGroundFloors: z.union([z.string(), z.number()]).transform((val: string | number) => {
+    if (typeof val === 'string') {
+      const num = parseInt(val, 10);
+      return isNaN(num) ? 1 : num;
+    }
+    return val;
+  }).refine((val) => val >= 1, { message: "Vyberte počet nadzemních pater" }),
   basementCleaning: z.string().min(1, "Vyberte, zda požadujete úklid suterénu"),
-  entranceCount: z.number().min(1, "Vyberte počet jednotlivých vchodů"),
+  entranceCount: z.union([z.string(), z.number()]).transform((val: string | number) => {
+    if (typeof val === 'string') {
+      const num = parseInt(val, 10);
+      return isNaN(num) ? 1 : num;
+    }
+    return val;
+  }).refine((val) => val >= 1, { message: "Vyberte počet jednotlivých vchodů" }),
   apartmentsPerFloor: z.string().min(1, "Vyberte orientační počet bytů na patře"),
   hasElevator: z.string().min(1, "Vyberte, zda má dům výtah"),
   generalCleaning: z.string().min(1, "Vyberte, zda požadujete generální úklid domu"),
-  windowsPerFloor: z.number().optional(),
+  windowsPerFloor: z.union([z.string(), z.number()]).optional().transform((val: string | number | undefined) => {
+    if (val === undefined) return undefined;
+    if (typeof val === 'string') {
+      const num = parseInt(val, 10);
+      return isNaN(num) ? undefined : num;
+    }
+    return val;
+  }),
   winterMaintenance: z.string().min(1, "Vyberte, zda máte zájem o zimní údržbu"),
-  communicationArea: z.union([z.string(), z.number()]).optional().transform((val) => {
+  communicationArea: z.union([z.string(), z.number()]).optional().transform((val: string | number | undefined) => {
     if (val === undefined) return undefined;
     if (typeof val === 'number') return val;
     const trimmed = val.trim();

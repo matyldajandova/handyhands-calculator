@@ -116,7 +116,7 @@ export function ServiceTypeSelector({ onServiceTypeSelect }: ServiceTypeSelector
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="flex-grow">
-                    <p className={`text-sm leading-relaxed font-sans mb-3 ${
+                    <p className={`text-sm leading-relaxed font-sans font-normal mb-2 ${
                       isDisabled ? 'text-muted-foreground/70' : 'text-muted-foreground'
                     }`}>
                       {service.description}

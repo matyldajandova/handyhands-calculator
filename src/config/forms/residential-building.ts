@@ -35,15 +35,42 @@ const CURRENT_PRICES = {
 // Validation schema
 const residentialBuildingSchema = z.object({
   cleaningFrequency: z.string().min(1, "Vyberte četnost úklidu"),
-  aboveGroundFloors: z.number().min(1, "Vyberte počet nadzemních pater"),
-  undergroundFloors: z.number().min(0, "Vyberte počet podzemních pater"),
+  aboveGroundFloors: z.union([z.string(), z.number()]).transform((val: string | number) => {
+    if (typeof val === 'string') {
+      const num = parseInt(val, 10);
+      return isNaN(num) ? 1 : num;
+    }
+    return val;
+  }).refine((val) => val >= 1, { message: "Vyberte počet nadzemních pater" }),
+  undergroundFloors: z.union([z.string(), z.number()]).transform((val: string | number) => {
+    if (typeof val === 'string') {
+      const num = parseInt(val, 10);
+      return isNaN(num) ? 0 : num;
+    }
+    return val;
+  }).refine((val) => val >= 0, { message: "Vyberte počet podzemních pater" }),
   apartmentsPerFloor: z.string().min(1, "Vyberte počet bytů na patře"),
   hasElevator: z.string().min(1, "Vyberte, zda má dům výtah"),
   hasHotWater: z.string().min(1, "Vyberte, zda má dům teplou vodu"),
   generalCleaning: z.string().min(1, "Vyberte, zda požadujete generální úklid"),
   generalCleaningType: z.string().optional(),
-  windowsPerFloor: z.number().optional(),
-  floorsWithWindows: z.union([z.string(), z.number()]).optional(), // Can be "all" or number
+  windowsPerFloor: z.union([z.string(), z.number()]).optional().transform((val: string | number | undefined) => {
+    if (val === undefined) return undefined;
+    if (typeof val === 'string') {
+      const num = parseInt(val, 10);
+      return isNaN(num) ? undefined : num;
+    }
+    return val;
+  }),
+  floorsWithWindows: z.union([z.string(), z.number()]).optional().transform((val: string | number | undefined) => {
+    if (val === undefined) return undefined;
+    if (typeof val === 'string') {
+      if (val === 'all') return val;
+      const num = parseInt(val, 10);
+      return isNaN(num) ? undefined : num;
+    }
+    return val;
+  }),
   windowType: z.string().optional(),
   basementCleaning: z.string().optional(),
   winterMaintenance: z.string().min(1, "Vyberte, zda požadujete zimní údržbu"),
