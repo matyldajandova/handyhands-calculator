@@ -40,6 +40,7 @@ function getIconComponent(iconName: string) {
     Warehouse: <Icons.Warehouse className="h-5 w-5 text-accent" />,
     Home: <Icons.Home className="h-5 w-5 text-accent" />,
     Store: <Icons.Store className="h-5 w-5 text-accent" />,
+    Wrench: <Icons.Wrench className="h-5 w-5 text-accent" />,
     ArrowUpDown: <Icons.ArrowUpDown className="h-5 w-5 text-accent" />,
     Droplets: <Icons.Droplets className="h-5 w-5 text-accent" />,
     Sparkles: <Icons.Sparkles className="h-5 w-5 text-accent" />,
