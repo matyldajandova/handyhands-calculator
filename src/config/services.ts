@@ -3,6 +3,7 @@ import { residentialBuildingFormConfig } from "./forms/residential-building";
 import { officeCleaningFormConfig } from "./forms/office-cleaning";
 import { panelBuildingFormConfig } from "./forms/panel-building";
 import { commercialSpacesFormConfig } from "./forms/commercial-spaces";
+import { homeCleaningFormConfig } from "./forms/home-cleaning";
 
 export const serviceTypes: ServiceType[] = [
   {
@@ -32,6 +33,13 @@ export const serviceTypes: ServiceType[] = [
     description: "Kalkulátor cen za pravidelný úklid komerčních nebytových prostorů (prodejny, sklady, fitness, kadeřnictví, ordinace, školky, restaurace, bary, kavárny…).",
     icon: "Store",
     formConfig: commercialSpacesFormConfig,
+  },
+  {
+    id: "home-cleaning",
+    title: "Pravidelný úklid domácností",
+    description: "Kalkulátor cen za pravidelný úklid domácností. Jednoduchý výpočet pro individuální zákazníky.",
+    icon: "Home",
+    formConfig: homeCleaningFormConfig,
   },
   {
     id: "family-homes",
