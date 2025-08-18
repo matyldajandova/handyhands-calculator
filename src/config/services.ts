@@ -1,6 +1,7 @@
 import { ServiceType } from "@/types/form-types";
 import { residentialBuildingFormConfig } from "./forms/residential-building";
 import { officeCleaningFormConfig } from "./forms/office-cleaning";
+import { panelBuildingFormConfig } from "./forms/panel-building";
 
 export const serviceTypes: ServiceType[] = [
   {
@@ -16,6 +17,13 @@ export const serviceTypes: ServiceType[] = [
     description: "Kalkulátor cen za pravidelný úklid kanceláří. Zahrnuje hodinový i plošný výpočet s pokročilými koeficienty.",
     icon: "Building2",
     formConfig: officeCleaningFormConfig,
+  },
+  {
+    id: "panel-building",
+    title: "Pravidelný úklid panelových domů",
+    description: "Kalkulátor cen za pravidelný úklid panelových domů. Zahrnuje všechny specifické koeficienty pro panelové stavby.",
+    icon: "Building",
+    formConfig: panelBuildingFormConfig,
   },
   {
     id: "family-homes",

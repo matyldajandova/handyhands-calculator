@@ -114,7 +114,7 @@ const residentialBuildingSchema = z.object({
 export const residentialBuildingFormConfig: FormConfig = {
   id: "residential-building",
   title: "Činžovní domy, novostavby",
-  description: `Vyplňte údaje pro výpočet ceny úklidových služeb. Všechny údaje jsou důležité pro přesný výpočet. Ceny jsou aktualizovány s inflací ${(INFLATION_RATE * 100).toFixed(1)}% od roku ${INFLATION_START_YEAR}.`,
+  description: `Vyplňte údaje pro výpočet ceny úklidových služeb. Všechny údaje jsou povinné. Ceny jsou aktualizovány s inflací ${(INFLATION_RATE * 100).toFixed(1)}% od roku ${INFLATION_START_YEAR}.`,
   validationSchema: residentialBuildingSchema,
   basePrice: CURRENT_PRICES.regularCleaning,
   conditions: [

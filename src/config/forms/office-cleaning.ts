@@ -124,7 +124,7 @@ const officeCleaningSchema = z.object({
 export const officeCleaningFormConfig: FormConfig = {
   id: "office-cleaning",
   title: "Pravidelný úklid kanceláří",
-  description: `Vyplňte údaje pro výpočet ceny úklidových služeb pro kanceláře. Všechny údaje označené jsou povinné. Ceny jsou aktualizovány s inflací ${(INFLATION_RATE * 100).toFixed(1)}% od roku ${INFLATION_START_YEAR}.`,
+  description: `Vyplňte údaje pro výpočet ceny úklidových služeb pro kanceláře. Všechny údaje jsou povinné. Ceny jsou aktualizovány s inflací ${(INFLATION_RATE * 100).toFixed(1)}% od roku ${INFLATION_START_YEAR}.`,
   validationSchema: officeCleaningSchema,
   basePrice: CURRENT_PRICES.regularCleaning,
   conditions: [],
