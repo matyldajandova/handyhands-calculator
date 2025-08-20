@@ -23,7 +23,6 @@ export default function Home() {
     handleFormChange,
     handleWarningDialogConfirm,
     handleWarningDialogCancel,
-    handleBackButtonClick,
     getFormConfig,
   } = useAppContext();
 
@@ -82,7 +81,7 @@ export default function Home() {
             }}
             onSubmit={handleFormSubmit}
             onFormChange={handleFormChange}
-            shouldResetForm={appState === "service-selection"}
+            shouldResetForm={false}
           />
         ) : (
           <div className="text-center py-20">

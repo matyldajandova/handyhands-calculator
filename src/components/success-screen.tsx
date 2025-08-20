@@ -2,7 +2,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Download, FileText, Calculator, Building } from "lucide-react";
+import { CheckCircle, Download, FileText, Building } from "lucide-react";
 import { CalculationResult, FormConfig } from "@/types/form-types";
 import * as Icons from "lucide-react";
 

@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
 import { useState, useEffect } from "react";
-import { Calculator, Sparkles, Clock } from "lucide-react";
+import { Calculator, Clock } from "lucide-react";
 import { CalculationResult } from "@/types/form-types";
 import { calculatePrice } from "@/utils/calculation";
 import { FormSubmissionData, FormConfig } from "@/types/form-types";
