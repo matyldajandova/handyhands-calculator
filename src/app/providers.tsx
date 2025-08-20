@@ -12,6 +12,7 @@ interface AppContextType {
   calculationResult: CalculationResult | null;
   hasFormChanges: boolean;
   showWarningDialog: boolean;
+  setShowWarningDialog: (show: boolean) => void;
   handleServiceTypeSelect: (serviceType: string) => void;
   handleBackToServiceSelection: () => void;
   handleFormSubmit: (data: FormSubmissionData) => void;
@@ -68,6 +69,7 @@ export function AppProvider({ children }: AppProviderProps) {
     setFormData(null);
     setCalculationResult(null);
     setHasFormChanges(false);
+    setShowWarningDialog(false);
   }, []);
 
   const handleFormSubmit = useCallback((data: FormSubmissionData) => {
@@ -119,6 +121,7 @@ export function AppProvider({ children }: AppProviderProps) {
     calculationResult,
     hasFormChanges,
     showWarningDialog,
+    setShowWarningDialog,
     handleServiceTypeSelect,
     handleBackToServiceSelection,
     handleFormSubmit,

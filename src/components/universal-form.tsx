@@ -30,6 +30,7 @@ interface UniversalFormProps {
   onBack?: () => void;
   onSubmit: (data: FormSubmissionData) => void;
   onFormChange?: () => void;
+  shouldResetForm?: boolean;
 }
 
 // Helper function to get icon component
@@ -272,6 +273,29 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
               formField.onChange(value);
             }
           }}
+          onBlur={(e) => {
+            if (inputField.inputType === 'number') {
+              const value = e.target.value;
+              const numValue = parseFloat(value);
+              if (value !== '' && !isNaN(numValue)) {
+                if (inputField.min !== undefined && numValue < inputField.min) {
+                  // Value is below minimum - show error immediately
+                  e.target.setCustomValidity(`Hodnota musí být alespoň ${inputField.min}`);
+                  e.target.reportValidity();
+                } else if (inputField.max !== undefined && numValue > inputField.max) {
+                  // Value is above maximum - show error immediately
+                  e.target.setCustomValidity(`Hodnota nesmí být větší než ${inputField.max}`);
+                  e.target.reportValidity();
+                } else {
+                  // Value is valid - clear any existing errors
+                  e.target.setCustomValidity('');
+                }
+              } else if (value === '') {
+                // Empty value - clear errors
+                e.target.setCustomValidity('');
+              }
+            }
+          }}
         />
       );
 
@@ -291,7 +315,7 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
   }
 }
 
-export function UniversalForm({ config, onBack, onSubmit, onFormChange }: UniversalFormProps) {
+export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldResetForm }: UniversalFormProps) {
   // Create default values for all fields
   const createDefaultValues = (): FormSubmissionData => {
     const defaults: FormSubmissionData = {};
@@ -377,6 +401,13 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange }: Univer
     }
   }, [form.formState.errors]);
 
+  // Reset form when shouldResetForm changes to true
+  useEffect(() => {
+    if (shouldResetForm) {
+      form.reset();
+    }
+  }, [shouldResetForm, form]);
+
   const handleSubmit = (values: FormSubmissionData) => {
     if (onSubmit) {
       onSubmit(values);
@@ -387,7 +418,8 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange }: Univer
 
   const handleBack = () => {
     if (onBack) {
-      form.reset();
+      // Don't reset form here - let the parent component handle it
+      // when the user actually confirms they want to leave
       onBack();
     }
   };

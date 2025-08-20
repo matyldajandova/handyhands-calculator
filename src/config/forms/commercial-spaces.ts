@@ -26,14 +26,22 @@ const CURRENT_PRICES = {
 const commercialSpacesSchema = z.object({
   cleaningFrequency: z.string().min(1, "Vyberte četnost úklidu nebytových prostor"),
   calculationMethod: z.string().min(1, "Vyberte způsob výpočtu"),
-  hoursPerCleaning: z.union([z.string(), z.number()]).optional().transform((val) => {
-    if (typeof val === 'string') return parseFloat(val) || undefined;
+  hoursPerCleaning: z.preprocess((val) => {
+    if (val === undefined || val === null || val === "") return undefined;
+    if (typeof val === 'string') {
+      const num = parseFloat(val);
+      return isNaN(num) ? undefined : num;
+    }
     return val;
-  }),
-  spaceArea: z.union([z.string(), z.number()]).optional().transform((val) => {
-    if (typeof val === 'string') return parseFloat(val) || undefined;
+  }, z.union([z.number().min(0.1), z.undefined()])).optional(),
+  spaceArea: z.preprocess((val) => {
+    if (val === undefined || val === null || val === "") return undefined;
+    if (typeof val === 'string') {
+      const num = parseFloat(val);
+      return isNaN(num) ? undefined : num;
+    }
     return val;
-  }),
+  }, z.union([z.number().min(0.1), z.undefined()])).optional(),
   floorType: z.string().min(1, "Vyberte převládající typ podlahové krytiny"),
   generalCleaning: z.string().min(1, "Vyberte, zda požadujete generální úklid"),
   dishwashing: z.string().min(1, "Vyberte požadavek na pravidelné mytí nádobí"),
@@ -67,10 +75,7 @@ export const commercialSpacesFormConfig: FormConfig = {
   description: `Vyplňte údaje pro výpočet ceny úklidových služeb pro komerční nebytové prostory (prodejny, sklady, fitness, kadeřnictví, ordinace, školky, restaurace, bary, kavárny…). Všechny údaje označené jsou povinné. Ceny jsou aktualizovány s inflací ${(INFLATION_RATE * 100).toFixed(1)}% od roku ${INFLATION_START_YEAR}.`,
   validationSchema: commercialSpacesSchema,
   basePrice: CURRENT_PRICES.regularCleaning,
-  conditions: [
-    "Dostupnost alespoň studené vody v nebytových prostorech",
-    "Uzamykatelná místnost nebo uzamykatelná část prostor na úklidové náčiní a úklidovou chemii"
-  ],
+  conditions: [],
   sections: [
     {
       id: "cleaning-frequency",
@@ -126,9 +131,10 @@ export const commercialSpacesFormConfig: FormConfig = {
               required: true,
               inputType: "number",
               min: 0.5,
+              max: 8,
               step: 0.5,
               placeholder: "např. 1.5",
-              description: "Zadejte počet hodin na úklid"
+              description: "Zadejte počet hodin na úklid (max. 8 hodin)"
             }
           ]
         },
@@ -146,9 +152,10 @@ export const commercialSpacesFormConfig: FormConfig = {
               required: true,
               inputType: "number",
               min: 1,
+              max: 700,
               step: 1,
               placeholder: "např. 150",
-              description: "Zadejte plochu nebytových prostor v m²"
+              description: "Zadejte plochu nebytových prostor v m² (max. 700 m²)"
             }
           ]
         }
@@ -243,7 +250,7 @@ export const commercialSpacesFormConfig: FormConfig = {
           label: "",
           required: true,
           options: [
-            { value: "prague", label: "Praha (PSČ 110 00 atd.)", coefficient: 1.0 },
+            { value: "prague", label: "Praha", coefficient: 1.0 },
             { value: "stredocesky", label: "Středočeský kraj", coefficient: 0.96078 },
             { value: "karlovarsky", label: "Karlovarský kraj", coefficient: 0.72549 },
             { value: "plzensky", label: "Plzeňský kraj", coefficient: 0.75686 },

@@ -36,10 +36,7 @@ export const homeCleaningFormConfig: FormConfig = {
   description: `Vyplňte údaje pro výpočet ceny úklidových služeb pro domácnosti. Všechny údaje jsou povinné. Ceny jsou aktualizovány s inflací ${(INFLATION_RATE * 100).toFixed(1)}% od roku ${INFLATION_START_YEAR}.`,
   validationSchema: homeCleaningSchema,
   basePrice: CURRENT_PRICES.regularCleaning,
-  conditions: [
-    "Dostupnost alespoň studené vody v domácnosti",
-    "Uzamykatelná místnost nebo místo na úklidové náčiní a úklidovou chemii"
-  ],
+  conditions: [],
   sections: [
     {
       id: "cleaning-frequency",

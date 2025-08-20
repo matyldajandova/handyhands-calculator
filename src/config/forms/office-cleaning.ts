@@ -26,33 +26,57 @@ const CURRENT_PRICES = {
 const officeCleaningSchema = z.object({
   cleaningFrequency: z.string().min(1, "Vyberte četnost úklidu kanceláří"),
   calculationMethod: z.string().min(1, "Vyberte způsob výpočtu"),
-  hoursPerCleaning: z.union([z.string(), z.number()]).optional().transform((val) => {
-    if (typeof val === 'string') return parseFloat(val) || undefined;
+  hoursPerCleaning: z.preprocess((val) => {
+    if (val === undefined || val === null || val === "") return undefined;
+    if (typeof val === 'string') {
+      const num = parseFloat(val);
+      return isNaN(num) ? undefined : num;
+    }
     return val;
-  }),
-  officeArea: z.union([z.string(), z.number()]).optional().transform((val) => {
-    if (typeof val === 'string') return parseFloat(val) || undefined;
+  }, z.union([z.number().min(0.1), z.undefined()])).optional(),
+  officeArea: z.preprocess((val) => {
+    if (val === undefined || val === null || val === "") return undefined;
+    if (typeof val === 'string') {
+      const num = parseFloat(val);
+      return isNaN(num) ? undefined : num;
+    }
     return val;
-  }),
+  }, z.union([z.number().min(0.1), z.undefined()])).optional(),
   floorType: z.string().min(1, "Vyberte převládající typ podlahové krytiny"),
   generalCleaning: z.string().min(1, "Vyberte, zda požadujete generální úklid"),
   generalCleaningWindows: z.string().optional(),
-  windowAreaBoth: z.union([z.string(), z.number()]).optional().transform((val) => {
-    if (typeof val === 'string') return parseFloat(val) || undefined;
+  windowAreaBoth: z.preprocess((val) => {
+    if (val === undefined || val === null || val === "") return undefined;
+    if (typeof val === 'string') {
+      const num = parseFloat(val);
+      return isNaN(num) ? undefined : num;
+    }
     return val;
-  }),
-  windowCountBoth: z.union([z.string(), z.number()]).optional().transform((val) => {
-    if (typeof val === 'string') return parseInt(val) || undefined;
+  }, z.union([z.number().min(0.1), z.undefined()])).optional(),
+  windowCountBoth: z.preprocess((val) => {
+    if (val === undefined || val === null || val === "") return undefined;
+    if (typeof val === 'string') {
+      const num = parseInt(val, 10);
+      return isNaN(num) ? undefined : num;
+    }
     return val;
-  }),
-  windowAreaInside: z.union([z.string(), z.number()]).optional().transform((val) => {
-    if (typeof val === 'string') return parseFloat(val) || undefined;
+  }, z.union([z.number().min(1), z.undefined()])).optional(),
+  windowAreaInside: z.preprocess((val) => {
+    if (val === undefined || val === null || val === "") return undefined;
+    if (typeof val === 'string') {
+      const num = parseFloat(val);
+      return isNaN(num) ? undefined : num;
+    }
     return val;
-  }),
-  windowCountInside: z.union([z.string(), z.number()]).optional().transform((val) => {
-    if (typeof val === 'string') return parseInt(val) || undefined;
+  }, z.union([z.number().min(0.1), z.undefined()])).optional(),
+  windowCountInside: z.preprocess((val) => {
+    if (val === undefined || val === null || val === "") return undefined;
+    if (typeof val === 'string') {
+      const num = parseInt(val, 10);
+      return isNaN(num) ? undefined : num;
+    }
     return val;
-  }),
+  }, z.union([z.number().min(1), z.undefined()])).optional(),
   dishwashing: z.string().min(1, "Vyberte požadavek na pravidelné mytí nádobí"),
   toiletCleaning: z.string().min(1, "Vyberte, zda je součástí úklidu i úklid WC"),
   afterHours: z.string().min(1, "Vyberte, zda úklid probíhá mimo pracovní dobu"),
@@ -182,9 +206,10 @@ export const officeCleaningFormConfig: FormConfig = {
               required: true,
               inputType: "number",
               min: 0.5,
+              max: 8,
               step: 0.5,
               placeholder: "např. 1.5",
-              description: "Zadejte počet hodin na úklid"
+              description: "Zadejte počet hodin na úklid (max. 8 hodin)"
             }
           ]
         },
@@ -202,9 +227,10 @@ export const officeCleaningFormConfig: FormConfig = {
               required: true,
               inputType: "number",
               min: 1,
+              max: 2500,
               step: 1,
               placeholder: "např. 150",
-              description: "Zadejte plochu kanceláře v m²"
+              description: "Zadejte plochu kanceláře v m² (max. 2500 m²)"
             }
           ]
         }
@@ -281,9 +307,10 @@ export const officeCleaningFormConfig: FormConfig = {
               required: true,
               inputType: "number",
               min: 0.1,
+              max: 1000,
               step: 0.1,
               placeholder: "např. 25.5",
-              description: "Zadejte plochu oken v m²"
+              description: "Zadejte plochu oken v m² (max. 1000 m²)"
             }
           ]
         },
@@ -301,9 +328,10 @@ export const officeCleaningFormConfig: FormConfig = {
               required: true,
               inputType: "number",
               min: 1,
+              max: 1000,
               step: 1,
               placeholder: "např. 8",
-              description: "Zadejte celkový počet oken"
+              description: "Zadejte celkový počet oken (max. 1000)"
             }
           ]
         },
@@ -321,9 +349,10 @@ export const officeCleaningFormConfig: FormConfig = {
               required: true,
               inputType: "number",
               min: 0.1,
+              max: 1000,
               step: 0.1,
               placeholder: "např. 25.5",
-              description: "Zadejte plochu oken v m²"
+              description: "Zadejte plochu oken v m² (max. 1000 m²)"
             }
           ]
         },
@@ -341,9 +370,10 @@ export const officeCleaningFormConfig: FormConfig = {
               required: true,
               inputType: "number",
               min: 1,
+              max: 1000,
               step: 1,
               placeholder: "např. 8",
-              description: "Zadejte celkový počet oken"
+              description: "Zadejte celkový počet oken (max. 1000)"
             }
           ]
         }
@@ -415,7 +445,7 @@ export const officeCleaningFormConfig: FormConfig = {
           label: "",
           required: true,
           options: [
-            { value: "prague", label: "Praha (PSČ 110 00 atd.)", coefficient: 1.0 },
+            { value: "prague", label: "Praha", coefficient: 1.0 },
             { value: "stredocesky", label: "Středočeský kraj", coefficient: 0.96078 },
             { value: "karlovarsky", label: "Karlovarský kraj", coefficient: 0.72549 },
             { value: "plzensky", label: "Plzeňský kraj", coefficient: 0.75686 },

@@ -47,10 +47,7 @@ export const handymanServicesFormConfig: FormConfig = {
   description: `Vyplňte údaje pro výpočet ceny řemeslných služeb. Všechny údaje jsou povinné. Ceny jsou aktualizovány s inflací ${(INFLATION_RATE * 100).toFixed(1)}% od roku ${INFLATION_START_YEAR}.`,
   validationSchema: handymanServicesSchema,
   basePrice: CURRENT_PRICES.hourlyRate,
-  conditions: [
-    "Dostupnost alespoň studené vody v místě práce",
-    "Přístup k elektrické zásuvce pro elektrické nářadí"
-  ],
+  conditions: [],
   sections: [
     {
       id: "time-complexity",
@@ -64,13 +61,13 @@ export const handymanServicesFormConfig: FormConfig = {
           required: true,
           layout: "vertical",
           options: [
-            { value: "up-to-30min", label: "Do 30 min.: účtováno minimum 2 hod práce = cena 790 Kč za práci", coefficient: 2.0 },
-            { value: "30-60min", label: "30 až 60 min.: účtováno minimum 2 hod práce = cena 790 Kč za práci", coefficient: 2.0 },
-            { value: "1-2hours", label: "1 hod až 2 hod: účtováno minimum 2 hod práce = cena 790 Kč za práci", coefficient: 2.0 },
-            { value: "2-3hours", label: "2 hod až 3 hod: účtováno 3x 395 Kč/hod = cena 1.185 Kč za práci", coefficient: 3.0 },
-            { value: "3-5hours", label: "3 hod až 5 hod: účtováno 5x 395 Kč/hod = cena 1.975 Kč za práci", coefficient: 5.0 },
-            { value: "5-8hours", label: "5 hod až 8 hod: účtováno 8x 395 Kč/hod = cena 3.160 Kč za práci", coefficient: 8.0 },
-            { value: "over-8hours", label: "Nad 8 hod. práce: účtováno 8x 395 Kč/hod", coefficient: 8.0 }
+            { value: "up-to-30min", label: "Do 30 min.", coefficient: 2.0 },
+            { value: "30-60min", label: "30 až 60 min.", coefficient: 2.0 },
+            { value: "1-2hours", label: "1 hod. až 2 hod.", coefficient: 2.0 },
+            { value: "2-3hours", label: "2 hod. až 3 hod.", coefficient: 3.0 },
+            { value: "3-5hours", label: "3 hod. až 5 hod.", coefficient: 5.0 },
+            { value: "5-8hours", label: "5 hod. až 8 hod.", coefficient: 8.0 },
+            { value: "over-8hours", label: "Nad 8 hod. práce", coefficient: 8.0 }
           ]
         }
       ]

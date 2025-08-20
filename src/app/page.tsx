@@ -3,7 +3,7 @@ import { ServiceTypeSelector } from "@/components/service-type-selector";
 import { UniversalForm } from "@/components/universal-form";
 import { CalculatingScreen } from "@/components/calculating-screen";
 import { SuccessScreen } from "@/components/success-screen";
-import { ThemeToggle } from "@/components/theme-toggle";
+
 import { useAppContext } from "@/app/providers";
 import { Button } from "@/components/ui/button";
 
@@ -13,7 +13,9 @@ export default function Home() {
     selectedService,
     formData,
     calculationResult,
+    hasFormChanges,
     showWarningDialog,
+    setShowWarningDialog,
     handleServiceTypeSelect,
     handleBackToServiceSelection,
     handleFormSubmit,
@@ -65,16 +67,22 @@ export default function Home() {
 
   return (
     <>
-      <ThemeToggle />
       <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background py-12 px-4">
         {appState === "service-selection" ? (
           <ServiceTypeSelector onServiceTypeSelect={handleServiceTypeSelect} />
         ) : appState === "form" && formConfig ? (
           <UniversalForm
             config={formConfig}
-            onBack={handleBackButtonClick}
+            onBack={() => {
+              if (hasFormChanges) {
+                setShowWarningDialog(true);
+              } else {
+                handleBackToServiceSelection();
+              }
+            }}
             onSubmit={handleFormSubmit}
             onFormChange={handleFormChange}
+            shouldResetForm={appState === "service-selection"}
           />
         ) : (
           <div className="text-center py-20">

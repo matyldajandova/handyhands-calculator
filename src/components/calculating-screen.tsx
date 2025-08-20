@@ -78,16 +78,7 @@ export function CalculatingScreen({ onComplete, formData, formConfig }: Calculat
           className="mb-8"
         >
           <div className="flex justify-center mb-6">
-            <div className="relative">
-              <Calculator className="h-16 w-16 text-accent" />
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                className="absolute -top-2 -right-2"
-              >
-                <Sparkles className="h-6 w-6 text-accent" />
-              </motion.div>
-            </div>
+            <Calculator className="h-16 w-16 text-accent" />
           </div>
           
           <h1 className="text-3xl font-bold text-foreground font-heading mb-4">

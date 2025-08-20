@@ -89,16 +89,7 @@ export function SuccessScreen({ onBackToServices, serviceType, calculationResult
           transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
           className="flex justify-center mb-6"
         >
-          <div className="relative">
-            <CheckCircle className="h-20 w-20 text-green-500" />
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-              className="absolute -top-2 -right-2"
-            >
-              <Calculator className="h-8 w-8 text-accent" />
-            </motion.div>
-          </div>
+          <CheckCircle className="h-20 w-20 text-green-500" />
         </motion.div>
 
         <motion.div

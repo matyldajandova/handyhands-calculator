@@ -25,32 +25,36 @@ const CURRENT_PRICES = {
 // Validation schema
 const panelBuildingSchema = z.object({
   cleaningFrequency: z.string().min(1, "Vyberte četnost úklidu panelového domu"),
-  aboveGroundFloors: z.union([z.string(), z.number()]).transform((val: string | number) => {
+  aboveGroundFloors: z.preprocess((val) => {
+    if (val === undefined || val === null || val === "") return undefined;
     if (typeof val === 'string') {
+      if (val === "13+") return val; // Keep string value for special case
       const num = parseInt(val, 10);
-      return isNaN(num) ? 1 : num;
+      return isNaN(num) ? undefined : num;
     }
     return val;
-  }).refine((val) => val >= 1, { message: "Vyberte počet nadzemních pater" }),
+  }, z.union([z.number().min(1), z.literal("13+"), z.undefined()])).refine((val) => val !== undefined, { message: "Vyberte počet nadzemních pater" }),
   basementCleaning: z.string().min(1, "Vyberte, zda požadujete úklid suterénu"),
-  entranceCount: z.union([z.string(), z.number()]).transform((val: string | number) => {
-    if (typeof val === 'string') {
-      const num = parseInt(val, 10);
-      return isNaN(num) ? 1 : num;
-    }
-    return val;
-  }).refine((val) => val >= 1, { message: "Vyberte počet jednotlivých vchodů" }),
-  apartmentsPerFloor: z.string().min(1, "Vyberte orientační počet bytů na patře"),
-  hasElevator: z.string().min(1, "Vyberte, zda má dům výtah"),
-  generalCleaning: z.string().min(1, "Vyberte, zda požadujete generální úklid domu"),
-  windowsPerFloor: z.union([z.string(), z.number()]).optional().transform((val: string | number | undefined) => {
-    if (val === undefined) return undefined;
+  entranceCount: z.preprocess((val) => {
+    if (val === undefined || val === null || val === "") return undefined;
     if (typeof val === 'string') {
       const num = parseInt(val, 10);
       return isNaN(num) ? undefined : num;
     }
     return val;
-  }),
+  }, z.union([z.number().min(1), z.undefined()])).refine((val) => val !== undefined, { message: "Vyberte počet jednotlivých vchodů" }),
+  apartmentsPerFloor: z.string().min(1, "Vyberte orientační počet bytů na patře"),
+  hasElevator: z.string().min(1, "Vyberte, zda má dům výtah"),
+  generalCleaning: z.string().min(1, "Vyberte, zda požadujete generální úklid domu"),
+  windowsPerFloor: z.preprocess((val) => {
+    if (val === undefined || val === null || val === "") return undefined;
+    if (typeof val === 'string') {
+      if (val === "5-10") return val; // Keep string value for special case
+      const num = parseInt(val, 10);
+      return isNaN(num) ? undefined : num;
+    }
+    return val;
+  }, z.union([z.number().min(1), z.literal("5-10"), z.undefined()])).optional(),
   winterMaintenance: z.string().min(1, "Vyberte, zda máte zájem o zimní údržbu"),
   communicationArea: z.union([z.string(), z.number()]).optional().transform((val: string | number | undefined) => {
     if (val === undefined) return undefined;
@@ -65,7 +69,7 @@ const panelBuildingSchema = z.object({
 }).superRefine((data, ctx) => {
   // Validate general cleaning details when general cleaning is "yes"
   if (data.generalCleaning === "yes") {
-    if (!data.windowsPerFloor || data.windowsPerFloor <= 0) {
+    if (!data.windowsPerFloor || (typeof data.windowsPerFloor === 'number' && data.windowsPerFloor <= 0)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Zadejte počet oken na patře",
@@ -283,9 +287,10 @@ export const panelBuildingFormConfig: FormConfig = {
               required: true,
               inputType: "number",
               min: 0.1,
+              max: 10000,
               step: 0.1,
               placeholder: "např. 150 m² nebo 50 m",
-              description: "Zadejte hodnotu větší než 0"
+              description: "Zadejte hodnotu větší než 0 (max. 10 000 m² nebo 10 000 m)"
             }
           ]
         }
@@ -302,7 +307,7 @@ export const panelBuildingFormConfig: FormConfig = {
           label: "",
           required: true,
           options: [
-            { value: "prague", label: "Praha (PSČ 110 00 atd.)", coefficient: 1.0 },
+            { value: "prague", label: "Praha", coefficient: 1.0 },
             { value: "stredocesky", label: "Středočeský kraj", coefficient: 0.96078 },
             { value: "karlovarsky", label: "Karlovarský kraj", coefficient: 0.72549 },
             { value: "plzensky", label: "Plzeňský kraj", coefficient: 0.75686 },

@@ -47,10 +47,7 @@ export const oneTimeCleaningFormConfig: FormConfig = {
   description: `Vyplňte údaje pro výpočet ceny jednorázového úklidu. Všechny údaje jsou povinné. Ceny jsou aktualizovány s inflací ${(INFLATION_RATE * 100).toFixed(1)}% od roku ${INFLATION_START_YEAR}.`,
   validationSchema: oneTimeCleaningSchema,
   basePrice: CURRENT_PRICES.hourlyRate,
-  conditions: [
-    "Dostupnost alespoň studené vody v prostorech určených k úklidu",
-    "Přístup k elektrické zásuvce pro úklidové přístroje"
-  ],
+  conditions: [],
   sections: [
     {
       id: "space-area",
@@ -64,13 +61,13 @@ export const oneTimeCleaningFormConfig: FormConfig = {
           required: true,
           layout: "vertical",
           options: [
-            { value: "up-to-30", label: "Do 30 m²: účtováno minimum 3 hod práce = min. cena 1.035 Kč za úklid", coefficient: 3.0 },
-            { value: "up-to-50", label: "Do 50 m²: účtováno minimum 3,5 hod práce = min. cena 1.208 Kč za úklid", coefficient: 3.5 },
-            { value: "50-75", label: "Od 50 do 75 m²: účtováno minimum 4 hod práce = min. cena 1.380 Kč za úklid", coefficient: 4.0 },
-            { value: "75-100", label: "Od 75 do 100 m²: účtováno minimum 4 hod práce = min. cena 1.380 Kč za úklid", coefficient: 4.0 },
-            { value: "100-125", label: "Od 100 do 125 m²: účtováno minimum 4 hod práce = min. cena 1.380 Kč za úklid", coefficient: 4.0 },
-            { value: "125-200", label: "Od 125 do 200 m²: účtováno minimum 4 hod práce = min. cena 1.380 Kč za úklid", coefficient: 4.0 },
-            { value: "200-plus", label: "Od 200 a více m²: účtováno minimum 4 hod práce = min. cena 1.380 Kč za úklid", coefficient: 4.0 }
+            { value: "up-to-30", label: "Do 30 m² (min 3 hod.)", coefficient: 3.0 },
+            { value: "up-to-50", label: "Do 50 m² (min 3,5 hod.)", coefficient: 3.5 },
+            { value: "50-75", label: "Od 50 do 75 m² (min 4 hod.)", coefficient: 4.0 },
+            { value: "75-100", label: "Od 75 do 100 m² (min 4 hod.)", coefficient: 4.0 },
+            { value: "100-125", label: "Od 100 do 125 m² (min 4 hod.)", coefficient: 4.0 },
+            { value: "125-200", label: "Od 125 do 200 m² (min 4 hod.)", coefficient: 4.0 },
+            { value: "200-plus", label: "Od 200 a více m² (min 4 hod.)", coefficient: 4.0 }
           ]
         }
       ]
