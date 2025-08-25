@@ -54,6 +54,15 @@ export function ServiceTypeSelector({ onServiceTypeSelect }: ServiceTypeSelector
       className="max-w-6xl mx-auto"
     >
       <div className="text-center mb-12">
+        {/* Brand Logo */}
+        <div className="flex justify-center mb-8">
+          <img 
+            src="/handyhands_horizontal.svg" 
+            alt="HandyHands Logo" 
+            className="h-16 md:h-20 lg:h-24 w-auto"
+          />
+        </div>
+        
         <h1 className="text-4xl font-bold text-foreground font-heading mb-4">
           Kalkulátor úklidových a řemeslných služeb
         </h1>

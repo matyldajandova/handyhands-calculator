@@ -60,6 +60,7 @@ export default function Home() {
         serviceType={selectedService}
         calculationResult={calculationResult}
         formConfig={formConfig}
+        formData={formData || {}}
       />
     );
   }

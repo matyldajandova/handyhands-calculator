@@ -11,9 +11,10 @@ interface SuccessScreenProps {
   serviceType: string;
   calculationResult: CalculationResult | null;
   formConfig: FormConfig | null;
+  formData: Record<string, string | number | string[] | undefined>;
 }
 
-export function SuccessScreen({ onBackToServices, serviceType, calculationResult, formConfig }: SuccessScreenProps) {
+export function SuccessScreen({ onBackToServices, serviceType, calculationResult, formConfig, formData }: SuccessScreenProps) {
   const handleDownloadPDF = () => {
     if (!calculationResult || !roundedResults || !formConfig) return;
     
@@ -29,6 +30,11 @@ export function SuccessScreen({ onBackToServices, serviceType, calculationResult
       
       ${formConfig.conditions && formConfig.conditions.length > 0 ? `Podmínky uvedené ceny:
       ${formConfig.conditions.map(condition => `- ${condition}`).join('\n')}
+      
+      ` : ''}      ${formData.notes ? `Poznámka zákazníka:
+      ${formData.notes}
+      
+      ⚠️ DŮLEŽITÉ: Poznámka zákazníka může ovlivnit celkovou cenu služeb.
       
       ` : ''}* Cena je zaokrouhlena na celé desetikoruny
       
