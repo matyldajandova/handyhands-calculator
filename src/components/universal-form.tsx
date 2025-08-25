@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -21,7 +22,7 @@ import {
 } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { FormConfig, FormField as FormFieldType, FormSubmissionData, ConditionalField, RadioField, SelectField, InputField, TextareaField } from "@/types/form-types";
+import { FormConfig, FormField as FormFieldType, FormSubmissionData, ConditionalField, RadioField, SelectField, InputField, TextareaField, CheckboxField } from "@/types/form-types";
 import * as Icons from "lucide-react";
 import React from "react";
 
@@ -80,7 +81,7 @@ function FieldLabel({ field }: { field: FormFieldType }) {
     <div className="flex items-center gap-2">
       <FormLabel>
         {field.label}
-        {!field.required && <span className="text-muted-foreground ml-2">(volitelné)</span>}
+        {!field.required && <span className="text-muted-foreground">(volitelné)</span>}
       </FormLabel>
       {field.note && (
         <Tooltip>
@@ -310,6 +311,34 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
         />
       );
 
+    case "checkbox":
+      const checkboxField = field as CheckboxField;
+      return (
+        <div className="flex flex-col gap-3">
+          {checkboxField.options.map((option) => (
+            <FormItem key={option.value} className="flex items-center gap-2">
+              <FormControl>
+                <Checkbox
+                  id={`${field.id}_${option.value}`}
+                  checked={Array.isArray(formField.value) ? formField.value.includes(option.value) : false}
+                  onCheckedChange={(checked: boolean | "indeterminate") => {
+                    const currentValue = Array.isArray(formField.value) ? formField.value : [];
+                    if (checked) {
+                      formField.onChange([...currentValue, option.value]);
+                    } else {
+                      formField.onChange(currentValue.filter((value: string) => value !== option.value));
+                    }
+                  }}
+                />
+              </FormControl>
+              <FormLabel htmlFor={`${field.id}_${option.value}`} className="font-normal cursor-pointer">
+                {option.label}
+              </FormLabel>
+            </FormItem>
+          ))}
+        </div>
+      );
+
     default:
       return null;
   }
@@ -339,6 +368,8 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
           }
         } else if (field.type === "textarea") {
           defaults[field.id] = "";
+        } else if (field.type === "checkbox") {
+          defaults[field.id] = [];
         } else if (field.type === "conditional") {
           const conditionalField = field as ConditionalField;
           conditionalField.fields.forEach((subField: FormFieldType) => {
@@ -360,6 +391,8 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
               }
             } else if (subField.type === "textarea") {
               defaults[subField.id] = "";
+            } else if (subField.type === "checkbox") {
+              defaults[subField.id] = [];
             }
           });
         }

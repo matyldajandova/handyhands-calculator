@@ -72,7 +72,7 @@ function getHourlyCoefficient(hours: number): number {
 
 // Main calculation function for office cleaning
 export function calculateOfficeCleaningPrice(
-  formData: Record<string, string | number | undefined>, 
+  formData: Record<string, string | number | string[] | undefined>, 
   basePrice: number
 ): {
   finalPrice: number;
@@ -120,13 +120,13 @@ export function calculateOfficeCleaningPrice(
   let methodCoefficient = 1.0;
   let calculationMethod = "";
   
-  if (formData.calculationMethod === "hourly" && formData.hoursPerCleaning) {
+  if (formData.calculationMethod === "hourly" && formData.hoursPerCleaning && !Array.isArray(formData.hoursPerCleaning)) {
     const hours = typeof formData.hoursPerCleaning === 'string' ? parseFloat(formData.hoursPerCleaning) : formData.hoursPerCleaning;
     if (hours && !isNaN(hours) && hours > 0) {
       methodCoefficient = getHourlyCoefficient(hours);
       calculationMethod = `Hodinový výpočet (${hours}h)`;
     }
-  } else if (formData.calculationMethod === "area" && formData.officeArea) {
+  } else if (formData.calculationMethod === "area" && formData.officeArea && !Array.isArray(formData.officeArea)) {
     const area = typeof formData.officeArea === 'string' ? parseFloat(formData.officeArea) : formData.officeArea;
     if (area && !isNaN(area) && area > 0) {
       methodCoefficient = getAreaCoefficient(formData.cleaningFrequency, area);

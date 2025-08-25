@@ -74,9 +74,12 @@ const residentialBuildingSchema = z.object({
     return val;
   }, z.union([z.number().min(1), z.literal('all'), z.undefined()])).optional(),
   windowType: z.string().optional(),
+  windowAccessibility: z.array(z.string()).optional(),
   basementCleaning: z.string().optional(),
+  basementCleaningDetails: z.string().optional(),
   winterMaintenance: z.string().min(1, "Vyberte, zda požadujete zimní údržbu"),
   communicationArea: z.string().optional(),
+  communicationLength: z.string().optional(),
   location: z.string().min(1, "Vyberte lokalitu"),
   notes: z.string().optional(),
 }).superRefine((data, ctx) => {
@@ -117,24 +120,48 @@ const residentialBuildingSchema = z.object({
         path: ["basementCleaning"]
       });
     }
+    if (!data.basementCleaningDetails) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Vyberte rozsah úklidu suterénních prostor",
+        path: ["basementCleaningDetails"]
+      });
+    }
   }
   
   // Validate communication area when winter maintenance is "yes"
   if (data.winterMaintenance === "yes") {
-    if (!data.communicationArea || data.communicationArea.trim() === "") {
+    const hasArea = data.communicationArea && data.communicationArea.trim() !== "";
+    const hasLength = data.communicationLength && data.communicationLength.trim() !== "";
+    
+    if (!hasArea && !hasLength) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Zadejte plochu komunikací",
+        message: "Zadejte buď plochu komunikací nebo délku komunikací",
         path: ["communicationArea"]
       });
     } else {
-      const num = parseFloat(data.communicationArea);
-      if (isNaN(num) || num <= 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Plocha komunikací musí být větší než 0",
-          path: ["communicationArea"]
-        });
+      // Validate area if provided
+      if (hasArea) {
+        const num = parseFloat(data.communicationArea!);
+        if (isNaN(num) || num <= 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Plocha komunikací musí být větší než 0",
+            path: ["communicationArea"]
+          });
+        }
+      }
+      // Validate length if provided
+      if (hasLength) {
+        const num = parseFloat(data.communicationLength!);
+        if (isNaN(num) || num <= 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Délka komunikací musí být větší než 0",
+            path: ["communicationLength"]
+          });
+        }
       }
     }
   }
@@ -142,8 +169,8 @@ const residentialBuildingSchema = z.object({
 
 export const residentialBuildingFormConfig: FormConfig = {
   id: "residential-building",
-  title: "Činžovní domy, novostavby",
-  description: `Vyplňte údaje pro výpočet ceny úklidových služeb. Všechny údaje jsou povinné. Ceny jsou aktualizovány s inflací ${(INFLATION_RATE * 100).toFixed(1)}% od roku ${INFLATION_START_YEAR}.`,
+  title: "Pravidelný úklid činžovních domů a novostaveb",
+  description: `Vyplňte údaje pro výpočet ceny úklidových služeb. Všechny údaje jsou povinné.`,
   validationSchema: residentialBuildingSchema,
   basePrice: CURRENT_PRICES.regularCleaning,
   conditions: [
@@ -164,12 +191,12 @@ export const residentialBuildingFormConfig: FormConfig = {
           layout: "vertical",
           note: "Četnost úklidu výrazně ovlivňuje celkovou cenu. Denní úklid je nejdražší, ale poskytuje nejvyšší úroveň čistoty.",
           options: [
+            { value: "daily", label: "každý den", coefficient: 3.67, tooltip: "Nejvyšší úroveň čistoty, ale také nejdražší varianta. Vhodné pro prostory s vysokými hygienickými požadavky." },
             { value: "weekly", label: "1x týdně", coefficient: 1.0, note: "frequent" },
             { value: "twice-weekly", label: "2x týdně", coefficient: 1.67 },
-            { value: "biweekly", label: "1x za 14 dní", coefficient: 0.75 },
-            { value: "daily", label: "každý den", coefficient: 3.67, tooltip: "Nejvyšší úroveň čistoty, ale také nejdražší varianta. Vhodné pro prostory s vysokými hygienickými požadavky." },
             { value: "mixed-weekly", label: "1x týdně nadzemní patra a 2x týdně přízemí", coefficient: 1.45 },
-            { value: "seasonal", label: "1x týdně v letním období a 2x týdně v zimním období", coefficient: 1.35, note: "recommended", tooltip: "Letní období se rozumí období od 1. dubna do 30. září a zimním období se myslí období od 1. října do 30. března." },
+            { value: "seasonal", label: "1x týdně v letním období a 2x týdně v zimním období", coefficient: 1.35, tooltip: "Letní období se rozumí období od 1. dubna do 30. září a zimním období se myslí období od 1. října do 30. března." },
+            { value: "biweekly", label: "1x za 14 dní", coefficient: 0.75 },
             { value: "monthly", label: "1x za měsíc", coefficient: 0.69 }
           ]
         }
@@ -186,7 +213,7 @@ export const residentialBuildingFormConfig: FormConfig = {
           label: "Počet nadzemních pater v domě včetně přízemí",
           required: true,
           layout: "vertical",
-          note: "Počet pater ovlivňuje náročnost úklidu a tím i cenu. Více pater = vyšší cena kvůli nutnosti přemisťování mezi patry.",
+          note: "",
           options: [
             { value: 1, label: "1 (tedy přízemní objekt)", coefficient: 0.4 },
             { value: 2, label: "2", coefficient: 0.6 },
@@ -216,6 +243,7 @@ export const residentialBuildingFormConfig: FormConfig = {
           label: "Orientáční počet bytů na patře",
           required: true,
           layout: "vertical",
+          note: "Tento údaj můžete určitě také tak, že celkový počet bytů v domě vydělíte počtem pater.",
           options: [
             { value: "less-than-3", label: "méně než 3 byty", coefficient: 0.95 },
             { value: "3", label: "3 byty", coefficient: 1.0 },
@@ -284,7 +312,7 @@ export const residentialBuildingFormConfig: FormConfig = {
               layout: "vertical",
               options: [
                 { value: "annual", label: `generální úklid domu 1x ročně`, coefficient: 1.0 },
-                { value: "standard", label: `standardní generální úklid domu 2x ročně`, coefficient: 1.0, note: "recommended" },
+                { value: "standard", label: `generální úklid domu 2x ročně`, coefficient: 1.0, note: "recommended" },
                 { value: "quarterly", label: `generální úklid domu 4x ročně`, coefficient: 1.0 }
               ]
             },
@@ -327,7 +355,16 @@ export const residentialBuildingFormConfig: FormConfig = {
               layout: "vertical",
               options: [
                 { value: "new", label: "nová plastová nebo dřevěná", coefficient: 1.0 },
-                { value: "original", label: "původní dřevěná nebo hliníková", coefficient: 1.1 },
+                { value: "original", label: "původní dřevěná nebo hliníková", coefficient: 1.1 }
+              ]
+            },
+            {
+              id: "windowAccessibility",
+              type: "checkbox",
+              label: "Dostupnost oken",
+              required: false,
+              layout: "vertical",
+              options: [
                 { value: "hard-to-reach", label: "některá jsou hůře dostupná z podlahy (nutno použít např. štafle nebo teleskopické tyče)", coefficient: 1.3 }
               ]
             },
@@ -340,6 +377,17 @@ export const residentialBuildingFormConfig: FormConfig = {
               options: [
                 { value: "general", label: "rámci generálního úklidu", coefficient: 1.0 },
                 { value: "regular", label: "rámci pravidelného úklidu", coefficient: 1.0 }
+              ]
+            },
+            {
+              id: "basementCleaningDetails",
+              type: "radio",
+              label: "Součástí úklidu suterénních prostor je:",
+              required: true,
+              layout: "vertical",
+              options: [
+                { value: "corridors-only", label: "pouze úklid chodeb", coefficient: 1.0 },
+                { value: "corridors-and-rooms", label: "úklid chodeb včetně místností v suterénu, jako jsou například kočárkárny, prádelny, sušárny apod.", coefficient: 1.1 }
               ]
             }
           ]
@@ -358,7 +406,7 @@ export const residentialBuildingFormConfig: FormConfig = {
           required: true,
           layout: "horizontal",
           options: [
-            { value: "yes", label: "Mám zájem i o zimní údržbu kolem domu" },
+            { value: "yes", label: "Ano, mám zájem i o zimní údržbu kolem domu", tooltip: "Pro zimní údržbu platí pohotovost od 15. 11. do 14. 3. následujícího roku a v tomto období jsou prováděny výjezdy – úklidu sněhu nebo náledí. Úklid sněhu se provádí, pokud je minimální sněhová pokrývka výšky 2 cm." },
             { value: "no", label: "Ne" }
           ]
         },
@@ -372,14 +420,26 @@ export const residentialBuildingFormConfig: FormConfig = {
             {
               id: "communicationArea",
               type: "input",
-              label: "Celková plocha komunikací (v m²) nebo celková délka komunikací (v m):",
-              required: true,
+              label: "Celková plocha komunikací (v m²):",
+              required: false,
               inputType: "number",
               min: 0.1,
               max: 10000,
               step: 0.1,
-              placeholder: "např. 150 m² nebo 50 m",
-              description: "Zadejte hodnotu větší než 0 (max. 10 000 m² nebo 10 000 m)"
+              placeholder: "např. 150 m²",
+              description: "Zadejte hodnotu větší než 0 (max. 10 000 m²)"
+            },
+            {
+              id: "communicationLength",
+              type: "input",
+              label: "Celková délka komunikací (v běžných metrech):",
+              required: false,
+              inputType: "number",
+              min: 0.1,
+              max: 10000,
+              step: 0.1,
+              placeholder: "např. 50 m",
+              description: "Zadejte hodnotu větší než 0 (max. 10 000 m)"
             }
           ]
         }

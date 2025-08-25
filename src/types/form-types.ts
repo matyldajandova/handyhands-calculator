@@ -20,7 +20,7 @@ export interface FormData {
 }
 
 // Form configuration types
-export type FieldType = 'radio' | 'select' | 'input' | 'textarea' | 'conditional';
+export type FieldType = 'radio' | 'select' | 'input' | 'textarea' | 'conditional' | 'checkbox';
 
 export type NoteType = 'frequent' | 'recommended';
 
@@ -88,7 +88,18 @@ export interface ConditionalField extends BaseField {
   fields: FormField[];
 }
 
-export type FormField = RadioField | SelectField | InputField | TextareaField | ConditionalField;
+export interface CheckboxField extends BaseField {
+  type: 'checkbox';
+  options: Array<{
+    value: string;
+    label: string;
+    coefficient?: number;
+    fixedAddon?: number; // Fixed price addon in Kč
+  }>;
+  layout?: 'horizontal' | 'vertical';
+}
+
+export type FormField = RadioField | SelectField | InputField | TextareaField | ConditionalField | CheckboxField;
 
 export interface FormSection {
   id: string;
@@ -136,7 +147,7 @@ export interface CalculationResult {
 }
 
 // Form submission data type
-export type FormSubmissionData = Record<string, string | number | undefined>;
+export type FormSubmissionData = Record<string, string | number | string[] | undefined>;
 
 // Office cleaning specific types
 export interface OfficeCleaningFormData {

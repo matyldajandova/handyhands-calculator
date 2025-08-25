@@ -1,4 +1,4 @@
-import { FormSubmissionData, FormConfig, FormField, RadioField, SelectField, CalculationResult } from "@/types/form-types";
+import { FormSubmissionData, FormConfig, FormField, RadioField, SelectField, CheckboxField, CalculationResult } from "@/types/form-types";
 import { calculateOfficeCleaningPrice } from "./office-cleaning-calculation";
 
 // Helper function to find a field in the form configuration
@@ -22,7 +22,7 @@ function findFieldInConfig(config: FormConfig, fieldId: string): FormField | nul
 }
 
 // Helper function to get coefficient from form configuration
-function getCoefficientFromConfig(config: FormConfig, fieldId: string, value: string | number): number {
+function getCoefficientFromConfig(config: FormConfig, fieldId: string, value: string | number | string[]): number {
   const field = findFieldInConfig(config, fieldId);
   if (!field) return 1.0;
 
@@ -38,11 +38,26 @@ function getCoefficientFromConfig(config: FormConfig, fieldId: string, value: st
     return option?.coefficient || 1.0;
   }
 
+  if (field.type === 'checkbox') {
+    const checkboxField = field as CheckboxField;
+    if (Array.isArray(value)) {
+      // For checkbox fields, multiply coefficients of all selected options
+      let totalCoefficient = 1.0;
+      for (const selectedValue of value) {
+        const option = checkboxField.options.find(opt => opt.value === selectedValue);
+        if (option?.coefficient) {
+          totalCoefficient *= option.coefficient;
+        }
+      }
+      return totalCoefficient;
+    }
+  }
+
   return 1.0;
 }
 
 // Helper function to get fixed addon from form configuration
-function getFixedAddonFromConfig(config: FormConfig, fieldId: string, value: string | number): number {
+function getFixedAddonFromConfig(config: FormConfig, fieldId: string, value: string | number | string[]): number {
   const field = findFieldInConfig(config, fieldId);
   if (!field) return 0;
 
@@ -56,6 +71,21 @@ function getFixedAddonFromConfig(config: FormConfig, fieldId: string, value: str
     const selectField = field as SelectField;
     const option = selectField.options.find(opt => opt.value === value);
     return option?.fixedAddon || 0;
+  }
+
+  if (field.type === 'checkbox') {
+    const checkboxField = field as CheckboxField;
+    if (Array.isArray(value)) {
+      // For checkbox fields, sum fixed addons of all selected options
+      let totalFixedAddon = 0;
+      for (const selectedValue of value) {
+        const option = checkboxField.options.find(opt => opt.value === selectedValue);
+        if (option?.fixedAddon) {
+          totalFixedAddon += option.fixedAddon;
+        }
+      }
+      return totalFixedAddon;
+    }
   }
 
   return 0;
