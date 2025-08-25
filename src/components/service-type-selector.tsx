@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Building, Home, Warehouse, Store, Factory, School, FileText, Building2 } from "lucide-react";
 import { serviceTypes } from "@/config/services";
+import Image from "next/image";
 
 interface ServiceTypeSelectorProps {
   onServiceTypeSelect: (serviceType: string) => void;
@@ -56,10 +57,13 @@ export function ServiceTypeSelector({ onServiceTypeSelect }: ServiceTypeSelector
       <div className="text-center mb-12">
         {/* Brand Logo */}
         <div className="flex justify-center mb-8">
-          <img 
+          <Image 
             src="/handyhands_horizontal.svg" 
             alt="HandyHands Logo" 
+            width={240}
+            height={96}
             className="h-16 md:h-20 lg:h-24 w-auto"
+            priority
           />
         </div>
         
