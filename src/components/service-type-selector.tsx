@@ -55,10 +55,10 @@ export function ServiceTypeSelector({ onServiceTypeSelect }: ServiceTypeSelector
     >
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold text-foreground font-heading mb-4">
-          Kalkulátor úklidových služeb
+          Kalkulátor úklidových a řemeslných služeb
         </h1>
         <p className="text-xl text-muted-foreground font-sans max-w-2xl mx-auto">
-          Vyberte typ nemovitosti a získejte přesnou kalkulaci úklidových služeb
+          Vyberte typ služby a získejte obratem přesnou kalkulaci našich prací
         </p>
       </div>
 
