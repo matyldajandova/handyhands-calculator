@@ -1,9 +1,15 @@
 import { z } from "zod";
 import { FormConfig } from "@/types/form-types";
+import { isWinterMaintenancePeriod } from "@/utils/date-utils";
 
 // Base prices and inflation
 const BASE_PRICES = {
   regularCleaning: 4500, // Base price per month for regular panel building cleaning
+};
+
+// Fixed prices (not affected by inflation or coefficients)
+const FIXED_PRICES = {
+  winterService: 500 // Monthly fee for winter on-call service (Nov 15 - Mar 14) - FIXED PRICE
 };
 
 const INFLATION_RATE = 0.04; // 4% annual inflation
@@ -21,6 +27,7 @@ const currentYear = new Date().getFullYear();
 const CURRENT_PRICES = {
   regularCleaning: getInflationAdjustedPrice(BASE_PRICES.regularCleaning, currentYear),
 };
+
 
 // Validation schema
 const panelBuildingSchema = z.object({
@@ -56,14 +63,28 @@ const panelBuildingSchema = z.object({
     return val;
   }, z.union([z.number().min(1), z.literal("5-10"), z.undefined()])).optional(),
   winterMaintenance: z.string().min(1, "Vyberte, zda máte zájem o zimní údržbu"),
-  communicationArea: z.union([z.string(), z.number()]).optional().transform((val: string | number | undefined) => {
-    if (val === undefined) return undefined;
-    if (typeof val === 'number') return val;
-    const trimmed = val.trim();
-    if (trimmed === '') return undefined;
-    const num = parseFloat(trimmed);
-    return isNaN(num) ? undefined : num;
-  }),
+  communicationType: z.string().optional(),
+  communicationArea: z.preprocess((val) => {
+    if (val === undefined || val === null || val === "") return undefined;
+    if (typeof val === 'string') {
+      const trimmed = val.trim();
+      if (trimmed === "") return undefined;
+      const num = parseFloat(trimmed);
+      return isNaN(num) ? undefined : num;
+    }
+    return val;
+  }, z.union([z.number().min(0.1).max(10000), z.undefined()])).optional(),
+  communicationLength: z.preprocess((val) => {
+    if (val === undefined || val === null || val === "") return undefined;
+    if (typeof val === 'string') {
+      const trimmed = val.trim();
+      if (trimmed === "") return undefined;
+      const num = parseFloat(trimmed);
+      return isNaN(num) ? undefined : num;
+    }
+    return val;
+  }, z.union([z.number().min(0.1).max(10000), z.undefined()])).optional(),
+  spreadingMaterial: z.string().optional(),
   zipCode: z.string().min(1, "Zadejte PSČ").regex(/^\d{5}$/, "PSČ musí mít přesně 5 čísel"),
   notes: z.string().optional(),
 }).superRefine((data, ctx) => {
@@ -78,19 +99,41 @@ const panelBuildingSchema = z.object({
     }
   }
   
-  // Validate communication area when winter maintenance is "yes"
+  // Validate winter maintenance details when winter maintenance is "yes"
   if (data.winterMaintenance === "yes") {
-    if (data.communicationArea === undefined) {
+    if (!data.communicationType) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Zadejte plochu komunikací",
-        path: ["communicationArea"]
+        message: "Vyberte způsob zadání rozměrů komunikací",
+        path: ["communicationType"]
       });
-    } else if (typeof data.communicationArea === 'number' && data.communicationArea <= 0) {
+    }
+    
+    if (data.communicationType === "area") {
+      if (!data.communicationArea || (typeof data.communicationArea === 'number' && data.communicationArea <= 0)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Zadejte plochu komunikací",
+          path: ["communicationArea"]
+        });
+      }
+    }
+    
+    if (data.communicationType === "length") {
+      if (!data.communicationLength || (typeof data.communicationLength === 'number' && data.communicationLength <= 0)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Zadejte délku komunikací",
+          path: ["communicationLength"]
+        });
+      }
+    }
+    
+    if (!data.spreadingMaterial) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Plocha komunikací musí být větší než 0",
-        path: ["communicationArea"]
+        message: "Vyberte typ posypového materiálu",
+        path: ["spreadingMaterial"]
       });
     }
   }
@@ -123,8 +166,8 @@ export const panelBuildingFormConfig: FormConfig = {
             { value: "weekly", label: "1x týdně", coefficient: 1.0, note: "frequent" },
             { value: "twice-weekly", label: "2x týdně", coefficient: 1.67 },
             { value: "biweekly", label: "1x za 14 dní", coefficient: 0.75 },
-            { value: "mixed-weekly", label: "1x týdně nadzemní patra a 2x týdně přízemí", coefficient: 1.45 },
-            { value: "seasonal", label: "1x týdně v letním období a 2x týdně v zimním období", coefficient: 1.35, note: "recommended" }
+            { value: "mixed-weekly", label: "1x týdně nadzemní patra a 2x týdně přízemí", coefficient: 1.45, hidden: true, tooltip: "Kromě přízemí domu se myslí také úklid podlahy výtahové kabiny, pokud je v domě výtah." },
+            { value: "seasonal", label: "1x týdně v letním období a 2x týdně v zimním období", coefficient: 1.35, hidden: true, tooltip: "Letní období se rozumí období od 1. dubna do 30. září a zimním období se myslí období od 1. října do 30. března." }
           ]
         }
       ]
@@ -185,6 +228,7 @@ export const panelBuildingFormConfig: FormConfig = {
           id: "apartmentsPerFloor",
           type: "radio",
           label: "Orientační počet bytů na patře",
+          note: "Tento údaj můžete určit také tak, že celkový počet bytů v domě vydělíte počtem pater.",
           required: true,
           layout: "vertical",
           options: [
@@ -261,15 +305,24 @@ export const panelBuildingFormConfig: FormConfig = {
       id: "winter-maintenance",
       title: "Zimní údržba",
       icon: "Snowflake",
+      note: "Odklizení čerstvě napadlého sněhu, odstranění náledí a zajištění vhodného posypu chodníků a udržování těchto ploch pro chodce ve stavu, aby nedošlo k újmě na zdraví a byla zajištěna bezpečnost osob.",
       fields: [
+        ...(isWinterMaintenancePeriod() ? [{
+          id: "winterMaintenanceAlert",
+          type: "alert" as const,
+          variant: "default" as const,
+          title: "Informace o zimní údržbě",
+          description: `Pro zimní údržbu platí pohotovost od 15. 11. do 14. 3. následujícího roku a v tomto období jsou prováděny výjezdy – úklidu sněhu nebo náledí. Úklid sněhu se provádí, pokud je minimální sněhová pokrývka výšky 2 cm. Měsíční poplatek za pohotovostní službu: 500 Kč/měsíc. Poplatek za výjezd: 50 Kč/běžný metr nebo 40 Kč/m² (min. 300 Kč, max. 2000 Kč za výjezd).`,
+          icon: "Info"
+        }] : []),
         {
           id: "winterMaintenance",
           type: "radio",
-          label: "Mám zájem i o zimní údržbu kolem domu",
+          label: "",
           required: true,
           layout: "horizontal",
           options: [
-            { value: "yes", label: "Ano" },
+            { value: "yes", label: "Ano, mám zájem i o zimní údržbu kolem domu" },
             { value: "no", label: "Ne" }
           ]
         },
@@ -281,19 +334,56 @@ export const panelBuildingFormConfig: FormConfig = {
           condition: { field: "winterMaintenance", value: "yes" },
           fields: [
             {
+              id: "communicationType",
+              type: "radio",
+              label: "Jak chcete zadat rozměry komunikací?",
+              required: true,
+              layout: "vertical",
+              options: [
+                { value: "area", label: "Plocha (m²)" },
+                { value: "length", label: "Délka (m)" }
+              ]
+            },
+            {
               id: "communicationArea",
               type: "input",
-              label: "Celková plocha komunikací (v m²) nebo celková délka komunikací (v m):",
+              label: "Celková plocha komunikací (v m²):",
               required: true,
               inputType: "number",
               min: 0.1,
               max: 10000,
               step: 0.1,
-              placeholder: "např. 150 m² nebo 50 m",
-              description: "Zadejte hodnotu větší než 0 (max. 10 000 m² nebo 10 000 m)"
+              placeholder: "např. 150 m²",
+              description: "Zadejte hodnotu větší než 0 (max. 10 000 m²)",
+              condition: { field: "communicationType", value: "area" }
+            },
+            {
+              id: "communicationLength",
+              type: "input",
+              label: "Celková délka komunikací (v běžných metrech):",
+              required: true,
+              inputType: "number",
+              min: 0.1,
+              max: 10000,
+              step: 0.1,
+              placeholder: "např. 50 m",
+              description: "Zadejte hodnotu větší než 0 (max. 10 000 m)",
+              condition: { field: "communicationType", value: "length" }
+            },
+            {
+              id: "spreadingMaterial",
+              type: "radio",
+              label: "Typ posypového materiálu",
+              required: true,
+              layout: "vertical",
+              options: [
+                { value: "gravel-sand", label: "štěrkodrť nebo písek", coefficient: 1.0 },
+                { value: "salt", label: "sůl", coefficient: 1.1 },
+                { value: "no-preference", label: "bez preferencí (dle vhodnosti kombinace obou posypových materiálů)", coefficient: 1.04 }
+              ]
             }
           ]
-        }
+        },
       ]
     },
     {
@@ -330,4 +420,4 @@ export const panelBuildingFormConfig: FormConfig = {
 };
 
 // Export the calculation functions and prices for use in the calculation logic
-export { BASE_PRICES, CURRENT_PRICES, getInflationAdjustedPrice, INFLATION_RATE, INFLATION_START_YEAR };
+export { BASE_PRICES, CURRENT_PRICES, FIXED_PRICES, getInflationAdjustedPrice, INFLATION_RATE, INFLATION_START_YEAR };

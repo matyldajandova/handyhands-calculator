@@ -153,7 +153,7 @@ function RadioFieldWithHiddenOptions({
                         : 'bg-accent text-accent-foreground'
                     }`}
                   >
-                    {option.note === 'frequent' ? 'nejvyužívanější' : 'doporučeno'}
+                    {option.note === 'frequent' ? 'Nejvyužívanější' : 'Doporučeno'}
                   </Badge>
                 )}
                 {option.tooltip && (
@@ -213,7 +213,7 @@ function RadioFieldWithHiddenOptions({
                           : 'bg-accent text-accent-foreground'
                       }`}
                     >
-                      {option.note === 'frequent' ? 'nejvyužívanější' : 'doporučeno'}
+                      {option.note === 'frequent' ? 'Nejvyužívanější' : 'Doporučeno'}
                     </Badge>
                   )}
                   {option.tooltip && (

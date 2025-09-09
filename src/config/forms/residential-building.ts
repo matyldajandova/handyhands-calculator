@@ -217,11 +217,6 @@ const residentialBuildingSchema = z.object({
   }
 });
 
-// Winter period configuration
-const winterPeriod = {
-  start: { month: 9, day: 1 },
-  end: { month: 3, day: 14 }
-};
 
 export const residentialBuildingFormConfig: FormConfig = {
   id: "residential-building",
@@ -229,7 +224,6 @@ export const residentialBuildingFormConfig: FormConfig = {
   description: `Vyplňte údaje pro výpočet ceny úklidových služeb. Všechny údaje jsou povinné.`,
   validationSchema: residentialBuildingSchema,
   basePrice: CURRENT_PRICES.regularCleaning,
-  winterPeriod,
   conditions: [
     "Dostupnost alespoň studené vody v domě",
     "Uzamykatelná místnost nebo uzamykatelná část domu (místo) na úklidové náčiní a úklidovou chemii"
@@ -468,7 +462,7 @@ export const residentialBuildingFormConfig: FormConfig = {
           type: "alert" as const,
           variant: "default" as const,
           title: "Informace o zimní údržbě",
-          description: `Pro zimní údržbu platí pohotovost od ${winterPeriod.start.day}. ${winterPeriod.start.month}. do ${winterPeriod.end.day}. ${winterPeriod.end.month}. následujícího roku a v tomto období jsou prováděny výjezdy – úklidu sněhu nebo náledí. Úklid sněhu se provádí, pokud je minimální sněhová pokrývka výšky 2 cm. Měsíční poplatek za pohotovostní službu: 500 Kč/měsíc. Poplatek za výjezd: 50 Kč/běžný metr nebo 40 Kč/m² (min. 300 Kč, max. 2000 Kč za výjezd).`,
+          description: `Pro zimní údržbu platí pohotovost od 15. 11. do 14. 3. následujícího roku a v tomto období jsou prováděny výjezdy – úklidu sněhu nebo náledí. Úklid sněhu se provádí, pokud je minimální sněhová pokrývka výšky 2 cm. Měsíční poplatek za pohotovostní službu: 500 Kč/měsíc. Poplatek za výjezd: 50 Kč/běžný metr nebo 40 Kč/m² (min. 300 Kč, max. 2000 Kč za výjezd).`,
           icon: "Info"
         }] : []),
         {
