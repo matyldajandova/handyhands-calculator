@@ -13,6 +13,7 @@ interface ZipCodeInputProps {
   placeholder?: string;
   className?: string;
   error?: string;
+  onValidationChange?: (isValid: boolean) => void;
 }
 
 export function ZipCodeInput({ 
@@ -22,7 +23,8 @@ export function ZipCodeInput({
   name, 
   placeholder = "12345",
   className = "",
-  error 
+  error,
+  onValidationChange
 }: ZipCodeInputProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [foundRegion, setFoundRegion] = useState<string | null>(null);
@@ -44,24 +46,30 @@ export function ZipCodeInput({
             if (region) {
               setFoundRegion(region.label);
               setIsValid(true);
+              onValidationChange?.(true);
             } else {
               setIsValid(false);
+              onValidationChange?.(false);
             }
           } else {
             setIsValid(false);
+            onValidationChange?.(false);
           }
         } catch (error) {
           console.error('Error looking up zip code:', error);
           setIsValid(false);
+          onValidationChange?.(false);
         } finally {
           setIsLoading(false);
         }
       } else if (value.length > 0) {
         setIsValid(false);
         setFoundRegion(null);
+        onValidationChange?.(false);
       } else {
         setIsValid(null);
         setFoundRegion(null);
+        onValidationChange?.(false);
       }
     }, 500); // 500ms debounce
 
@@ -111,9 +119,9 @@ export function ZipCodeInput({
       )}
       
       {!isLoading && isValid === false && value.length === 5 && (
-        <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+        <div className="flex items-center gap-2 text-sm text-destructive bg-red-50 border border-red-200 rounded-md px-3 py-2">
           <MapPin className="h-3 w-3" />
-          <span>PSČ nenalezeno, použije se výchozí region (Praha)</span>
+          <span>Pro zadané PSČ nebyl nalezen žádný region</span>
         </div>
       )}
       
