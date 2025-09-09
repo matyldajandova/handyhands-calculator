@@ -3,6 +3,7 @@ import { calculateOfficeCleaningPrice } from "./office-cleaning-calculation";
 import { FIXED_PRICES } from "@/config/forms/residential-building";
 import { isWinterMaintenancePeriod } from "./date-utils";
 import { getRegionFromZipCode, getAvailableRegions } from "./zip-code-mapping";
+import { getFixedFeeForService } from "./regional-fixed-fees";
 
 // Helper function to find a field in the form configuration
 function findFieldInConfig(config: FormConfig, fieldId: string): FormField | null {
@@ -129,14 +130,15 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
     impact: number;
   }> = [];
 
-  // Handle zip code to region mapping for residential building form
-  if (formConfig.id === "residential-building" && formData.zipCode && typeof formData.zipCode === 'string') {
+  // Handle zip code to region mapping for all forms
+  if (formData.zipCode && typeof formData.zipCode === 'string') {
     try {
       const regionKey = await getRegionFromZipCode(formData.zipCode);
       if (regionKey) {
         const regions = getAvailableRegions();
         const region = regions.find(r => r.value === regionKey);
         if (region) {
+          // Apply coefficient for ALL forms (including one-time cleaning and handyman services)
           finalCoefficient *= region.coefficient;
           appliedCoefficients.push({
             field: 'zipCode',
@@ -146,7 +148,7 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
           });
         }
       } else {
-        // If zip code not found, use Prague coefficient as default
+        // If zip code not found, use Prague as default
         finalCoefficient *= 1.0;
         appliedCoefficients.push({
           field: 'zipCode',
@@ -157,7 +159,7 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
       }
     } catch (error) {
       console.error('Error mapping zip code to region:', error);
-      // Fallback to Prague coefficient
+      // Fallback to Prague
       finalCoefficient *= 1.0;
       appliedCoefficients.push({
         field: 'zipCode',
@@ -277,8 +279,32 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
     });
   }
 
-  // Calculate total monthly price (including winter service fee)
-  const totalMonthlyPrice = regularCleaningPrice + winterServiceFee;
+  // Add fixed regional fees for one-time cleaning and handyman services
+  // These are added ON TOP of the calculated price (which already includes regional coefficients)
+  let regionalFixedFee = 0;
+  if ((formConfig.id === "one-time-cleaning" || formConfig.id === "handyman-services") && formData.zipCode && typeof formData.zipCode === 'string') {
+    try {
+      const regionKey = await getRegionFromZipCode(formData.zipCode);
+      if (regionKey) {
+        regionalFixedFee = getFixedFeeForService(formConfig.id, regionKey);
+        if (regionalFixedFee > 0) {
+          appliedCoefficients.push({
+            field: 'zipCode',
+            label: `Doprava (${regionKey}) - pevná cena`,
+            coefficient: 1,
+            impact: regionalFixedFee
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error getting fixed fee for region:', error);
+    }
+  }
+
+  // Calculate total monthly price (including winter service fee and regional fixed fee)
+  // Note: regularCleaningPrice already includes regional coefficients applied to base price
+  // regionalFixedFee is added on top as a fixed amount (not affected by coefficients or inflation)
+  const totalMonthlyPrice = regularCleaningPrice + winterServiceFee + regionalFixedFee;
 
   return {
     regularCleaningPrice,

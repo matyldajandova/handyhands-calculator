@@ -341,7 +341,7 @@ function renderConditionalFields(field: FormFieldType, form: UseFormReturn<FormS
                               <FieldLabel field={subField} isRequired={shouldShowSubField && subField.required} />
                             )}
                             <FormControl>
-                              {renderField(subField, subFormField, form.formState)}
+                              {renderField(subField, subFormField, form.formState, form)}
                             </FormControl>
                             {subField.description && (
                               <p className="text-xs text-muted-foreground">
@@ -373,7 +373,7 @@ function renderConditionalFields(field: FormFieldType, form: UseFormReturn<FormS
 }
 
 // Helper function to render individual fields
-function renderField(field: FormFieldType, formField: ControllerRenderProps<FormSubmissionData>, formState: any) {
+function renderField(field: FormFieldType, formField: ControllerRenderProps<FormSubmissionData>, formState: any, form: any) {
   const placeholder = 'placeholder' in field ? field.placeholder : undefined;
 
   switch (field.type) {
@@ -493,8 +493,40 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
       const hasNewSelected = currentValues.includes("new");
       const hasOriginalSelected = currentValues.includes("original");
       
+      // Special logic for cleaning days field to handle frequency-based selection limits
+      const isCleaningDaysField = field.id === "cleaningDays";
+      const hasNoPreferenceSelected = currentValues.includes("no-preference");
+      
+      // Get cleaning frequency from form values
+      const formValues = form.watch();
+      const cleaningFrequency = formValues.cleaningFrequency;
+      
+      // Get expected number of days based on frequency
+      const getExpectedDaysCount = (frequency: string) => {
+        const expectedDays = {
+          "3x-weekly": 3,
+          "2x-weekly": 2,
+          "weekly": 1,
+          "biweekly": 1
+        };
+        return expectedDays[frequency as keyof typeof expectedDays] || 0;
+      };
+      
+      const expectedDaysCount = getExpectedDaysCount(cleaningFrequency);
+      
+      // Create dynamic label for cleaning days
+      const getCleaningDaysLabel = () => {
+        if (expectedDaysCount > 0) {
+          return `Vyberte ${expectedDaysCount} ${expectedDaysCount === 1 ? 'preferovaný den' : expectedDaysCount < 5 ? 'preferované dny' : 'dní'} v týdnu pro úklid`;
+        }
+        return "Vyberte preferované dny v týdnu pro úklid";
+      };
+      
       return (
         <div className="flex flex-col gap-3">
+          <div className="text-sm font-medium text-foreground mb-2">
+            {getCleaningDaysLabel()}
+          </div>
           {checkboxField.options.map((option) => {
             let isDisabled = false;
             let disabledReason = "";
@@ -512,6 +544,26 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
               }
             }
             
+            if (isCleaningDaysField) {
+              // If "no preference" is selected, disable all day options
+              if (hasNoPreferenceSelected && option.value !== "no-preference") {
+                isDisabled = true;
+                disabledReason = "";
+              }
+              // If we have reached the maximum number of days, disable remaining day options (but not selected ones)
+              else if (option.value !== "no-preference" && !hasNoPreferenceSelected && 
+                       !currentValues.includes(option.value) &&
+                       currentValues.filter(val => val !== "no-preference").length >= expectedDaysCount) {
+                isDisabled = true;
+                disabledReason = "";
+              }
+              // Disable "no preference" if any days are selected
+              else if (option.value === "no-preference" && currentValues.some(val => val !== "no-preference")) {
+                isDisabled = true;
+                disabledReason = "";
+              }
+            }
+            
             return (
             <FormItem key={option.value} className="flex items-center gap-2">
               <FormControl>
@@ -521,9 +573,9 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
                     disabled={isDisabled}
                   onCheckedChange={(checked: boolean | "indeterminate") => {
                     if (checked) {
-                        formField.onChange([...currentValues, option.value]);
+                      formField.onChange([...currentValues, option.value]);
                     } else {
-                        formField.onChange(currentValues.filter((value: string) => value !== option.value));
+                      formField.onChange(currentValues.filter((value: string) => value !== option.value));
                     }
                   }}
                 />
@@ -533,7 +585,7 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
                   className={`font-normal cursor-pointer ${isDisabled ? 'text-muted-foreground' : ''}`}
                 >
                 {option.label}
-                  {isDisabled && (
+                  {isDisabled && disabledReason && (
                     <span className="text-xs text-muted-foreground">({disabledReason})</span>
                   )}
               </FormLabel>
@@ -746,7 +798,7 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
                           >
                     {field.type === "alert" ? (
                       <div className="space-y-2">
-                        {renderField(field, {} as ControllerRenderProps<FormSubmissionData>, form.formState)}
+                        {renderField(field, {} as ControllerRenderProps<FormSubmissionData>, form.formState, form)}
                       </div>
                     ) : (
                       <FormField
@@ -754,11 +806,11 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
                         name={field.id as keyof FormSubmissionData}
                         render={({ field: formField }) => (
                           <FormItem className="space-y-2">
-                            {field.type !== "conditional" && 'label' in field && field.label && (
+                            {field.type !== "conditional" && 'label' in field && field.label && field.id !== "cleaningDays" && (
                               <FieldLabel field={field} isRequired={isRequiredWhenVisible} />
                             )}
                             <FormControl>
-                              {renderField(field, formField, form.formState)}
+                              {renderField(field, formField, form.formState, form)}
                             </FormControl>
                             {field.description && (
                               <p className="text-xs text-muted-foreground">
@@ -780,13 +832,16 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
                       </AnimatePresence>
                     
                     {/* Add separator between fields (but not after the last one, after conditional fields, or before conditional fields) */}
-                    {index < section.fields.length - 1 && 
+                    {shouldShowField && index < section.fields.length - 1 && 
                      field.type !== "conditional" && 
                      section.fields[index + 1]?.type !== "conditional" && 
                      !(field.type === "radio" && section.fields[index + 1]?.type === "conditional" && 
                          (section.fields[index + 1] as ConditionalField)?.condition && 
                          'field' in (section.fields[index + 1] as ConditionalField).condition && 
-                         ((section.fields[index + 1] as ConditionalField).condition as any).field === field.id) && (
+                         ((section.fields[index + 1] as ConditionalField).condition as any).field === field.id) && 
+                     // Check if the next field is also visible
+                     ('condition' in section.fields[index + 1] && section.fields[index + 1].condition ? 
+                       evaluateCondition(section.fields[index + 1].condition, formValues) : true) && (
                       <Separator className="my-6 bg-muted/40" />
                     )}
                   </React.Fragment>

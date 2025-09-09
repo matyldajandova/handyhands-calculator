@@ -25,7 +25,7 @@ export const serviceTypes: ServiceType[] = [
   {
     id: "office-cleaning",
     title: "Pravidelný úklid kanceláří",
-    description: "Zahrnuje hodinový i plošný výpočet prostor kanceláří s pokročilými koeficienty.",
+    description: "Zahrnuje hodinový i plošný výpočet úklidu prostor kanceláří s pokročilými koeficienty.",
     icon: "Building2",
     formConfig: officeCleaningFormConfig,
   },

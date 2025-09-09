@@ -37,7 +37,7 @@ const TIME_BRACKETS = {
 const handymanServicesSchema = z.object({
   timeComplexity: z.string().min(1, "Vyberte orientační časovou náročnost"),
   workTools: z.string().min(1, "Vyberte pracovní náčiní"),
-  location: z.string().min(1, "Vyberte lokalitu"),
+  zipCode: z.string().min(1, "Zadejte PSČ").regex(/^\d{5}$/, "PSČ musí mít přesně 5 čísel"),
   notes: z.string().optional(),
 });
 
@@ -96,26 +96,12 @@ export const handymanServicesFormConfig: FormConfig = {
       icon: "MapPin",
       fields: [
         {
-          id: "location",
-          type: "select",
-          label: "",
+          id: "zipCode",
+          type: "input",
+          label: "Zadejte PSČ",
           required: true,
-          options: [
-            { value: "prague", label: "Praha (+ doprava 350 Kč)", coefficient: 1.0, fixedAddon: 350 },
-            { value: "stredocesky", label: "Středočeský kraj (+ doprava 300 Kč)", coefficient: 0.96078, fixedAddon: 300 },
-            { value: "karlovarsky", label: "Karlovarský kraj (+ doprava 250 Kč)", coefficient: 0.72549, fixedAddon: 250 },
-            { value: "plzensky", label: "Plzeňský kraj (+ doprava 250 Kč)", coefficient: 0.75686, fixedAddon: 250 },
-            { value: "ustecky", label: "Ústecký kraj (+ doprava 250 Kč)", coefficient: 0.69019, fixedAddon: 250 },
-            { value: "jihocesky", label: "Jihočeský kraj (+ doprava 250 Kč)", coefficient: 0.75294, fixedAddon: 250 },
-            { value: "liberecky", label: "Liberecký kraj (+ doprava 250 Kč)", coefficient: 0.76863, fixedAddon: 250 },
-            { value: "kralovehradecky", label: "Královéhradecký kraj (+ doprava 250 Kč)", coefficient: 0.75294, fixedAddon: 250 },
-            { value: "pardubicky", label: "Pardubický kraj (+ doprava 250 Kč)", coefficient: 0.75294, fixedAddon: 250 },
-            { value: "vysocina", label: "Kraj Vysočina (+ doprava 250 Kč)", coefficient: 0.68235, fixedAddon: 250 },
-            { value: "jihomoravsky", label: "Jihomoravský kraj (+ doprava 300 Kč)", coefficient: 0.82352, fixedAddon: 300 },
-            { value: "olomoucky", label: "Olomoucký kraj (+ doprava 250 Kč)", coefficient: 0.71372, fixedAddon: 250 },
-            { value: "zlinsky", label: "Zlínský kraj (+ doprava 250 Kč)", coefficient: 0.71372, fixedAddon: 250 },
-            { value: "moravskoslezsky", label: "Moravskoslezský kraj (+ doprava 250 Kč)", coefficient: 0.65098, fixedAddon: 250 }
-          ]
+          inputType: "text",
+          placeholder: "12345"
         }
       ]
     },

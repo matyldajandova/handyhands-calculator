@@ -64,7 +64,7 @@ const panelBuildingSchema = z.object({
     const num = parseFloat(trimmed);
     return isNaN(num) ? undefined : num;
   }),
-  location: z.string().min(1, "Vyberte lokalitu"),
+  zipCode: z.string().min(1, "Zadejte PSČ").regex(/^\d{5}$/, "PSČ musí mít přesně 5 čísel"),
   notes: z.string().optional(),
 }).superRefine((data, ctx) => {
   // Validate general cleaning details when general cleaning is "yes"
@@ -302,26 +302,12 @@ export const panelBuildingFormConfig: FormConfig = {
       icon: "MapPin",
       fields: [
         {
-          id: "location",
-          type: "select",
-          label: "",
+          id: "zipCode",
+          type: "input",
+          label: "Zadejte PSČ",
           required: true,
-          options: [
-            { value: "prague", label: "Praha", coefficient: 1.0 },
-            { value: "stredocesky", label: "Středočeský kraj", coefficient: 0.96078 },
-            { value: "karlovarsky", label: "Karlovarský kraj", coefficient: 0.72549 },
-            { value: "plzensky", label: "Plzeňský kraj", coefficient: 0.75686 },
-            { value: "ustecky", label: "Ústecký kraj", coefficient: 0.69019 },
-            { value: "jihocesky", label: "Jihočeský kraj", coefficient: 0.75294 },
-            { value: "liberecky", label: "Liberecký kraj", coefficient: 0.76863 },
-            { value: "kralovehradecky", label: "Královéhradecký kraj", coefficient: 0.75294 },
-            { value: "pardubicky", label: "Pardubický kraj", coefficient: 0.75294 },
-            { value: "vysocina", label: "Kraj Vysočina", coefficient: 0.68235 },
-            { value: "jihomoravsky", label: "Jihomoravský kraj", coefficient: 0.82352 },
-            { value: "olomoucky", label: "Olomoucký kraj", coefficient: 0.71372 },
-            { value: "zlinsky", label: "Zlínský kraj", coefficient: 0.71372 },
-            { value: "moravskoslezsky", label: "Moravskoslezský kraj", coefficient: 0.65098 }
-          ]
+          inputType: "text",
+          placeholder: "12345"
         }
       ]
     },

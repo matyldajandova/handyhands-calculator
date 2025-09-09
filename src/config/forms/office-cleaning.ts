@@ -25,6 +25,7 @@ const CURRENT_PRICES = {
 // Validation schema
 const officeCleaningSchema = z.object({
   cleaningFrequency: z.string().min(1, "Vyberte četnost úklidu kanceláří"),
+  cleaningDays: z.array(z.string()).optional(),
   calculationMethod: z.string().min(1, "Vyberte způsob výpočtu"),
   hoursPerCleaning: z.preprocess((val) => {
     if (val === undefined || val === null || val === "") return undefined;
@@ -80,7 +81,7 @@ const officeCleaningSchema = z.object({
   dishwashing: z.string().min(1, "Vyberte požadavek na pravidelné mytí nádobí"),
   toiletCleaning: z.string().min(1, "Vyberte, zda je součástí úklidu i úklid WC"),
   afterHours: z.string().min(1, "Vyberte, zda úklid probíhá mimo pracovní dobu"),
-  location: z.string().min(1, "Vyberte lokalitu"),
+  zipCode: z.string().min(1, "Zadejte PSČ").regex(/^\d{5}$/, "PSČ musí mít přesně 5 čísel"),
   notes: z.string().optional(),
 }).superRefine((data, ctx) => {
   // Validate calculation method specific fields
@@ -143,6 +144,38 @@ const officeCleaningSchema = z.object({
       }
     }
   }
+
+  // Validate cleaning days selection based on frequency
+  const frequencyRequiresDays = ["3x-weekly", "2x-weekly", "weekly", "biweekly"];
+  if (frequencyRequiresDays.includes(data.cleaningFrequency)) {
+    if (!data.cleaningDays || data.cleaningDays.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Vyberte preferované dny v týdnu pro úklid",
+        path: ["cleaningDays"]
+      });
+    } else if (data.cleaningDays.includes("no-preference")) {
+      // If "no preference" is selected, it's valid regardless of other selections
+      // No additional validation needed
+    } else {
+      // Get expected number of days based on frequency
+      const expectedDays = {
+        "3x-weekly": 3,
+        "2x-weekly": 2,
+        "weekly": 1,
+        "biweekly": 1
+      };
+      
+      const expectedCount = expectedDays[data.cleaningFrequency as keyof typeof expectedDays];
+      if (data.cleaningDays.length !== expectedCount) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Musíte vybrat přesně ${expectedCount} ${expectedCount === 1 ? 'den' : expectedCount < 5 ? 'dny' : 'dní'} v týdnu`,
+          path: ["cleaningDays"]
+        });
+      }
+    }
+  }
 });
 
 export const officeCleaningFormConfig: FormConfig = {
@@ -172,6 +205,31 @@ export const officeCleaningFormConfig: FormConfig = {
             { value: "biweekly", label: "1x za 14 dní", coefficient: 0.75 },
             { value: "daily-basic-weekly", label: "každý den pouze vynášení košů + úklid WC a úklid podlah a povrchů 1x týdně", coefficient: 2.5 },
             { value: "daily-basic-weekly-wc", label: "každý den pouze vynášení košů a úklid podlah a povrchů včetně WC 1x týdně", coefficient: 2.0 }
+          ]
+        },
+        {
+          id: "cleaningDays",
+          type: "checkbox",
+          label: "Vyberte preferované dny v týdnu pro úklid",
+          required: true,
+          condition: {
+            operator: "or",
+            conditions: [
+              { field: "cleaningFrequency", value: "3x-weekly", operator: "equals" },
+              { field: "cleaningFrequency", value: "2x-weekly", operator: "equals" },
+              { field: "cleaningFrequency", value: "weekly", operator: "equals" },
+              { field: "cleaningFrequency", value: "biweekly", operator: "equals" }
+            ]
+          },
+          options: [
+            { value: "monday", label: "Pondělí" },
+            { value: "tuesday", label: "Úterý" },
+            { value: "wednesday", label: "Středa" },
+            { value: "thursday", label: "Čtvrtek" },
+            { value: "friday", label: "Pátek" },
+            { value: "saturday", label: "Sobota" },
+            { value: "sunday", label: "Neděle" },
+            { value: "no-preference", label: "Bez preferencí" }
           ]
         }
       ]
@@ -440,26 +498,12 @@ export const officeCleaningFormConfig: FormConfig = {
       icon: "MapPin",
       fields: [
         {
-          id: "location",
-          type: "select",
-          label: "",
+          id: "zipCode",
+          type: "input",
+          label: "Zadejte PSČ",
           required: true,
-          options: [
-            { value: "prague", label: "Praha", coefficient: 1.0 },
-            { value: "stredocesky", label: "Středočeský kraj", coefficient: 0.96078 },
-            { value: "karlovarsky", label: "Karlovarský kraj", coefficient: 0.72549 },
-            { value: "plzensky", label: "Plzeňský kraj", coefficient: 0.75686 },
-            { value: "ustecky", label: "Ústecký kraj", coefficient: 0.69019 },
-            { value: "jihocesky", label: "Jihočeský kraj", coefficient: 0.75294 },
-            { value: "liberecky", label: "Liberecký kraj", coefficient: 0.76863 },
-            { value: "kralovehradecky", label: "Královéhradecký kraj", coefficient: 0.75294 },
-            { value: "pardubicky", label: "Pardubický kraj", coefficient: 0.75294 },
-            { value: "vysocina", label: "Kraj Vysočina", coefficient: 0.68235 },
-            { value: "jihomoravsky", label: "Jihomoravský kraj", coefficient: 0.82352 },
-            { value: "olomoucky", label: "Olomoucký kraj", coefficient: 0.71372 },
-            { value: "zlinsky", label: "Zlínský kraj", coefficient: 0.71372 },
-            { value: "moravskoslezsky", label: "Moravskoslezský kraj", coefficient: 0.65098 }
-          ]
+          inputType: "text",
+          placeholder: "12345"
         }
       ]
     },
