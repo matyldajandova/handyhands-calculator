@@ -191,13 +191,13 @@ export const residentialBuildingFormConfig: FormConfig = {
           layout: "vertical",
           note: "Četnost úklidu výrazně ovlivňuje celkovou cenu. Denní úklid je nejdražší, ale poskytuje nejvyšší úroveň čistoty.",
           options: [
-            { value: "daily", label: "každý den", coefficient: 3.67, tooltip: "Nejvyšší úroveň čistoty, ale také nejdražší varianta. Vhodné pro prostory s vysokými hygienickými požadavky." },
             { value: "weekly", label: "1x týdně", coefficient: 1.0, note: "frequent" },
             { value: "twice-weekly", label: "2x týdně", coefficient: 1.67 },
-            { value: "mixed-weekly", label: "1x týdně nadzemní patra a 2x týdně přízemí", coefficient: 1.45 },
-            { value: "seasonal", label: "1x týdně v letním období a 2x týdně v zimním období", coefficient: 1.35, tooltip: "Letní období se rozumí období od 1. dubna do 30. září a zimním období se myslí období od 1. října do 30. března." },
             { value: "biweekly", label: "1x za 14 dní", coefficient: 0.75 },
-            { value: "monthly", label: "1x za měsíc", coefficient: 0.69 }
+            { value: "daily", label: "každý den", coefficient: 3.67 },
+            { value: "mixed-weekly", label: "1x týdně nadzemní patra a 2x týdně přízemí", tooltip: "Kromě přízemí domu se myslí také úklid výtahové kabiny, pokud je v domě výtah.", coefficient: 1.45, hidden: true },
+            { value: "seasonal", label: "1x týdně v letním období a 2x týdně v zimním období", coefficient: 1.35, tooltip: "Letní období se rozumí období od 1. dubna do 30. září a zimním období se myslí období od 1. října do 30. března.", hidden: true },
+            { value: "monthly", label: "1x za měsíc", coefficient: 0.69, hidden: true }
           ]
         }
       ]
@@ -228,7 +228,7 @@ export const residentialBuildingFormConfig: FormConfig = {
         {
           id: "undergroundFloors",
           type: "radio",
-          label: "Počet podzemních pater v domě",
+          label: "Počet podzemních pater v domě určený k úklidu",
           required: true,
           layout: "vertical",
           options: [
@@ -247,7 +247,8 @@ export const residentialBuildingFormConfig: FormConfig = {
           options: [
             { value: "less-than-3", label: "méně než 3 byty", coefficient: 0.95 },
             { value: "3", label: "3 byty", coefficient: 1.0 },
-            { value: "more-than-3", label: "více jak 3 byty", coefficient: 1.11 }
+            { value: "3-to-6", label: "od 3 do 6 bytů", coefficient: 1.11 },
+            { value: "7-or-more", label: "7 a více bytů", coefficient: 1.3 }
           ]
         }
       ]
@@ -338,13 +339,13 @@ export const residentialBuildingFormConfig: FormConfig = {
               layout: "vertical",
               options: [
                 { value: "all", label: "ve všech nadzemních patrech", coefficient: 1.0 },
-                { value: 1, label: "1", coefficient: 0.97 },
-                { value: 2, label: "2", coefficient: 0.98 },
-                { value: 3, label: "3", coefficient: 1.0 },
-                { value: 4, label: "4", coefficient: 1.0 },
-                { value: 5, label: "5", coefficient: 1.02 },
-                { value: 6, label: "6", coefficient: 1.04 },
-                { value: 7, label: "7", coefficient: 1.06 }
+                { value: 1, label: "1", coefficient: 0.97, hidden: true },
+                { value: 2, label: "2", coefficient: 0.98, hidden: true },
+                { value: 3, label: "3", coefficient: 1.0, hidden: true },
+                { value: 4, label: "4", coefficient: 1.0, hidden: true },
+                { value: 5, label: "5", coefficient: 1.02, hidden: true },
+                { value: 6, label: "6", coefficient: 1.04, hidden: true },
+                { value: 7, label: "7", coefficient: 1.06, hidden: true }
               ]
             },
             {

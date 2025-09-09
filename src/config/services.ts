@@ -10,10 +10,17 @@ import { handymanServicesFormConfig } from "./forms/handyman-services";
 export const serviceTypes: ServiceType[] = [
   {
     id: "residential-building",
-    title: "Pravidelný úklid činžovních domů a novostaveb",
+    title: "Pravidelný úklid činžovních domů, bytových novostaveb",
     description: "Zahrnuje vše od úklidu společných prostor činžovních (zděných) domů po zimní údržbu s pokročilými koeficienty.",
     icon: "Building",
     formConfig: residentialBuildingFormConfig,
+  },  
+  {
+    id: "panel-building",
+    title: "Pravidelný úklid panelových domů",
+    description: "Zahrnuje vše od úklidu společných prostor panelových domů po zimní údržbu s pokročilými koeficienty.",
+    icon: "Building",
+    formConfig: panelBuildingFormConfig,
   },
   {
     id: "office-cleaning",
@@ -23,15 +30,8 @@ export const serviceTypes: ServiceType[] = [
     formConfig: officeCleaningFormConfig,
   },
   {
-    id: "panel-building",
-    title: "Pravidelný úklid panelových domů",
-    description: "Zahrnuje vše od úklidu společných prostor panelových domů po zimní údržbu s pokročilými koeficienty.",
-    icon: "Building",
-    formConfig: panelBuildingFormConfig,
-  },
-  {
     id: "commercial-spaces",
-    title: "Pravidelný úklid komerčních nebytových prostorů",
+    title: "Pravidelný úklid komerčních nebytových (retailových) prostorů",
     description: "Zahrnuje výpočet cen pravidelných úklidů prodejen, showroomů, skladů, fitness, kadeřnictví, ordinací, školek, restaurací, barů, kaváren...",
     icon: "Store",
     formConfig: commercialSpacesFormConfig,
@@ -52,7 +52,7 @@ export const serviceTypes: ServiceType[] = [
   },
   {
     id: "handyman-services",
-    title: "Řemeslné služby",
+    title: "Mytí oken a ostatní služby",
     description: "Výpočet ceny řemeslných prací podle délky jejich zhodnocení a zahrnutí dopravy a potřebného náčiní.",
     icon: "Wrench",
     formConfig: handymanServicesFormConfig,

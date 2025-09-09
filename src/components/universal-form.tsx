@@ -4,7 +4,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, UseFormReturn, ControllerRenderProps } from "react-hook-form";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Input } from "@/components/ui/input";
@@ -97,6 +97,140 @@ function FieldLabel({ field }: { field: FormFieldType }) {
   );
 }
 
+// Radio field component with hidden options support
+function RadioFieldWithHiddenOptions({ 
+  field, 
+  formField, 
+  formState 
+}: { 
+  field: RadioField; 
+  formField: ControllerRenderProps<FormSubmissionData>; 
+  formState: any;
+}) {
+  const [showHiddenOptions, setShowHiddenOptions] = useState(false);
+  const hasHiddenOptions = field.options.some(option => option.hidden);
+  
+  const visibleOptions = field.options.filter(option => !option.hidden);
+  const hiddenOptions = field.options.filter(option => option.hidden);
+
+  return (
+    <div className="space-y-3">
+      <RadioGroup
+        value={formField.value?.toString() || ""}
+        onValueChange={(value) => {
+          // Convert back to the original type if it was numeric
+          const firstOption = field.options?.[0];
+          if (firstOption && typeof firstOption.value === "number") {
+            formField.onChange(parseInt(value, 10));
+          } else {
+            formField.onChange(value);
+          }
+        }}
+        className="flex flex-col gap-3"
+      >
+        {/* Render visible options */}
+        {visibleOptions.map((option) => (
+          <FormItem key={option.value} className="flex items-center gap-2">
+            <FormControl>
+              <RadioGroupItem value={option.value.toString()} id={`${field.id}_${option.value}`} />
+            </FormControl>
+            <FormLabel htmlFor={`${field.id}_${option.value}`} className="font-normal cursor-pointer">
+              <span>{option.label}</span>
+              <div className="flex items-center gap-2">
+                {option.note && (
+                  <Badge 
+                    variant={option.note === 'frequent' ? 'secondary' : 'default'}
+                    className={`text-xs ${
+                      option.note === 'frequent' 
+                        ? 'bg-muted text-muted-foreground' 
+                        : 'bg-accent text-accent-foreground'
+                    }`}
+                  >
+                    {option.note === 'frequent' ? 'nejvyužívanější' : 'doporučeno'}
+                  </Badge>
+                )}
+                {option.tooltip && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Icons.Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-accent transition-colors" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs">
+                      <p className="text-sm">{option.tooltip}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
+            </FormLabel>
+          </FormItem>
+        ))}
+        
+        {/* Toggle button for hidden options */}
+        {hasHiddenOptions && !showHiddenOptions && (
+          <div className="flex justify-start pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowHiddenOptions(true)}
+            >
+              <Icons.ChevronDown className="h-4 w-4" />
+              Další možnosti
+            </Button>
+          </div>
+        )}
+        
+        {/* Render hidden options when shown */}
+        <AnimatePresence>
+          {showHiddenOptions && hiddenOptions.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="flex flex-col gap-3"
+            >
+              {hiddenOptions.map((option) => (
+                <FormItem key={option.value} className="flex items-center gap-2">
+                  <FormControl>
+                    <RadioGroupItem value={option.value.toString()} id={`${field.id}_${option.value}`} />
+                  </FormControl>
+                  <FormLabel htmlFor={`${field.id}_${option.value}`} className="font-normal cursor-pointer">
+                    <span>{option.label}</span>
+                    <div className="flex items-center gap-2">
+                      {option.note && (
+                        <Badge 
+                          variant={option.note === 'frequent' ? 'secondary' : 'default'}
+                          className={`text-xs ${
+                            option.note === 'frequent' 
+                              ? 'bg-muted text-muted-foreground' 
+                              : 'bg-accent text-accent-foreground'
+                          }`}
+                        >
+                          {option.note === 'frequent' ? 'nejvyužívanější' : 'doporučeno'}
+                        </Badge>
+                      )}
+                      {option.tooltip && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Icons.Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-accent transition-colors" />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs">
+                            <p className="text-sm">{option.tooltip}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
+                  </FormLabel>
+                </FormItem>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </RadioGroup>
+    </div>
+  );
+}
+
 // Helper function to render conditional fields
 function renderConditionalFields(field: FormFieldType, form: UseFormReturn<FormSubmissionData>) {
   if (field.type !== "conditional") return null;
@@ -174,56 +308,7 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
   switch (field.type) {
     case "radio":
       const radioField = field as RadioField;
-      return (
-        <RadioGroup
-          value={formField.value?.toString() || ""}
-          onValueChange={(value) => {
-            // Convert back to the original type if it was numeric
-            const firstOption = radioField.options?.[0];
-            if (firstOption && typeof firstOption.value === "number") {
-              formField.onChange(parseInt(value, 10));
-            } else {
-              formField.onChange(value);
-            }
-          }}
-          className="flex flex-col gap-3"
-        >
-          {radioField.options.map((option: { value: string | number; label: string; note?: 'frequent' | 'recommended'; tooltip?: string }) => (
-            <FormItem key={option.value} className="flex items-center gap-2">
-              <FormControl>
-                <RadioGroupItem value={option.value.toString()} id={`${field.id}_${option.value}`} />
-              </FormControl>
-              <FormLabel htmlFor={`${field.id}_${option.value}`} className="font-normal cursor-pointer">
-                <span>{option.label}</span>
-                <div className="flex items-center gap-2">
-                  {option.note && (
-                    <Badge 
-                      variant={option.note === 'frequent' ? 'secondary' : 'default'}
-                      className={`text-xs ${
-                        option.note === 'frequent' 
-                          ? 'bg-muted text-muted-foreground' 
-                          : 'bg-accent text-accent-foreground'
-                      }`}
-                    >
-                      {option.note === 'frequent' ? 'nejběžnější' : 'doporučeno'}
-                    </Badge>
-                  )}
-                  {option.tooltip && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Icons.Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-accent transition-colors" />
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs">
-                        <p className="text-sm">{option.tooltip}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
-                </div>
-              </FormLabel>
-            </FormItem>
-          ))}
-        </RadioGroup>
-      );
+      return <RadioFieldWithHiddenOptions field={radioField} formField={formField} formState={formState} />;
 
     case "select":
       const selectField = field as SelectField;

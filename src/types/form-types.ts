@@ -50,6 +50,7 @@ export interface RadioField extends BaseField {
     tooltip?: string; // Custom tooltip text
     coefficient?: number;
     fixedAddon?: number; // Fixed price addon in Kč
+    hidden?: boolean; // Whether this option should be hidden initially
   }>;
   layout?: 'horizontal' | 'vertical';
 }
