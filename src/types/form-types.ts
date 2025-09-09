@@ -127,6 +127,7 @@ export interface FormSection {
   icon: string;
   fields: FormField[];
   description?: string;
+  note?: string;
 }
 
 export interface FormConfig {

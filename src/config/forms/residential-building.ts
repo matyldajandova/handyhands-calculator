@@ -77,6 +77,8 @@ const residentialBuildingSchema = z.object({
   basementCleaning: z.string().optional(),
   basementCleaningDetails: z.string().optional(),
   winterMaintenance: z.string().min(1, "Vyberte, zda požadujete zimní údržbu"),
+  spreadingMaterial: z.string().optional(),
+  communicationType: z.string().optional(),
   communicationArea: z.string().optional(),
   communicationLength: z.string().optional(),
   location: z.string().min(1, "Vyberte lokalitu"),
@@ -148,38 +150,61 @@ const residentialBuildingSchema = z.object({
     }
   }
   
-  // Validate communication area when winter maintenance is "yes"
+  // Validate spreading material when winter maintenance is "yes"
   if (data.winterMaintenance === "yes") {
-    const hasArea = data.communicationArea && data.communicationArea.trim() !== "";
-    const hasLength = data.communicationLength && data.communicationLength.trim() !== "";
-    
-    if (!hasArea && !hasLength) {
+    if (!data.spreadingMaterial) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Zadejte buď plochu komunikací nebo délku komunikací",
-        path: ["communicationArea"]
+        message: "Vyberte typ posypového materiálu",
+        path: ["spreadingMaterial"]
+      });
+    }
+  }
+  
+  // Validate communication fields when winter maintenance is "yes"
+  if (data.winterMaintenance === "yes") {
+    // First validate that communication type is selected
+    if (!data.communicationType) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Vyberte, jak chcete zadat rozměry komunikací",
+        path: ["communicationType"]
       });
     } else {
-      // Validate area if provided
-      if (hasArea) {
-        const num = parseFloat(data.communicationArea!);
-        if (isNaN(num) || num <= 0) {
+      // Then validate the appropriate field based on the selected type
+      if (data.communicationType === "area") {
+        if (!data.communicationArea || data.communicationArea.trim() === "") {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: "Plocha komunikací musí být větší než 0",
+            message: "Zadejte plochu komunikací",
             path: ["communicationArea"]
           });
+        } else {
+          const num = parseFloat(data.communicationArea);
+          if (isNaN(num) || num <= 0) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Plocha komunikací musí být větší než 0",
+              path: ["communicationArea"]
+            });
+          }
         }
-      }
-      // Validate length if provided
-      if (hasLength) {
-        const num = parseFloat(data.communicationLength!);
-        if (isNaN(num) || num <= 0) {
+      } else if (data.communicationType === "length") {
+        if (!data.communicationLength || data.communicationLength.trim() === "") {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: "Délka komunikací musí být větší než 0",
+            message: "Zadejte délku komunikací",
             path: ["communicationLength"]
           });
+        } else {
+          const num = parseFloat(data.communicationLength);
+          if (isNaN(num) || num <= 0) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Délka komunikací musí být větší než 0",
+              path: ["communicationLength"]
+            });
+          }
         }
       }
     }
@@ -411,8 +436,8 @@ export const residentialBuildingFormConfig: FormConfig = {
                 ]
               },
               options: [
-                { value: "corridors-only", label: "pouze úklid chodeb", coefficient: 1.0 },
-                { value: "corridors-and-rooms", label: "úklid chodeb včetně místností v suterénu, jako jsou například kočárkárny, prádelny, sušárny apod.", coefficient: 1.1 }
+                { value: "corridors-only", label: "pouze úklid předsklepních chodeb", coefficient: 1.0 },
+                { value: "corridors-and-rooms", label: "úklid předsklepních chodeb včetně místností v suterénu, jako jsou například kočárkárny, prádelny, sušárny, kolárny apod.", coefficient: 1.1 }
               ]
             }
           ]
@@ -423,6 +448,7 @@ export const residentialBuildingFormConfig: FormConfig = {
       id: "winter-maintenance",
       title: "Zimní údržba",
       icon: "Snowflake",
+      note: "Odklizení čerstvě napadlého sněhu, odstranění náledí a zajištění vhodného posypu chodníků a udržování těchto ploch pro chodce ve stavu, aby nedošlo k újmě na zdraví a byla zajištěna bezpečnost osob.",
       fields: [
         {
           id: "winterMaintenance",
@@ -443,31 +469,56 @@ export const residentialBuildingFormConfig: FormConfig = {
           condition: { field: "winterMaintenance", value: "yes" },
           fields: [
             {
+              id: "communicationType",
+              type: "radio",
+              label: "Jak chcete zadat rozměry komunikací?",
+              required: true,
+              layout: "vertical",
+              options: [
+                { value: "area", label: "Plocha (m²)" },
+                { value: "length", label: "Délka (m)" }
+              ]
+            },
+            {
               id: "communicationArea",
               type: "input",
               label: "Celková plocha komunikací (v m²):",
-              required: false,
+              required: true,
               inputType: "number",
               min: 0.1,
               max: 10000,
               step: 0.1,
               placeholder: "např. 150 m²",
-              description: "Zadejte hodnotu větší než 0 (max. 10 000 m²)"
+              description: "Zadejte hodnotu větší než 0 (max. 10 000 m²)",
+              condition: { field: "communicationType", value: "area" }
             },
             {
               id: "communicationLength",
               type: "input",
               label: "Celková délka komunikací (v běžných metrech):",
-              required: false,
+              required: true,
               inputType: "number",
               min: 0.1,
               max: 10000,
               step: 0.1,
               placeholder: "např. 50 m",
-              description: "Zadejte hodnotu větší než 0 (max. 10 000 m)"
+              description: "Zadejte hodnotu větší než 0 (max. 10 000 m)",
+              condition: { field: "communicationType", value: "length" }
+            },
+            {
+              id: "spreadingMaterial",
+              type: "radio",
+              label: "Typ posypového materiálu",
+              required: true,
+              layout: "vertical",
+              options: [
+                { value: "gravel-sand", label: "štěrkodrť nebo písek", coefficient: 1.0 },
+                { value: "salt", label: "sůl", coefficient: 1.1 },
+                { value: "no-preference", label: "bez preferencí (dle vhodnosti kombinace obou posypových materiálů)", coefficient: 1.04 }
+              ]
             }
           ]
-        }
+        },
       ]
     },
     {

@@ -299,7 +299,7 @@ function renderConditionalFields(field: FormFieldType, form: UseFormReturn<FormS
             duration: 0.3, 
             ease: "easeInOut"
           }}
-          className="mt-6 space-y-6 pl-6 border-l-2 border-accent/20"
+          className="mt-6 flex flex-col pl-6 border-l-2 border-accent/20"
         >
           {conditionalField.fields.map((subField: FormFieldType, index: number) => {
             // Check if sub-field should be shown based on its condition
@@ -684,6 +684,11 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
                 {section.description && (
                   <p className="text-muted-foreground font-sans">
                     {section.description}
+                  </p>
+                )}
+                {section.note && (
+                  <p className="text-sm text-muted-foreground mt-2 mb-4">
+                    {section.note}
                   </p>
                 )}
               </CardHeader>
