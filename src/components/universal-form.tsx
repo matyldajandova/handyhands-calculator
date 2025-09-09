@@ -26,6 +26,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { FormConfig, FormField as FormFieldType, FormSubmissionData, ConditionalField, RadioField, SelectField, InputField, TextareaField, CheckboxField, AlertField } from "@/types/form-types";
 import * as Icons from "lucide-react";
 import React from "react";
+import { ZipCodeInput } from "@/components/zip-code-input";
 
 interface UniversalFormProps {
   config: FormConfig;
@@ -413,6 +414,22 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
 
     case "input":
       const inputField = field as InputField;
+      
+      // Use custom ZipCodeInput for zip code fields
+      if (field.id === "zipCode") {
+        return (
+          <ZipCodeInput
+            value={formField.value?.toString() || ""}
+            onChange={formField.onChange}
+            onBlur={formField.onBlur}
+            name={formField.name}
+            placeholder={placeholder}
+            className={formField.name && formState.errors[formField.name] ? "border-destructive" : ""}
+            error={formState.errors[formField.name]?.message as string}
+          />
+        );
+      }
+      
       return (
         <Input
           type={inputField.inputType}

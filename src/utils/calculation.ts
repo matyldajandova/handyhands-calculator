@@ -2,6 +2,7 @@ import { FormSubmissionData, FormConfig, FormField, RadioField, SelectField, Che
 import { calculateOfficeCleaningPrice } from "./office-cleaning-calculation";
 import { FIXED_PRICES } from "@/config/forms/residential-building";
 import { isWinterMaintenancePeriod } from "./date-utils";
+import { getRegionFromZipCode, getAvailableRegions } from "./zip-code-mapping";
 
 // Helper function to find a field in the form configuration
 function findFieldInConfig(config: FormConfig, fieldId: string): FormField | null {
@@ -94,7 +95,7 @@ function getFixedAddonFromConfig(config: FormConfig, fieldId: string, value: str
 }
 
 // Main calculation function - now generic for any form configuration
-export function calculatePrice(formData: FormSubmissionData, formConfig: FormConfig): CalculationResult {
+export async function calculatePrice(formData: FormSubmissionData, formConfig: FormConfig): Promise<CalculationResult> {
   // Filter out boolean values for calculation functions that don't expect them
   const calculationData = Object.fromEntries(
     Object.entries(formData).filter(([_, value]) => typeof value !== 'boolean')
@@ -127,6 +128,45 @@ export function calculatePrice(formData: FormSubmissionData, formConfig: FormCon
     coefficient: number;
     impact: number;
   }> = [];
+
+  // Handle zip code to region mapping for residential building form
+  if (formConfig.id === "residential-building" && formData.zipCode && typeof formData.zipCode === 'string') {
+    try {
+      const regionKey = await getRegionFromZipCode(formData.zipCode);
+      if (regionKey) {
+        const regions = getAvailableRegions();
+        const region = regions.find(r => r.value === regionKey);
+        if (region) {
+          finalCoefficient *= region.coefficient;
+          appliedCoefficients.push({
+            field: 'zipCode',
+            label: `Lokalita (${region.label})`,
+            coefficient: region.coefficient,
+            impact: (region.coefficient - 1) * 100
+          });
+        }
+      } else {
+        // If zip code not found, use Prague coefficient as default
+        finalCoefficient *= 1.0;
+        appliedCoefficients.push({
+          field: 'zipCode',
+          label: 'Lokalita (Praha - výchozí)',
+          coefficient: 1.0,
+          impact: 0
+        });
+      }
+    } catch (error) {
+      console.error('Error mapping zip code to region:', error);
+      // Fallback to Prague coefficient
+      finalCoefficient *= 1.0;
+      appliedCoefficients.push({
+        field: 'zipCode',
+        label: 'Lokalita (Praha - výchozí)',
+        coefficient: 1.0,
+        impact: 0
+      });
+    }
+  }
 
   // Get field labels for better display
   function getFieldLabel(fieldId: string): string {

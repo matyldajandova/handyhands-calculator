@@ -15,7 +15,7 @@ export interface FormData {
   basementCleaning?: string;
   winterMaintenance: string;
   communicationArea?: string;
-  location: string;
+  zipCode: string;
   notes: string;
 }
 

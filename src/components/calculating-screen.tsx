@@ -50,9 +50,9 @@ export function CalculatingScreen({ onComplete, formData, formConfig }: Calculat
     }, 800);
 
     // Complete calculation after progress reaches 100%
-    const completionTimer = setTimeout(() => {
+    const completionTimer = setTimeout(async () => {
       // Use the real calculation utility instead of mock data
-      const realResult = calculatePrice(formData, formConfig);
+      const realResult = await calculatePrice(formData, formConfig);
       onComplete(realResult);
     }, 5000);
 
