@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Download, FileText, Building } from "lucide-react";
 import { CalculationResult, FormConfig } from "@/types/form-types";
+import { isWinterMaintenancePeriod } from "@/utils/date-utils";
 import * as Icons from "lucide-react";
 
 interface SuccessScreenProps {
@@ -27,9 +28,15 @@ export function SuccessScreen({ onBackToServices, serviceType, calculationResult
       Výsledek kalkulace:
       - Cena za pravidelný úklid domu: ${roundedResults.totalMonthlyPrice.toLocaleString('cs-CZ')} Kč/měsíc
       ${roundedResults.generalCleaningPrice ? `- Cena za generální úklid domu ${calculationResult.generalCleaningFrequency}: ${roundedResults.generalCleaningPrice.toLocaleString('cs-CZ')} Kč za provedený úklid` : ''}
+      ${calculationResult.winterServiceFee && isWinterMaintenancePeriod() ? `- Cena za zimní údržbu v období od ${formConfig.winterPeriod?.start.day}. ${formConfig.winterPeriod?.start.month}. do ${formConfig.winterPeriod?.end.day}. ${formConfig.winterPeriod?.end.month}. následujícího roku: ${calculationResult.winterServiceFee.toLocaleString('cs-CZ')} Kč/měsíc (tato položka platí pouze v zimních měsících)` : ''}
       
       ${formConfig.conditions && formConfig.conditions.length > 0 ? `Podmínky uvedené ceny:
       ${formConfig.conditions.map(condition => `- ${condition}`).join('\n')}
+      
+      ` : ''}      ${calculationResult.winterServiceFee && isWinterMaintenancePeriod() ? `DŮLEŽITÉ INFORMACE O ZIMNÍ ÚDRŽBĚ:
+      - Cena za zimní údržbu v období od ${formConfig.winterPeriod?.start.day}. ${formConfig.winterPeriod?.start.month}. do ${formConfig.winterPeriod?.end.day}. ${formConfig.winterPeriod?.end.month}. následujícího roku: ${calculationResult.winterServiceFee.toLocaleString('cs-CZ')} Kč/měsíc
+      - Tato položka platí pouze v zimních měsících
+      - Seznam běžně prováděných úkonů (specifikace prací) - bude uvedena ve vygenerovaném PDF
       
       ` : ''}      ${formData.notes ? `Poznámka zákazníka:
       ${formData.notes}
@@ -151,6 +158,26 @@ export function SuccessScreen({ onBackToServices, serviceType, calculationResult
                     </div>
                     <div className="text-sm text-blue-600 dark:text-blue-400">
                       {calculationResult.generalCleaningFrequency} za provedený úklid
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Winter Service Fee (if applicable and in winter period) */}
+              {calculationResult.winterServiceFee && isWinterMaintenancePeriod() && (
+                <div className="p-4 bg-slate-50 dark:bg-slate-950/20 rounded-lg border border-slate-200 dark:border-slate-800">
+                  <div className="text-center">
+                    <div className="text-lg font-semibold text-slate-700 dark:text-slate-300">
+                      + Zimní údržba
+                    </div>
+                    <div className="text-2xl font-bold text-slate-800 dark:text-slate-200">
+                      {formatCurrency(calculationResult.winterServiceFee)}
+                    </div>
+                      <div className="text-sm text-slate-600 dark:text-slate-400">
+                        měsíčně v období od {formConfig?.winterPeriod?.start.day}. {formConfig?.winterPeriod?.start.month}. do {formConfig?.winterPeriod?.end.day}. {formConfig?.winterPeriod?.end.month}. následujícího roku
+                      </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-500 mt-1">
+                      (tato položka platí pouze v zimních měsících)
                     </div>
                   </div>
                 </div>
