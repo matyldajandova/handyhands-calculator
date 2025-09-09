@@ -71,6 +71,8 @@ const officeCleaningSchema = z.object({
   preferredTimeType: z.string().optional(),
   preferredHourMorning: z.string().optional(),
   preferredHourEvening: z.string().optional(),
+  cleaningChemicals: z.string().min(1, "Vyberte způsob dodávání úklidové chemie"),
+  cleaningTools: z.string().min(1, "Vyberte způsob dodávání úklidového náčiní"),
   zipCode: z.string().min(1, "Zadejte PSČ").regex(/^\d{5}$/, "PSČ musí mít přesně 5 čísel"),
   notes: z.string().optional(),
 }).superRefine((data, ctx) => {
@@ -620,6 +622,52 @@ export const officeCleaningFormConfig: FormConfig = {
                 { value: "22", label: "22:00" },
                 { value: "23", label: "23:00" }
               ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      id: "supplies",
+      title: "Dodávání úklidových prostředků a náčiní",
+      icon: "Package",
+      fields: [
+        {
+          id: "cleaningChemicals",
+          type: "radio",
+          label: "Dodávání úklidové chemie",
+          required: true,
+          layout: "vertical",
+          options: [
+            { 
+              value: "client", 
+              label: "Zajišťuje objednatel a je v jeho režii (cenová nabídka tedy neobsahuje zajišťování tohoto zboží)", 
+              coefficient: 0.98 
+            },
+            { 
+              value: "contractor", 
+              label: "Zajišťuje zhotovitel a je započítán v cenové nabídce", 
+              coefficient: 1.02 
+            }
+          ],
+          note: "Zhotovitel nedodává spotřební hygienické zboží, jako jsou například toaletní papíry, pytle do košů, tahací papírové ručníky atd."
+        },
+        {
+          id: "cleaningTools",
+          type: "radio",
+          label: "Dodání úklidového náčiní a jeho správa (jako např. mopy, kýble, smetáky, hadříky, utěrky, prachovky atd.)",
+          required: true,
+          layout: "vertical",
+          options: [
+            { 
+              value: "client", 
+              label: "Zajišťuje objednatel a je v jeho režii (cenová nabídka tedy neobsahuje zajišťování tohoto zboží)", 
+              coefficient: 0.98 
+            },
+            { 
+              value: "contractor", 
+              label: "Zajišťuje zhotovitel a je započítán v cenové nabídce", 
+              coefficient: 1.02 
             }
           ]
         }

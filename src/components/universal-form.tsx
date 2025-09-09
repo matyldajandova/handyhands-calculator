@@ -533,7 +533,7 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
       
       return (
         <div className="flex flex-col gap-3">
-          <div className="text-sm font-medium text-foreground mb-2">
+          <div className="text-sm font-medium text-foreground mb-1">
             {getCleaningDaysLabel()}
           </div>
           {checkboxField.options.map((option) => {
@@ -853,8 +853,8 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
                          (section.fields[index + 1] as ConditionalField)?.condition && 
                          'field' in (section.fields[index + 1] as ConditionalField).condition && 
                          ((section.fields[index + 1] as ConditionalField).condition as any).field === field.id) && 
-                     // Don't show separator if current field has empty label
-                     field.label !== "" &&
+                     // Don't show separator if next field has empty label
+                     section.fields[index + 1]?.label !== "" &&
                      // Check if the next field is also visible
                      ('condition' in section.fields[index + 1] && section.fields[index + 1].condition ? 
                        evaluateCondition(section.fields[index + 1].condition, formValues) : true) && (
