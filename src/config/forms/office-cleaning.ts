@@ -227,13 +227,13 @@ export const officeCleaningFormConfig: FormConfig = {
           required: true,
           layout: "vertical",
           options: [
-            { value: "daily", label: "každý pracovní den", coefficient: 3.67 },
+            { value: "daily", label: "Každý pracovní den", coefficient: 3.67 },
             { value: "3x-weekly", label: "3x týdně", coefficient: 2.0 },
             { value: "2x-weekly", label: "2x týdně", coefficient: 1.67 },
             { value: "weekly", label: "1x týdně", coefficient: 1.0 },
             { value: "biweekly", label: "1x za 14 dní", coefficient: 0.75 },
-            { value: "daily-basic-weekly", label: "každý pracovní den pouze vynášení košů + úklid WC a úklid podlah a povrchů 1x týdně", coefficient: 2.5, hidden: true },
-            { value: "daily-basic-weekly-wc", label: "každý pracovní den pouze vynášení košů a úklid podlah a povrchů včetně WC 1x týdně", coefficient: 2.0, hidden: true }
+            { value: "daily-basic-weekly", label: "Každý pracovní den pouze vynášení košů + úklid WC a úklid podlah a povrchů 1x týdně", coefficient: 2.5, hidden: true },
+            { value: "daily-basic-weekly-wc", label: "Každý pracovní den pouze vynášení košů a úklid podlah a povrchů včetně WC 1x týdně", coefficient: 2.0, hidden: true }
           ]
         },
         {

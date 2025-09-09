@@ -46,6 +46,7 @@ const commercialSpacesSchema = z.object({
   generalCleaning: z.string().min(1, "Vyberte, zda požadujete generální úklid"),
   dishwashing: z.string().min(1, "Vyberte požadavek na pravidelné mytí nádobí"),
   afterHours: z.string().min(1, "Vyberte, zda úklid probíhá mimo pracovní dobu"),
+  cleaningDays: z.array(z.string()).optional(),
   zipCode: z.string().min(1, "Zadejte PSČ").regex(/^\d{5}$/, "PSČ musí mít přesně 5 čísel"),
   notes: z.string().optional(),
 }).superRefine((data, ctx) => {
@@ -67,12 +68,24 @@ const commercialSpacesSchema = z.object({
       });
     }
   }
+
+  // Validate cleaning days when required
+  const requiresCleaningDays = ["3x-weekly", "2x-weekly", "weekly", "biweekly"].includes(data.cleaningFrequency);
+  if (requiresCleaningDays) {
+    if (!data.cleaningDays || data.cleaningDays.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Vyberte preferované dny v týdnu pro úklid",
+        path: ["cleaningDays"]
+      });
+    }
+  }
 });
 
 export const commercialSpacesFormConfig: FormConfig = {
   id: "commercial-spaces",
   title: "Pravidelný úklid komerčních nebytových prostorů",
-  description: `Vyplňte údaje pro výpočet ceny úklidových služeb pro komerční nebytové prostory (prodejny, sklady, fitness, kadeřnictví, ordinace, školky, restaurace, bary, kavárny…). Všechny údaje označené jsou povinné. Ceny jsou aktualizovány s inflací ${(INFLATION_RATE * 100).toFixed(1)}% od roku ${INFLATION_START_YEAR}.`,
+  description: `Vyplňte údaje pro výpočet ceny úklidových služeb pro komerční nebytové prostory (prodejny, sklady, fitness, kadeřnictví, ordinace, školky, restaurace, bary, kavárny…). Všechny údaje označené jsou povinné.`,
   validationSchema: commercialSpacesSchema,
   basePrice: CURRENT_PRICES.regularCleaning,
   conditions: [],
@@ -89,14 +102,41 @@ export const commercialSpacesFormConfig: FormConfig = {
           required: true,
           layout: "vertical",
           options: [
-            { value: "workdays", label: "každý pracovní den", coefficient: 3.67 },
-            { value: "everyday", label: "každý den včetně víkendů", coefficient: 4.0 },
+            { value: "workdays", label: "Každý pracovní den", coefficient: 3.67 },
+            { value: "everyday", label: "Každý den včetně víkendů", coefficient: 4.0 },
             { value: "3x-weekly", label: "3x týdně", coefficient: 2.0 },
             { value: "2x-weekly", label: "2x týdně", coefficient: 1.67 },
             { value: "weekly", label: "1x týdně", coefficient: 1.0 },
             { value: "biweekly", label: "1x za 14 dní", coefficient: 0.75 },
-            { value: "daily-basic-weekly", label: "každý den pouze vynášení košů + úklid WC a úklid podlah a povrchů 1x týdně", coefficient: 2.5 },
-            { value: "daily-basic-weekly-wc", label: "každý den pouze vynášení košů a úklid podlah a povrchů včetně WC 1x týdně", coefficient: 2.0 }
+            { value: "daily-basic-weekly", label: "Každý pracovní den pouze vynášení košů + úklid WC a úklid podlah a povrchů 1x týdně", coefficient: 2.4, hidden: true },
+            { value: "daily-basic-weekly-wc", label: "Každý pracovní den pouze vynášení košů a úklid podlah a povrchů včetně WC 1x týdně", coefficient: 1.9, hidden: true },
+            { value: "daily-weekends-basic-weekly", label: "Každý den (včetně víkendů) pouze vynášení košů + úklid WC a úklid podlah a povrchů 1x týdně", coefficient: 2.5, hidden: true },
+            { value: "daily-weekends-basic-weekly-wc", label: "Každý den (včetně víkendů) pouze vynášení košů a úklid podlah a povrchů včetně WC 1x týdně", coefficient: 2, hidden: true }
+          ]
+        },
+        {
+          id: "cleaningDays",
+          type: "checkbox",
+          label: "Vyberte preferované dny v týdnu pro úklid",
+          required: true,
+          condition: {
+            operator: "or",
+            conditions: [
+              { field: "cleaningFrequency", value: "3x-weekly", operator: "equals" },
+              { field: "cleaningFrequency", value: "2x-weekly", operator: "equals" },
+              { field: "cleaningFrequency", value: "weekly", operator: "equals" },
+              { field: "cleaningFrequency", value: "biweekly", operator: "equals" }
+            ]
+          },
+          options: [
+            { value: "no-preference", label: "Bez preferencí" },
+            { value: "monday", label: "Pondělí" },
+            { value: "tuesday", label: "Úterý" },
+            { value: "wednesday", label: "Středa" },
+            { value: "thursday", label: "Čtvrtek" },
+            { value: "friday", label: "Pátek" },
+            { value: "saturday", label: "Sobota" },
+            { value: "sunday", label: "Neděle" }
           ]
         }
       ]

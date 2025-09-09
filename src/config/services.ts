@@ -32,7 +32,7 @@ export const serviceTypes: ServiceType[] = [
   {
     id: "commercial-spaces",
     title: "Pravidelný úklid komerčních nebytových (retailových) prostorů",
-    description: "Zahrnuje výpočet cen pravidelných úklidů prodejen, showroomů, skladů, fitness, kadeřnictví, ordinací, školek, restaurací, barů, kaváren...",
+    description: "Zahrnuje výpočet cen pravidelných úklidů prodejen, showroomů, skladů, fitness, kadeřnictví, ordinací, školek, restaurací, barů, kaváren, atd. s pokročilými koeficienty.",
     icon: "Store",
     formConfig: commercialSpacesFormConfig,
   },

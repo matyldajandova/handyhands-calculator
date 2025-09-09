@@ -377,9 +377,9 @@ export const panelBuildingFormConfig: FormConfig = {
               required: true,
               layout: "vertical",
               options: [
-                { value: "gravel-sand", label: "štěrkodrť nebo písek", coefficient: 1.0 },
-                { value: "salt", label: "sůl", coefficient: 1.1 },
-                { value: "no-preference", label: "bez preferencí (dle vhodnosti kombinace obou posypových materiálů)", coefficient: 1.04 }
+                { value: "gravel-sand", label: "Štěrkodrť nebo písek", coefficient: 1.0 },
+                { value: "salt", label: "Sůl", coefficient: 1.1 },
+                { value: "no-preference", label: "Bez preferencí (dle vhodnosti kombinace obou posypových materiálů)", coefficient: 1.04 }
               ]
             }
           ]

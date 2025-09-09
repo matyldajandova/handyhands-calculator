@@ -245,7 +245,7 @@ export const residentialBuildingFormConfig: FormConfig = {
             { value: "weekly", label: "1x týdně", coefficient: 1.0, note: "frequent" },
             { value: "twice-weekly", label: "2x týdně", coefficient: 1.67 },
             { value: "biweekly", label: "1x za 14 dní", coefficient: 0.75 },
-            { value: "daily", label: "každý den", coefficient: 3.67 },
+            { value: "daily", label: "Každý den", coefficient: 3.67 },
             { value: "mixed-weekly", label: "1x týdně nadzemní patra a 2x týdně přízemí", tooltip: "Kromě přízemí domu se myslí také úklid výtahové kabiny, pokud je v domě výtah.", coefficient: 1.45, hidden: true },
             { value: "seasonal", label: "1x týdně v letním období a 2x týdně v zimním období", coefficient: 1.35, tooltip: "Letní období se rozumí období od 1. dubna do 30. září a zimním období se myslí období od 1. října do 30. března.", hidden: true },
             { value: "monthly", label: "1x za měsíc", coefficient: 0.69, hidden: true }
@@ -296,9 +296,9 @@ export const residentialBuildingFormConfig: FormConfig = {
           layout: "vertical",
           note: "Tento údaj můžete určitě také tak, že celkový počet bytů v domě vydělíte počtem pater.",
           options: [
-            { value: "less-than-3", label: "méně než 3 byty", coefficient: 0.95 },
+            { value: "less-than-3", label: "Méně než 3 byty", coefficient: 0.95 },
             { value: "3", label: "3 byty", coefficient: 1.0 },
-            { value: "3-to-6", label: "od 3 do 6 bytů", coefficient: 1.11 },
+            { value: "3-to-6", label: "Od 3 do 6 bytů", coefficient: 1.11 },
             { value: "7-or-more", label: "7 a více bytů", coefficient: 1.3 }
           ]
         }
@@ -363,9 +363,9 @@ export const residentialBuildingFormConfig: FormConfig = {
               required: true,
               layout: "vertical",
               options: [
-                { value: "annual", label: `generální úklid domu 1x ročně`, coefficient: 1.0 },
-                { value: "standard", label: `generální úklid domu 2x ročně`, coefficient: 1.0, note: "recommended" },
-                { value: "quarterly", label: `generální úklid domu 4x ročně`, coefficient: 1.0 }
+                { value: "annual", label: `Generální úklid domu 1x ročně`, coefficient: 1.0 },
+                { value: "standard", label: `Generální úklid domu 2x ročně`, coefficient: 1.0, note: "recommended" },
+                { value: "quarterly", label: `Generální úklid domu 4x ročně`, coefficient: 1.0 }
               ]
             },
             {
@@ -389,7 +389,7 @@ export const residentialBuildingFormConfig: FormConfig = {
               required: true,
               layout: "vertical",
               options: [
-                { value: "all", label: "ve všech nadzemních patrech", coefficient: 1.0 },
+                { value: "all", label: "Ve všech nadzemních patrech", coefficient: 1.0 },
                 { value: 1, label: "1", coefficient: 0.97, hidden: true },
                 { value: 2, label: "2", coefficient: 0.98, hidden: true },
                 { value: 3, label: "3", coefficient: 1.0, hidden: true },
@@ -406,9 +406,9 @@ export const residentialBuildingFormConfig: FormConfig = {
               required: true,
               layout: "vertical",
               options: [
-                { value: "new", label: "nová plastová nebo dřevěná", coefficient: 1.0 },
-                { value: "original", label: "původní dřevěná nebo hliníková", coefficient: 1.1 },
-                { value: "hard-to-reach", label: "některá jsou hůře dostupná z podlahy (nutno použít např. štafle nebo teleskopické tyče)", coefficient: 1.3 }
+                { value: "new", label: "Nová plastová nebo dřevěná", coefficient: 1.0 },
+                { value: "original", label: "Původní dřevěná nebo hliníková", coefficient: 1.1 },
+                { value: "hard-to-reach", label: "Některá jsou hůře dostupná z podlahy (nutno použít např. štafle nebo teleskopické tyče)", coefficient: 1.3 }
               ]
             },
             {
@@ -443,8 +443,8 @@ export const residentialBuildingFormConfig: FormConfig = {
                 ]
               },
               options: [
-                { value: "corridors-only", label: "pouze úklid předsklepních chodeb", coefficient: 1.0 },
-                { value: "corridors-and-rooms", label: "úklid předsklepních chodeb včetně místností v suterénu, jako jsou například kočárkárny, prádelny, sušárny, kolárny apod.", coefficient: 1.1 }
+                { value: "corridors-only", label: "Pouze úklid předsklepních chodeb", coefficient: 1.0 },
+                { value: "corridors-and-rooms", label: "Úklid předsklepních chodeb včetně místností v suterénu, jako jsou například kočárkárny, prádelny, sušárny, kolárny apod.", coefficient: 1.1 }
               ]
             }
           ]
@@ -527,9 +527,9 @@ export const residentialBuildingFormConfig: FormConfig = {
               required: true,
               layout: "vertical",
               options: [
-                { value: "gravel-sand", label: "štěrkodrť nebo písek", coefficient: 1.0 },
-                { value: "salt", label: "sůl", coefficient: 1.1 },
-                { value: "no-preference", label: "bez preferencí (dle vhodnosti kombinace obou posypových materiálů)", coefficient: 1.04 }
+                { value: "gravel-sand", label: "Štěrkodrť nebo písek", coefficient: 1.0 },
+                { value: "salt", label: "Sůl", coefficient: 1.1 },
+                { value: "no-preference", label: "Bez preferencí (dle vhodnosti kombinace obou posypových materiálů)", coefficient: 1.04 }
               ]
             }
           ]
