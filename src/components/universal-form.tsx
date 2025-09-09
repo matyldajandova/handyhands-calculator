@@ -515,6 +515,7 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
         const expectedDays = {
           "3x-weekly": 3,
           "2x-weekly": 2,
+          "twice-weekly": 2, // Home cleaning form uses this value
           "weekly": 1,
           "biweekly": 1
         };

@@ -3,7 +3,7 @@ import { FormConfig } from "@/types/form-types";
 
 // Base prices and inflation
 const BASE_PRICES = {
-  regularCleaning: 2450, // Base price per month for regular home cleaning
+  regularCleaning: 3420, // Base price per month for regular home cleaning
 };
 
 const INFLATION_RATE = 0.04; // 4% annual inflation
@@ -25,18 +25,38 @@ const CURRENT_PRICES = {
 // Validation schema
 const homeCleaningSchema = z.object({
   cleaningFrequency: z.string().min(1, "Vyberte četnost úklidu domácnosti"),
+  cleaningDays: z.array(z.string()).optional(),
   homeArea: z.string().min(1, "Vyberte orientační plochu prostor domácnosti"),
+  domesticAnimals: z.string().min(1, "Vyberte, zda máte domácí zvířata"),
   zipCode: z.string().min(1, "Zadejte PSČ").regex(/^\d{5}$/, "PSČ musí mít přesně 5 čísel"),
   notes: z.string().optional(),
+}).superRefine((data, ctx) => {
+  // Validate cleaning days selection based on frequency
+  const frequencyRequiresDays = ["weekly", "twice-weekly", "biweekly"];
+  if (frequencyRequiresDays.includes(data.cleaningFrequency)) {
+    if (!data.cleaningDays || data.cleaningDays.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Vyberte preferované dny v týdnu pro úklid",
+        path: ["cleaningDays"]
+      });
+    } else if (data.cleaningDays.includes("no-preference")) {
+      // If "no preference" is selected, it's valid regardless of other selections
+      // No additional validation needed
+    }
+    // Note: Day count validation is handled by the universal form component
+  }
 });
 
 export const homeCleaningFormConfig: FormConfig = {
   id: "home-cleaning",
   title: "Pravidelný úklid domácností",
-  description: `Vyplňte údaje pro výpočet ceny úklidových služeb pro domácnosti. Všechny údaje jsou povinné. Ceny jsou aktualizovány s inflací ${(INFLATION_RATE * 100).toFixed(1)}% od roku ${INFLATION_START_YEAR}.`,
+  description: `Vyplňte údaje pro výpočet ceny úklidových služeb pro domácnosti. Všechny údaje jsou povinné.`,
   validationSchema: homeCleaningSchema,
   basePrice: CURRENT_PRICES.regularCleaning,
-  conditions: [],
+  conditions: [
+    "Zajištění dostatečných úklidových prostředků a úklidového náčiní (včetně vysavače, pokud je to potřeba) objednatelem"
+  ],
   sections: [
     {
       id: "cleaning-frequency",
@@ -53,7 +73,31 @@ export const homeCleaningFormConfig: FormConfig = {
             { value: "weekly", label: "1x týdně", coefficient: 1.0 },
             { value: "twice-weekly", label: "2x týdně", coefficient: 1.67 },
             { value: "biweekly", label: "1x za 14 dní", coefficient: 0.75 },
-            { value: "monthly", label: "1x měsíčně", coefficient: 0.66 }
+            { value: "monthly", label: "1x měsíčně", coefficient: 0.66, hidden: true }
+          ]
+        },
+        {
+          id: "cleaningDays",
+          type: "checkbox",
+          label: "Vyberte preferované dny v týdnu pro úklid",
+          required: true,
+          condition: {
+            operator: "or",
+            conditions: [
+              { field: "cleaningFrequency", value: "weekly", operator: "equals" },
+              { field: "cleaningFrequency", value: "twice-weekly", operator: "equals" },
+              { field: "cleaningFrequency", value: "biweekly", operator: "equals" }
+            ]
+          },
+          options: [
+            { value: "no-preference", label: "Bez preferencí" },
+            { value: "monday", label: "Pondělí" },
+            { value: "tuesday", label: "Úterý" },
+            { value: "wednesday", label: "Středa" },
+            { value: "thursday", label: "Čtvrtek" },
+            { value: "friday", label: "Pátek" },
+            { value: "saturday", label: "Sobota" },
+            { value: "sunday", label: "Neděle" }
           ]
         }
       ]
@@ -77,6 +121,24 @@ export const homeCleaningFormConfig: FormConfig = {
             { value: "100-125", label: "Od 100 do 125 m²", coefficient: 1.1 },
             { value: "125-200", label: "Od 125 do 200 m²", coefficient: 1.3 },
             { value: "200-plus", label: "Od 200 a více m²", coefficient: 1.6 }
+          ]
+        }
+      ]
+    },
+    {
+      id: "domestic-animals",
+      title: "Domácí zvířata v domácnosti",
+      icon: "Heart",
+      fields: [
+        {
+          id: "domesticAnimals",
+          type: "radio",
+          label: "",
+          required: true,
+          layout: "vertical",
+          options: [
+            { value: "no", label: "Ne", coefficient: 0.98 },
+            { value: "yes", label: "Ano", coefficient: 1.05 }
           ]
         }
       ]
