@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Download, FileText, Building } from "lucide-react";
-import { CalculationResult, FormConfig } from "@/types/form-types";
+import { CalculationResult, FormConfig, FormSubmissionData } from "@/types/form-types";
 import { isWinterMaintenancePeriod } from "@/utils/date-utils";
 import * as Icons from "lucide-react";
 
@@ -12,7 +12,7 @@ interface SuccessScreenProps {
   serviceType: string;
   calculationResult: CalculationResult | null;
   formConfig: FormConfig | null;
-  formData: Record<string, string | number | string[] | undefined>;
+  formData: FormSubmissionData;
 }
 
 export function SuccessScreen({ onBackToServices, serviceType, calculationResult, formConfig, formData }: SuccessScreenProps) {

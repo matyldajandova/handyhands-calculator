@@ -109,12 +109,10 @@ function FieldLabel({ field, isRequired }: { field: FormFieldType; isRequired?: 
 // Radio field component with hidden options support
 function RadioFieldWithHiddenOptions({ 
   field, 
-  formField, 
-  formState 
+  formField
 }: { 
   field: RadioField; 
   formField: ControllerRenderProps<FormSubmissionData>; 
-  formState: any;
 }) {
   const [showHiddenOptions, setShowHiddenOptions] = useState(false);
   const hasHiddenOptions = field.options.some(option => option.hidden);
@@ -381,7 +379,7 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
   switch (field.type) {
     case "radio":
       const radioField = field as RadioField;
-      return <RadioFieldWithHiddenOptions field={radioField} formField={formField} formState={formState} />;
+      return <RadioFieldWithHiddenOptions field={radioField} formField={formField} />;
 
     case "select":
       const selectField = field as SelectField;

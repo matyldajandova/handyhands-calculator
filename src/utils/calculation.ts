@@ -98,7 +98,7 @@ function getFixedAddonFromConfig(config: FormConfig, fieldId: string, value: str
 export async function calculatePrice(formData: FormSubmissionData, formConfig: FormConfig): Promise<CalculationResult> {
   // Filter out boolean values for calculation functions that don't expect them
   const calculationData = Object.fromEntries(
-    Object.entries(formData).filter(([_, value]) => typeof value !== 'boolean')
+    Object.entries(formData).filter(([, value]) => typeof value !== 'boolean')
   ) as Record<string, string | number | string[] | undefined>;
   // Check if this is the office cleaning calculator
   if (formConfig.id === "office-cleaning") {
