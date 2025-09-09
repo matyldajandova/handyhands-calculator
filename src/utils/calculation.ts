@@ -181,11 +181,8 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
   
   for (const [fieldId, value] of Object.entries(calculationData)) {
     if (value !== undefined && value !== null && value !== '') {
-      let coefficient: number;
-      let fixedAddon: number | undefined;
-      
-      coefficient = getCoefficientFromConfig(formConfig, fieldId, value);
-      fixedAddon = getFixedAddonFromConfig(formConfig, fieldId, value);
+      const coefficient = getCoefficientFromConfig(formConfig, fieldId, value);
+      const fixedAddon = getFixedAddonFromConfig(formConfig, fieldId, value);
       
       // Apply coefficient if it's different from 1.0 (has an effect)
       if (coefficient !== 1.0) {
