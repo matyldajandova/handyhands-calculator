@@ -27,22 +27,9 @@ const officeCleaningSchema = z.object({
   cleaningFrequency: z.string().min(1, "Vyberte četnost úklidu kanceláří"),
   cleaningDays: z.array(z.string()).optional(),
   calculationMethod: z.string().min(1, "Vyberte způsob výpočtu"),
-  hoursPerCleaning: z.preprocess((val) => {
-    if (val === undefined || val === null || val === "") return undefined;
-    if (typeof val === 'string') {
-      const num = parseFloat(val);
-      return isNaN(num) ? undefined : num;
-    }
-    return val;
-  }, z.union([z.number().min(0.1), z.undefined()])).optional(),
-  officeArea: z.preprocess((val) => {
-    if (val === undefined || val === null || val === "") return undefined;
-    if (typeof val === 'string') {
-      const num = parseFloat(val);
-      return isNaN(num) ? undefined : num;
-    }
-    return val;
-  }, z.union([z.number().min(0.1), z.undefined()])).optional(),
+  hoursPerCleaning: z.string().min(1, "Vyberte požadovanou délku úklidu").optional(),
+  officeAreaNonDaily: z.string().min(1, "Vyberte orientační plochu kanceláře").optional(),
+  officeAreaDaily: z.string().min(1, "Vyberte orientační plochu kanceláře").optional(),
   floorType: z.string().min(1, "Vyberte převládající typ podlahové krytiny"),
   generalCleaning: z.string().min(1, "Vyberte, zda požadujete generální úklid"),
   generalCleaningWindows: z.string().optional(),
@@ -81,25 +68,40 @@ const officeCleaningSchema = z.object({
   dishwashing: z.string().min(1, "Vyberte požadavek na pravidelné mytí nádobí"),
   toiletCleaning: z.string().min(1, "Vyberte, zda je součástí úklidu i úklid WC"),
   afterHours: z.string().min(1, "Vyberte, zda úklid probíhá mimo pracovní dobu"),
+  preferredTimeType: z.string().optional(),
+  preferredHourMorning: z.string().optional(),
+  preferredHourEvening: z.string().optional(),
   zipCode: z.string().min(1, "Zadejte PSČ").regex(/^\d{5}$/, "PSČ musí mít přesně 5 čísel"),
   notes: z.string().optional(),
 }).superRefine((data, ctx) => {
   // Validate calculation method specific fields
   if (data.calculationMethod === "hourly") {
-    if (!data.hoursPerCleaning || data.hoursPerCleaning <= 0) {
+    if (!data.hoursPerCleaning || data.hoursPerCleaning === "") {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Zadejte požadovaný počet hodin na úklid",
+        message: "Vyberte požadovanou délku úklidu",
         path: ["hoursPerCleaning"]
       });
     }
   } else if (data.calculationMethod === "area") {
-    if (!data.officeArea || data.officeArea <= 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Zadejte plochu kanceláře",
-        path: ["officeArea"]
-      });
+    // Check if daily cleaning is selected
+    if (data.cleaningFrequency === "daily") {
+      if (!data.officeAreaDaily || data.officeAreaDaily === "") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Vyberte orientační plochu kanceláře",
+          path: ["officeAreaDaily"]
+        });
+      }
+    } else {
+      // For non-daily cleaning frequencies
+      if (!data.officeAreaNonDaily || data.officeAreaNonDaily === "") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Vyberte orientační plochu kanceláře",
+          path: ["officeAreaNonDaily"]
+        });
+      }
     }
   }
 
@@ -176,12 +178,37 @@ const officeCleaningSchema = z.object({
       }
     }
   }
+
+  // Validate preferred time details when after hours is "yes"
+  if (data.afterHours === "yes") {
+    if (!data.preferredTimeType) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Vyberte preferovaný čas úklidu",
+        path: ["preferredTimeType"]
+      });
+    }
+    if (data.preferredTimeType === "morning" && !data.preferredHourMorning) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Vyberte čas",
+        path: ["preferredHourMorning"]
+      });
+    }
+    if (data.preferredTimeType === "evening" && !data.preferredHourEvening) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Vyberte čas",
+        path: ["preferredHourEvening"]
+      });
+    }
+  }
 });
 
 export const officeCleaningFormConfig: FormConfig = {
   id: "office-cleaning",
   title: "Pravidelný úklid kanceláří",
-  description: `Vyplňte údaje pro výpočet ceny úklidových služeb pro kanceláře. Všechny údaje jsou povinné. Ceny jsou aktualizovány s inflací ${(INFLATION_RATE * 100).toFixed(1)}% od roku ${INFLATION_START_YEAR}.`,
+  description: `Vyplňte údaje pro výpočet ceny úklidových služeb pro kanceláře. Všechny údaje jsou povinné.`,
   validationSchema: officeCleaningSchema,
   basePrice: CURRENT_PRICES.regularCleaning,
   conditions: [],
@@ -198,13 +225,13 @@ export const officeCleaningFormConfig: FormConfig = {
           required: true,
           layout: "vertical",
           options: [
-            { value: "daily", label: "každý den", coefficient: 3.67 },
+            { value: "daily", label: "každý pracovní den", coefficient: 3.67 },
             { value: "3x-weekly", label: "3x týdně", coefficient: 2.0 },
             { value: "2x-weekly", label: "2x týdně", coefficient: 1.67 },
             { value: "weekly", label: "1x týdně", coefficient: 1.0 },
             { value: "biweekly", label: "1x za 14 dní", coefficient: 0.75 },
-            { value: "daily-basic-weekly", label: "každý den pouze vynášení košů + úklid WC a úklid podlah a povrchů 1x týdně", coefficient: 2.5 },
-            { value: "daily-basic-weekly-wc", label: "každý den pouze vynášení košů a úklid podlah a povrchů včetně WC 1x týdně", coefficient: 2.0 }
+            { value: "daily-basic-weekly", label: "každý pracovní den pouze vynášení košů + úklid WC a úklid podlah a povrchů 1x týdně", coefficient: 2.5, hidden: true },
+            { value: "daily-basic-weekly-wc", label: "každý pracovní den pouze vynášení košů a úklid podlah a povrchů včetně WC 1x týdně", coefficient: 2.0, hidden: true }
           ]
         },
         {
@@ -222,14 +249,14 @@ export const officeCleaningFormConfig: FormConfig = {
             ]
           },
           options: [
+            { value: "no-preference", label: "Bez preferencí" },
             { value: "monday", label: "Pondělí" },
             { value: "tuesday", label: "Úterý" },
             { value: "wednesday", label: "Středa" },
             { value: "thursday", label: "Čtvrtek" },
             { value: "friday", label: "Pátek" },
             { value: "saturday", label: "Sobota" },
-            { value: "sunday", label: "Neděle" },
-            { value: "no-preference", label: "Bez preferencí" }
+            { value: "sunday", label: "Neděle" }
           ]
         }
       ]
@@ -259,15 +286,19 @@ export const officeCleaningFormConfig: FormConfig = {
           fields: [
             {
               id: "hoursPerCleaning",
-              type: "input",
-              label: "Požadujeme, aby každý úklid trval (hod/úklid):",
+              type: "radio",
+              label: "Požadujeme, aby každý úklid trval:",
               required: true,
-              inputType: "number",
-              min: 0.5,
-              max: 8,
-              step: 0.5,
-              placeholder: "např. 1.5",
-              description: "Zadejte počet hodin na úklid (max. 8 hodin)"
+              layout: "vertical",
+              options: [
+                { value: "0.5", label: "0,5 hod.", coefficient: 0.85 },
+                { value: "1", label: "1 hod.", coefficient: 1.0 },
+                { value: "1.5", label: "1,5 hod.", coefficient: 1.1 },
+                { value: "2", label: "2 hod.", coefficient: 1.3 },
+                { value: "2-3", label: "2–3 hod.", coefficient: 1.45 },
+                { value: "3", label: "3 hod.", coefficient: 1.6 },
+                { value: "3+", label: "Více jak 3 hod.", coefficient: 1.9 }
+              ]
             }
           ]
         },
@@ -279,16 +310,58 @@ export const officeCleaningFormConfig: FormConfig = {
           condition: { field: "calculationMethod", value: "area" },
           fields: [
             {
-              id: "officeArea",
-              type: "input",
-              label: "Orientáční plocha kanceláře (m²):",
+              id: "officeAreaNonDaily",
+              type: "radio",
+              label: "Orientáční plocha kanceláře",
               required: true,
-              inputType: "number",
-              min: 1,
-              max: 2500,
-              step: 1,
-              placeholder: "např. 150",
-              description: "Zadejte plochu kanceláře v m² (max. 2500 m²)"
+              layout: "vertical",
+              condition: { 
+                operator: "or",
+                conditions: [
+                  { field: "cleaningFrequency", value: "3x-weekly", operator: "equals" },
+                  { field: "cleaningFrequency", value: "2x-weekly", operator: "equals" },
+                  { field: "cleaningFrequency", value: "weekly", operator: "equals" },
+                  { field: "cleaningFrequency", value: "biweekly", operator: "equals" }
+                ]
+              },
+              options: [
+                { value: "up-to-50", label: "Do 50 m²", coefficient: 0.73 },
+                { value: "50-75", label: "Od 50 do 75 m²", coefficient: 0.91 },
+                { value: "75-100", label: "Od 75 do 100 m²", coefficient: 1.0 },
+                { value: "100-125", label: "Od 100 do 125 m²", coefficient: 1.1 },
+                { value: "125-200", label: "Od 125 do 200 m²", coefficient: 1.3 },
+                { value: "200-300", label: "Od 200 do 300 m²", coefficient: 1.6 },
+                { value: "300-500", label: "Od 300 do 500 m²", coefficient: 1.9 },
+                { value: "500-700", label: "Od 500 do 700 m²", coefficient: 2.07 },
+                { value: "700-plus", label: "Nad 700 m²", coefficient: 2.67 }
+              ]
+            },
+            {
+              id: "officeAreaDaily",
+              type: "radio",
+              label: "Orientáční plocha kanceláře",
+              required: true,
+              layout: "vertical",
+              condition: { 
+                operator: "or",
+                conditions: [
+                  { field: "cleaningFrequency", value: "daily", operator: "equals" },
+                  { field: "cleaningFrequency", value: "daily-basic-weekly", operator: "equals" },
+                  { field: "cleaningFrequency", value: "daily-basic-weekly-wc", operator: "equals" },
+                  { field: "cleaningFrequency", value: "", operator: "equals" }
+                ]
+              },
+              options: [
+                { value: "up-to-50", label: "Do 50 m²", coefficient: 0.42 },
+                { value: "50-75", label: "Od 50 do 75 m²", coefficient: 0.58 },
+                { value: "75-100", label: "Od 75 do 100 m²", coefficient: 0.62 },
+                { value: "100-125", label: "Od 100 do 125 m²", coefficient: 0.66 },
+                { value: "125-200", label: "Od 125 do 200 m²", coefficient: 0.8 },
+                { value: "200-300", label: "Od 200 do 300 m²", coefficient: 0.957 },
+                { value: "300-500", label: "Od 300 do 500 m²", coefficient: 1.25 },
+                { value: "500-700", label: "Od 500 do 700 m²", coefficient: 1.5 },
+                { value: "700-plus", label: "Nad 700 m²", coefficient: 2.4 }
+              ]
             }
           ]
         }
@@ -306,11 +379,9 @@ export const officeCleaningFormConfig: FormConfig = {
           required: true,
           layout: "vertical",
           options: [
-            { value: "pvc", label: "PVC", coefficient: 0.96 },
-            { value: "stone", label: "Kámen", coefficient: 0.96 },
-            { value: "floating", label: "Plovoucí podlaha", coefficient: 0.96 },
-            { value: "ceramic", label: "Keramika", coefficient: 0.93 },
-            { value: "carpet", label: "Koberce", coefficient: 1.06 }
+            { value: "smooth", label: "Hladké (povrchy udržované mokrým způsobem, např. PVC, linoleum, keramika, plovoucí podlaha, kámen)", coefficient: 0.96 },
+            { value: "carpet", label: "Koberce (povrchy čístěné vysavačem)", tooltip: "Vysavač je v režii objednatele a jeho pořízení a správa není zahrnuta v cenové nabídce.", coefficient: 1.06 },
+            { value: "combination", label: "Kombinace těchto povrchů (k údržbě je potřeba jak mop, tak vysavač)", tooltip: "Vysavač je v režii objednatele a jeho pořízení a správa není zahrnuta v cenové nabídce.", coefficient: 1.03 }
           ]
         }
       ]
@@ -486,8 +557,70 @@ export const officeCleaningFormConfig: FormConfig = {
           required: true,
           layout: "vertical",
           options: [
-            { value: "yes", label: "Ano, pracovníkovi úklidu bude umožněn přístup do prostor kanceláří (bude mít klíče nebo čipy)", coefficient: 1.0 },
-            { value: "no", label: "Ne, je potřeba provádět úklid v pracovní době kanceláří (pracovník úklidu nebude mít klíče nebo čipy od prostor)", coefficient: 1.05 }
+            { 
+              value: "no", 
+              label: "Ne, je potřeba provádět úklid v pracovní době kanceláří (pracovník úklidu nebude mít klíče nebo čipy od prostor)", 
+              coefficient: 1.05 
+            },
+            { 
+              value: "yes", 
+              label: "Ano, pracovníkovi úklidu bude umožněn přístup do prostor kanceláří (bude mít klíče nebo čipy)", 
+              coefficient: 1.0
+            }
+          ]
+        },
+        {
+          id: "preferred-time-details",
+          type: "conditional",
+          label: "Detaily preferovaného času",
+          required: false,
+          condition: { field: "afterHours", value: "yes" },
+          fields: [
+            {
+              id: "preferredTimeType",
+              type: "radio",
+              label: "Preferovaný čas úklidu:",
+              required: true,
+              layout: "vertical",
+              options: [
+                { value: "morning", label: "Nejpozději ráno v" },
+                { value: "evening", label: "Nejdříve večer začít v" }
+              ]
+            },
+            {
+              id: "preferredHourMorning",
+              type: "select",
+              label: "",
+              required: true,
+              condition: { field: "preferredTimeType", value: "morning", operator: "equals" },
+              options: [
+                { value: "3", label: "3:00" },
+                { value: "4", label: "4:00" },
+                { value: "5", label: "5:00" },
+                { value: "6", label: "6:00" },
+                { value: "7", label: "7:00" },
+                { value: "8", label: "8:00", default: true },
+                { value: "9", label: "9:00" },
+                { value: "10", label: "10:00" }
+              ]
+            },
+            {
+              id: "preferredHourEvening",
+              type: "select",
+              label: "",
+              required: true,
+              condition: { field: "preferredTimeType", value: "evening", operator: "equals" },
+              options: [
+                { value: "16", label: "16:00" },
+                { value: "17", label: "17:00", default: true },
+                { value: "18", label: "18:00" },
+                { value: "19", label: "19:00" },
+                { value: "20", label: "20:00" },
+                { value: "21", label: "21:00" },
+                { value: "22", label: "22:00" },
+                { value: "23", label: "23:00" }
+              ]
+            }
           ]
         }
       ]

@@ -316,6 +316,13 @@ function renderConditionalFields(field: FormFieldType, form: UseFormReturn<FormS
                 evaluateCondition(nextField.condition, form.getValues())
               );
             
+            // Check if the next visible field has a label (to determine if separator should show)
+            const nextVisibleField = conditionalField.fields.slice(index + 1).find(nextField => 
+              evaluateCondition(nextField.condition, form.getValues())
+            );
+            const shouldShowSeparator = shouldShowSubField && hasNextVisibleField && 
+              nextVisibleField && nextVisibleField.label !== "";
+            
             return (
               <motion.div
                 key={subField.id}
@@ -336,7 +343,7 @@ function renderConditionalFields(field: FormFieldType, form: UseFormReturn<FormS
                         control={form.control}
                         name={subField.id as keyof FormSubmissionData}
                         render={({ field: subFormField }) => (
-                          <FormItem className="space-y-2">
+                          <FormItem className={subField.label || subField.description ? "space-y-2" : ""}>
                             {subField.label && (
                               <FieldLabel field={subField} isRequired={shouldShowSubField && subField.required} />
                             )}
@@ -359,10 +366,12 @@ function renderConditionalFields(field: FormFieldType, form: UseFormReturn<FormS
                 </AnimatePresence>
                 
                 {/* Add separator between conditional sub-fields */}
-                {/* Only show separator if current field is visible and there's a next visible field */}
-                {shouldShowSubField && hasNextVisibleField && (
+                {/* Only show separator if current field is visible, there's a next visible field, and the next field has a label */}
+                {shouldShowSeparator ? (
                   <Separator className="my-6 bg-muted/40" />
-                )}
+                ) : shouldShowSubField && hasNextVisibleField ? (
+                  <div className="my-4" />
+                ) : null}
               </motion.div>
             );
           })}
@@ -625,7 +634,9 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
             defaults[field.id] = "";
           }
         } else if (field.type === "select") {
-          defaults[field.id] = "";
+          const selectField = field as SelectField;
+          const defaultOption = selectField.options?.find(option => option.default);
+          defaults[field.id] = defaultOption?.value || "";
         } else if (field.type === "input") {
           const inputField = field as InputField;
           if (inputField.inputType === 'number') {
@@ -648,7 +659,9 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
                 defaults[subField.id] = "";
               }
             } else if (subField.type === "select") {
-              defaults[subField.id] = "";
+              const subSelectField = subField as SelectField;
+              const defaultOption = subSelectField.options?.find(option => option.default);
+              defaults[subField.id] = defaultOption?.value || "";
             } else if (subField.type === "input") {
               const subInputField = subField as InputField;
               if (subInputField.inputType === 'number') {
@@ -711,6 +724,7 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
       form.reset();
     }
   }, [shouldResetForm, form]);
+
 
   const handleSubmit = (values: FormSubmissionData) => {
     if (onSubmit) {
@@ -839,6 +853,8 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
                          (section.fields[index + 1] as ConditionalField)?.condition && 
                          'field' in (section.fields[index + 1] as ConditionalField).condition && 
                          ((section.fields[index + 1] as ConditionalField).condition as any).field === field.id) && 
+                     // Don't show separator if current field has empty label
+                     field.label !== "" &&
                      // Check if the next field is also visible
                      ('condition' in section.fields[index + 1] && section.fields[index + 1].condition ? 
                        evaluateCondition(section.fields[index + 1].condition, formValues) : true) && (

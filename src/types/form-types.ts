@@ -63,6 +63,7 @@ export interface RadioField extends BaseField {
     coefficient?: number;
     fixedAddon?: number; // Fixed price addon in Kč
     hidden?: boolean; // Whether this option should be hidden initially
+    hiddenOptions?: Array<FormField>; // Fields to show when this option is selected
   }>;
   layout?: 'horizontal' | 'vertical';
 }
@@ -75,6 +76,7 @@ export interface SelectField extends BaseField {
     note?: string; // Custom note for tooltip
     coefficient?: number;
     fixedAddon?: number; // Fixed price addon in Kč
+    default?: boolean; // Whether this option should be selected by default
   }>;
 }
 

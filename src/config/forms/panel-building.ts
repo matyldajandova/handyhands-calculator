@@ -99,7 +99,7 @@ const panelBuildingSchema = z.object({
 export const panelBuildingFormConfig: FormConfig = {
   id: "panel-building",
   title: "Pravidelný úklid panelových domů",
-  description: `Vyplňte údaje pro výpočet ceny úklidových služeb pro panelové domy. Všechny údaje jsou povinné. Ceny jsou aktualizovány s inflací ${(INFLATION_RATE * 100).toFixed(1)}% od roku ${INFLATION_START_YEAR}.`,
+  description: `Vyplňte údaje pro výpočet ceny úklidových služeb pro panelové domy. Všechny údaje jsou povinné.`,
   validationSchema: panelBuildingSchema,
   basePrice: CURRENT_PRICES.regularCleaning,
   conditions: [
