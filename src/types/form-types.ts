@@ -20,7 +20,7 @@ export interface FormData {
 }
 
 // Form configuration types
-export type FieldType = 'radio' | 'select' | 'input' | 'textarea' | 'conditional' | 'checkbox';
+export type FieldType = 'radio' | 'select' | 'input' | 'textarea' | 'conditional' | 'checkbox' | 'alert';
 
 export type NoteType = 'frequent' | 'recommended';
 
@@ -91,6 +91,28 @@ export interface TextareaField extends BaseField {
   rows?: number;
 }
 
+export interface AlertField extends Omit<BaseField, 'required' | 'label'> {
+  type: 'alert';
+  variant?: 'default' | 'destructive';
+  title?: string;
+  description?: string;
+  icon?: string;
+  required?: never;
+  label?: never;
+  condition?: {
+    field: string;
+    value: string | number | boolean;
+    operator?: 'equals' | 'not_equals' | 'greater_than' | 'less_than' | 'greater_than_or_equal' | 'less_than_or_equal';
+  } | {
+    operator: 'and' | 'or';
+    conditions: Array<{
+      field: string;
+      value: string | number | boolean;
+      operator?: 'equals' | 'not_equals' | 'greater_than' | 'less_than' | 'greater_than_or_equal' | 'less_than_or_equal';
+    }>;
+  };
+}
+
 export interface ConditionalField extends BaseField {
   type: 'conditional';
   condition: {
@@ -119,7 +141,7 @@ export interface CheckboxField extends BaseField {
   layout?: 'horizontal' | 'vertical';
 }
 
-export type FormField = RadioField | SelectField | InputField | TextareaField | ConditionalField | CheckboxField;
+export type FormField = RadioField | SelectField | InputField | TextareaField | ConditionalField | CheckboxField | AlertField;
 
 export interface FormSection {
   id: string;
@@ -138,6 +160,10 @@ export interface FormConfig {
   validationSchema: z.ZodSchema<Record<string, unknown>>; // More specific than any
   basePrice?: number; // Base price for the service (optional, defaults to 1500)
   conditions?: string[]; // Pricing conditions (optional)
+  winterPeriod?: {
+    start: { month: number; day: number };
+    end: { month: number; day: number };
+  }; // Winter period configuration (optional)
 }
 
 // Service type definitions
@@ -155,6 +181,7 @@ export interface CalculationResult {
   generalCleaningPrice?: number;
   generalCleaningFrequency?: string;
   totalMonthlyPrice: number;
+  winterServiceFee?: number;
   calculationDetails: {
     basePrice: number;
     appliedCoefficients: Array<{
@@ -168,7 +195,7 @@ export interface CalculationResult {
 }
 
 // Form submission data type
-export type FormSubmissionData = Record<string, string | number | string[] | undefined>;
+export type FormSubmissionData = Record<string, string | number | string[] | boolean | undefined>;
 
 // Office cleaning specific types
 export interface OfficeCleaningFormData {

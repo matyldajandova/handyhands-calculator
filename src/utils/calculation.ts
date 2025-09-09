@@ -1,5 +1,7 @@
 import { FormSubmissionData, FormConfig, FormField, RadioField, SelectField, CheckboxField, CalculationResult } from "@/types/form-types";
 import { calculateOfficeCleaningPrice } from "./office-cleaning-calculation";
+import { FIXED_PRICES } from "@/config/forms/residential-building";
+import { isWinterMaintenancePeriod } from "./date-utils";
 
 // Helper function to find a field in the form configuration
 function findFieldInConfig(config: FormConfig, fieldId: string): FormField | null {
@@ -93,9 +95,13 @@ function getFixedAddonFromConfig(config: FormConfig, fieldId: string, value: str
 
 // Main calculation function - now generic for any form configuration
 export function calculatePrice(formData: FormSubmissionData, formConfig: FormConfig): CalculationResult {
+  // Filter out boolean values for calculation functions that don't expect them
+  const calculationData = Object.fromEntries(
+    Object.entries(formData).filter(([_, value]) => typeof value !== 'boolean')
+  ) as Record<string, string | number | string[] | undefined>;
   // Check if this is the office cleaning calculator
   if (formConfig.id === "office-cleaning") {
-    const officeResult = calculateOfficeCleaningPrice(formData, formConfig.basePrice || 2450);
+    const officeResult = calculateOfficeCleaningPrice(calculationData, formConfig.basePrice || 2450);
     
     // Convert office cleaning result to standard CalculationResult format
     return {
@@ -131,7 +137,7 @@ export function calculatePrice(formData: FormSubmissionData, formConfig: FormCon
   // Apply coefficients and fixed addons for all form fields
   let totalFixedAddons = 0;
   
-  for (const [fieldId, value] of Object.entries(formData)) {
+  for (const [fieldId, value] of Object.entries(calculationData)) {
     if (value !== undefined && value !== null && value !== '') {
       const coefficient = getCoefficientFromConfig(formConfig, fieldId, value);
       const fixedAddon = getFixedAddonFromConfig(formConfig, fieldId, value);
@@ -182,23 +188,23 @@ export function calculatePrice(formData: FormSubmissionData, formConfig: FormCon
           let generalCoefficient = 1.0;
 
           // Apply additional coefficients for general cleaning
-          if (formData.windowsPerFloor) {
-            const windowsCoefficient = getCoefficientFromConfig(formConfig, 'windowsPerFloor', formData.windowsPerFloor);
+          if (calculationData.windowsPerFloor) {
+            const windowsCoefficient = getCoefficientFromConfig(formConfig, 'windowsPerFloor', calculationData.windowsPerFloor);
             generalCoefficient *= windowsCoefficient;
           }
 
-          if (formData.floorsWithWindows) {
-            const floorsCoefficient = getCoefficientFromConfig(formConfig, 'floorsWithWindows', formData.floorsWithWindows);
+          if (calculationData.floorsWithWindows) {
+            const floorsCoefficient = getCoefficientFromConfig(formConfig, 'floorsWithWindows', calculationData.floorsWithWindows);
             generalCoefficient *= floorsCoefficient;
           }
 
-          if (formData.windowType) {
-            const windowTypeCoefficient = getCoefficientFromConfig(formConfig, 'windowType', formData.windowType);
+          if (calculationData.windowType) {
+            const windowTypeCoefficient = getCoefficientFromConfig(formConfig, 'windowType', calculationData.windowType);
             generalCoefficient *= windowTypeCoefficient;
           }
 
-          if (formData.basementCleaning && formData.undergroundFloors && Number(formData.undergroundFloors) > 0) {
-            const basementCoefficient = getCoefficientFromConfig(formConfig, 'basementCleaning', formData.basementCleaning);
+          if (calculationData.basementCleaning && calculationData.undergroundFloors && Number(calculationData.undergroundFloors) > 0) {
+            const basementCoefficient = getCoefficientFromConfig(formConfig, 'basementCleaning', calculationData.basementCleaning);
             generalCoefficient *= basementCoefficient;
           }
 
@@ -217,14 +223,29 @@ export function calculatePrice(formData: FormSubmissionData, formConfig: FormCon
     }
   }
 
-  // Calculate total monthly price
-  const totalMonthlyPrice = regularCleaningPrice;
+  // Add winter service fee if winter maintenance is selected AND we're in winter period
+  let winterServiceFee = 0;
+  if (formData.winterMaintenance === "yes" && isWinterMaintenancePeriod()) {
+    // Winter service fee is a fixed price (not affected by inflation or coefficients)
+    winterServiceFee = FIXED_PRICES.winterService;
+    
+    appliedCoefficients.push({
+      field: 'winterMaintenance',
+      label: 'Zimní služby (pohotovostní služba)',
+      coefficient: 1,
+      impact: winterServiceFee
+    });
+  }
+
+  // Calculate total monthly price (including winter service fee)
+  const totalMonthlyPrice = regularCleaningPrice + winterServiceFee;
 
   return {
     regularCleaningPrice,
     generalCleaningPrice,
     generalCleaningFrequency,
     totalMonthlyPrice,
+    winterServiceFee: winterServiceFee > 0 ? winterServiceFee : undefined,
     calculationDetails: {
       basePrice,
       appliedCoefficients,

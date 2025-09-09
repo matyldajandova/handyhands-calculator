@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Form,
   FormControl,
@@ -22,7 +23,7 @@ import {
 } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { FormConfig, FormField as FormFieldType, FormSubmissionData, ConditionalField, RadioField, SelectField, InputField, TextareaField, CheckboxField } from "@/types/form-types";
+import { FormConfig, FormField as FormFieldType, FormSubmissionData, ConditionalField, RadioField, SelectField, InputField, TextareaField, CheckboxField, AlertField } from "@/types/form-types";
 import * as Icons from "lucide-react";
 import React from "react";
 
@@ -77,15 +78,20 @@ function AnimatedErrorMessage({ error }: { error: string | undefined }) {
 
 // Custom field label component with info icon and tooltip
 function FieldLabel({ field, isRequired }: { field: FormFieldType; isRequired?: boolean }) {
-  const shouldShowOptional = isRequired !== undefined ? !isRequired : !field.required;
+  // AlertField doesn't have label or required properties
+  if (field.type === 'alert') {
+    return null;
+  }
+  
+  const shouldShowOptional = isRequired !== undefined ? !isRequired : !('required' in field ? field.required : false);
   
   return (
     <div className="flex items-center gap-2">
       <FormLabel>
-        {field.label}
+        {'label' in field ? field.label : ''}
         {shouldShowOptional && <span className="text-muted-foreground">(volitelné)</span>}
       </FormLabel>
-      {field.note && (
+      {'note' in field && field.note && (
         <Tooltip>
           <TooltipTrigger asChild>
             <Icons.Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-accent transition-colors" />
@@ -369,7 +375,7 @@ function renderConditionalFields(field: FormFieldType, form: UseFormReturn<FormS
 
 // Helper function to render individual fields
 function renderField(field: FormFieldType, formField: ControllerRenderProps<FormSubmissionData>, formState: any) {
-  const { placeholder } = field;
+  const placeholder = 'placeholder' in field ? field.placeholder : undefined;
 
   switch (field.type) {
     case "radio":
@@ -459,6 +465,7 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
           rows={textareaField.rows || 4}
           className={formField.name && formState.errors[formField.name] ? "border-destructive" : ""}
           {...formField}
+          value={formField.value?.toString() || ""}
         />
       );
 
@@ -519,6 +526,17 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
             );
           })}
         </div>
+      );
+
+    case "alert":
+      const alertField = field as AlertField;
+      
+      return (
+        <Alert variant={alertField.variant || "default"}>
+          <Icons.Info className="h-4 w-4" />
+          {alertField.title && <AlertTitle>{alertField.title}</AlertTitle>}
+          {alertField.description && <AlertDescription>{alertField.description}</AlertDescription>}
+        </Alert>
       );
 
     default:
@@ -606,6 +624,7 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
   // Force re-render when form values change to update conditional fields
   const formValues = form.watch();
 
+
   // Scroll to first error when errors appear
   useEffect(() => {
     if (Object.keys(form.formState.errors).length > 0) {
@@ -687,7 +706,7 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
                   </p>
                 )}
                 {section.note && (
-                  <p className="text-sm text-muted-foreground mt-2 mb-4">
+                  <p className="text-sm text-muted-foreground mt-2 mb-2">
                     {section.note}
                   </p>
                 )}
@@ -695,10 +714,10 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
               <CardContent>
                 {section.fields.map((field: FormFieldType, index: number) => {
                   // Check if field should be shown based on its condition
-                  const shouldShowField = evaluateCondition(field.condition, formValues);
+                  const shouldShowField = 'condition' in field && field.condition ? evaluateCondition(field.condition, formValues) : true;
                   
                   // Determine if field should be required when visible
-                  const isRequiredWhenVisible = shouldShowField && field.required;
+                  const isRequiredWhenVisible = shouldShowField && 'required' in field && field.required;
                   
                   return (
                   <React.Fragment key={field.id}>
@@ -710,31 +729,37 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
                             exit={{ opacity: 0, height: 0, overflow: "hidden" }}
                             transition={{ duration: 0.3, ease: "easeInOut" }}
                           >
-                    <FormField
-                      control={form.control}
-                      name={field.id as keyof FormSubmissionData}
-                      render={({ field: formField }) => (
-                        <FormItem className="space-y-2">
-                                              {field.type !== "conditional" && field.label && (
-                                    <FieldLabel field={field} isRequired={isRequiredWhenVisible} />
+                    {field.type === "alert" ? (
+                      <div className="space-y-2">
+                        {renderField(field, {} as ControllerRenderProps<FormSubmissionData>, form.formState)}
+                      </div>
+                    ) : (
+                      <FormField
+                        control={form.control}
+                        name={field.id as keyof FormSubmissionData}
+                        render={({ field: formField }) => (
+                          <FormItem className="space-y-2">
+                            {field.type !== "conditional" && 'label' in field && field.label && (
+                              <FieldLabel field={field} isRequired={isRequiredWhenVisible} />
+                            )}
+                            <FormControl>
+                              {renderField(field, formField, form.formState)}
+                            </FormControl>
+                            {field.description && (
+                              <p className="text-xs text-muted-foreground">
+                                {field.description}
+                              </p>
+                            )}
+                            <AnimatedErrorMessage error={
+                              form.formState.errors[field.id]?.message as string | undefined
+                            } />
+                            
+                            {/* Render conditional fields if this is a conditional field */}
+                            {field.type === "conditional" && renderConditionalFields(field, form)}
+                          </FormItem>
+                        )}
+                      />
                     )}
-                          <FormControl>
-                            {renderField(field, formField, form.formState)}
-                          </FormControl>
-                          {field.description && (
-                            <p className="text-xs text-muted-foreground">
-                              {field.description}
-                            </p>
-                          )}
-                          <AnimatedErrorMessage error={
-                            form.formState.errors[field.id]?.message as string | undefined
-                          } />
-                          
-                          {/* Render conditional fields if this is a conditional field */}
-                          {field.type === "conditional" && renderConditionalFields(field, form)}
-                        </FormItem>
-                      )}
-                    />
                           </motion.div>
                         )}
                       </AnimatePresence>

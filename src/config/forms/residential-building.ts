@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { FormConfig } from "@/types/form-types";
+import { isWinterMaintenancePeriod } from "@/utils/date-utils";
 
 // Base prices and inflation
 const BASE_PRICES = {
@@ -9,6 +10,11 @@ const BASE_PRICES = {
     annual: 2900,   // 1x ročně
     quarterly: 2050 // 4x ročně
   }
+};
+
+// Fixed prices (not affected by inflation or coefficients)
+const FIXED_PRICES = {
+  winterService: 500 // Monthly fee for winter on-call service (Nov 15 - Mar 14) - FIXED PRICE
 };
 
 const INFLATION_RATE = 0.04; // 4% annual inflation
@@ -211,12 +217,19 @@ const residentialBuildingSchema = z.object({
   }
 });
 
+// Winter period configuration
+const winterPeriod = {
+  start: { month: 9, day: 1 },
+  end: { month: 3, day: 14 }
+};
+
 export const residentialBuildingFormConfig: FormConfig = {
   id: "residential-building",
   title: "Pravidelný úklid činžovních domů a novostaveb",
   description: `Vyplňte údaje pro výpočet ceny úklidových služeb. Všechny údaje jsou povinné.`,
   validationSchema: residentialBuildingSchema,
   basePrice: CURRENT_PRICES.regularCleaning,
+  winterPeriod,
   conditions: [
     "Dostupnost alespoň studené vody v domě",
     "Uzamykatelná místnost nebo uzamykatelná část domu (místo) na úklidové náčiní a úklidovou chemii"
@@ -450,6 +463,14 @@ export const residentialBuildingFormConfig: FormConfig = {
       icon: "Snowflake",
       note: "Odklizení čerstvě napadlého sněhu, odstranění náledí a zajištění vhodného posypu chodníků a udržování těchto ploch pro chodce ve stavu, aby nedošlo k újmě na zdraví a byla zajištěna bezpečnost osob.",
       fields: [
+        ...(isWinterMaintenancePeriod() ? [{
+          id: "winterMaintenanceAlert",
+          type: "alert" as const,
+          variant: "default" as const,
+          title: "Informace o zimní údržbě",
+          description: `Pro zimní údržbu platí pohotovost od ${winterPeriod.start.day}. ${winterPeriod.start.month}. do ${winterPeriod.end.day}. ${winterPeriod.end.month}. následujícího roku a v tomto období jsou prováděny výjezdy – úklidu sněhu nebo náledí. Úklid sněhu se provádí, pokud je minimální sněhová pokrývka výšky 2 cm. Měsíční poplatek za pohotovostní službu: 500 Kč/měsíc. Poplatek za výjezd: 50 Kč/běžný metr nebo 40 Kč/m² (min. 300 Kč, max. 2000 Kč za výjezd).`,
+          icon: "Info"
+        }] : []),
         {
           id: "winterMaintenance",
           type: "radio",
@@ -457,7 +478,7 @@ export const residentialBuildingFormConfig: FormConfig = {
           required: true,
           layout: "horizontal",
           options: [
-            { value: "yes", label: "Ano, mám zájem i o zimní údržbu kolem domu", tooltip: "Pro zimní údržbu platí pohotovost od 15. 11. do 14. 3. následujícího roku a v tomto období jsou prováděny výjezdy – úklidu sněhu nebo náledí. Úklid sněhu se provádí, pokud je minimální sněhová pokrývka výšky 2 cm." },
+            { value: "yes", label: "Ano, mám zájem i o zimní údržbu kolem domu" },
             { value: "no", label: "Ne" }
           ]
         },
@@ -569,4 +590,4 @@ export const residentialBuildingFormConfig: FormConfig = {
 };
 
 // Export the calculation functions and prices for use in the calculation logic
-export { BASE_PRICES, CURRENT_PRICES, getInflationAdjustedPrice, INFLATION_RATE, INFLATION_START_YEAR };
+export { BASE_PRICES, CURRENT_PRICES, FIXED_PRICES, getInflationAdjustedPrice, INFLATION_RATE, INFLATION_START_YEAR };
