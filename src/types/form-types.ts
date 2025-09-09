@@ -33,6 +33,18 @@ export interface BaseField {
   description?: string;
   note?: string; // Info note to display under info icon
   placeholder?: string;
+  condition?: {
+    field: string;
+    value: string | number | boolean;
+    operator?: 'equals' | 'not_equals' | 'greater_than' | 'less_than' | 'greater_than_or_equal' | 'less_than_or_equal';
+  } | {
+    operator: 'and' | 'or';
+    conditions: Array<{
+      field: string;
+      value: string | number | boolean;
+      operator?: 'equals' | 'not_equals' | 'greater_than' | 'less_than' | 'greater_than_or_equal' | 'less_than_or_equal';
+    }>;
+  };
   validation?: {
     min?: number;
     max?: number;
@@ -85,6 +97,13 @@ export interface ConditionalField extends BaseField {
     field: string;
     value: string | number | boolean;
     operator?: 'equals' | 'not_equals' | 'greater_than' | 'less_than';
+  } | {
+    operator: 'and' | 'or';
+    conditions: Array<{
+      field: string;
+      value: string | number | boolean;
+      operator?: 'equals' | 'not_equals' | 'greater_than' | 'less_than';
+    }>;
   };
   fields: FormField[];
 }

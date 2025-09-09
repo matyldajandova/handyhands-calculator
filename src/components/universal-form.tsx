@@ -76,12 +76,14 @@ function AnimatedErrorMessage({ error }: { error: string | undefined }) {
 }
 
 // Custom field label component with info icon and tooltip
-function FieldLabel({ field }: { field: FormFieldType }) {
+function FieldLabel({ field, isRequired }: { field: FormFieldType; isRequired?: boolean }) {
+  const shouldShowOptional = isRequired !== undefined ? !isRequired : !field.required;
+  
   return (
     <div className="flex items-center gap-2">
       <FormLabel>
         {field.label}
-        {!field.required && <span className="text-muted-foreground">(volitelné)</span>}
+        {shouldShowOptional && <span className="text-muted-foreground">(volitelné)</span>}
       </FormLabel>
       {field.note && (
         <Tooltip>
@@ -115,19 +117,19 @@ function RadioFieldWithHiddenOptions({
 
   return (
     <div className="space-y-3">
-      <RadioGroup
-        value={formField.value?.toString() || ""}
-        onValueChange={(value) => {
-          // Convert back to the original type if it was numeric
+        <RadioGroup
+          value={formField.value?.toString() || ""}
+          onValueChange={(value) => {
+            // Convert back to the original type if it was numeric
           const firstOption = field.options?.[0];
-          if (firstOption && typeof firstOption.value === "number") {
-            formField.onChange(parseInt(value, 10));
-          } else {
-            formField.onChange(value);
-          }
-        }}
-        className="flex flex-col gap-3"
-      >
+            if (firstOption && typeof firstOption.value === "number") {
+              formField.onChange(parseInt(value, 10));
+            } else {
+              formField.onChange(value);
+            }
+          }}
+          className="flex flex-col gap-3"
+        >
         {/* Render visible options */}
         {visibleOptions.map((option) => (
           <FormItem key={option.value} className="flex items-center gap-2">
@@ -190,45 +192,88 @@ function RadioFieldWithHiddenOptions({
               className="flex flex-col gap-3"
             >
               {hiddenOptions.map((option) => (
-                <FormItem key={option.value} className="flex items-center gap-2">
-                  <FormControl>
-                    <RadioGroupItem value={option.value.toString()} id={`${field.id}_${option.value}`} />
-                  </FormControl>
-                  <FormLabel htmlFor={`${field.id}_${option.value}`} className="font-normal cursor-pointer">
-                    <span>{option.label}</span>
-                    <div className="flex items-center gap-2">
-                      {option.note && (
-                        <Badge 
-                          variant={option.note === 'frequent' ? 'secondary' : 'default'}
-                          className={`text-xs ${
-                            option.note === 'frequent' 
-                              ? 'bg-muted text-muted-foreground' 
-                              : 'bg-accent text-accent-foreground'
-                          }`}
-                        >
-                          {option.note === 'frequent' ? 'nejvyužívanější' : 'doporučeno'}
-                        </Badge>
-                      )}
-                      {option.tooltip && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Icons.Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-accent transition-colors" />
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="max-w-xs">
-                            <p className="text-sm">{option.tooltip}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                    </div>
-                  </FormLabel>
-                </FormItem>
-              ))}
+            <FormItem key={option.value} className="flex items-center gap-2">
+              <FormControl>
+                <RadioGroupItem value={option.value.toString()} id={`${field.id}_${option.value}`} />
+              </FormControl>
+              <FormLabel htmlFor={`${field.id}_${option.value}`} className="font-normal cursor-pointer">
+                <span>{option.label}</span>
+                <div className="flex items-center gap-2">
+                  {option.note && (
+                    <Badge 
+                      variant={option.note === 'frequent' ? 'secondary' : 'default'}
+                      className={`text-xs ${
+                        option.note === 'frequent' 
+                          ? 'bg-muted text-muted-foreground' 
+                          : 'bg-accent text-accent-foreground'
+                      }`}
+                    >
+                      {option.note === 'frequent' ? 'nejvyužívanější' : 'doporučeno'}
+                    </Badge>
+                  )}
+                  {option.tooltip && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Icons.Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-accent transition-colors" />
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs">
+                        <p className="text-sm">{option.tooltip}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
+              </FormLabel>
+            </FormItem>
+          ))}
             </motion.div>
           )}
         </AnimatePresence>
-      </RadioGroup>
+        </RadioGroup>
     </div>
   );
+}
+
+// Helper function to evaluate field conditions
+function evaluateCondition(condition: any, formData: FormSubmissionData): boolean {
+  if (!condition) return true;
+  
+  // Simple condition
+  if (condition.field) {
+    const fieldValue = formData[condition.field];
+    const operator = condition.operator || 'equals';
+    
+    switch (operator) {
+      case 'equals':
+        return fieldValue === condition.value;
+      case 'not_equals':
+        return fieldValue !== condition.value;
+      case 'greater_than':
+        return Number(fieldValue) > Number(condition.value);
+      case 'less_than':
+        return Number(fieldValue) < Number(condition.value);
+      case 'greater_than_or_equal':
+        return Number(fieldValue) >= Number(condition.value);
+      case 'less_than_or_equal':
+        return Number(fieldValue) <= Number(condition.value);
+      default:
+        return fieldValue === condition.value;
+    }
+  }
+  
+  // Complex condition with AND/OR
+  if (condition.operator && condition.conditions) {
+    const results = condition.conditions.map((subCondition: any) => {
+      return evaluateCondition(subCondition, formData);
+    });
+    
+    const finalResult = condition.operator === 'and' 
+      ? results.every((result: boolean) => result)
+      : results.some((result: boolean) => result);
+    
+    return finalResult;
+  }
+  
+  return true;
 }
 
 // Helper function to render conditional fields
@@ -236,9 +281,7 @@ function renderConditionalFields(field: FormFieldType, form: UseFormReturn<FormS
   if (field.type !== "conditional") return null;
   
   const conditionalField = field as ConditionalField;
-  const conditionField = conditionalField.condition.field;
-  const conditionValue = conditionalField.condition.value;
-  const shouldShow = form.watch(conditionField) === conditionValue;
+  const shouldShow = evaluateCondition(conditionalField.condition, form.getValues());
 
   return (
     <AnimatePresence mode="wait" initial={false}>
@@ -258,43 +301,66 @@ function renderConditionalFields(field: FormFieldType, form: UseFormReturn<FormS
           }}
           className="mt-6 space-y-6 pl-6 border-l-2 border-accent/20"
         >
-          {conditionalField.fields.map((subField: FormFieldType, index: number) => (
-            <motion.div
-              key={subField.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2, delay: index * 0.1 }}
-            >
-              <FormField
-                control={form.control}
-                name={subField.id as keyof FormSubmissionData}
-                render={({ field: subFormField }) => (
-                  <FormItem className="space-y-2">
-                    {subField.label && (
-                      <FieldLabel field={subField} />
-                    )}
-                    <FormControl>
-                      {renderField(subField, subFormField, form.formState)}
-                    </FormControl>
-                    {subField.description && (
-                      <p className="text-xs text-muted-foreground">
-                        {subField.description}
-                      </p>
-                    )}
-                    <AnimatedErrorMessage error={
-                      form.formState.errors[subField.id]?.message as string | undefined
-                    } />
-                  </FormItem>
+          {conditionalField.fields.map((subField: FormFieldType, index: number) => {
+            // Check if sub-field should be shown based on its condition
+            const shouldShowSubField = evaluateCondition(subField.condition, form.getValues());
+            
+            // Check if there's a next visible field
+            const hasNextVisibleField = index < conditionalField.fields.length - 1 && 
+              conditionalField.fields.slice(index + 1).some(nextField => 
+                evaluateCondition(nextField.condition, form.getValues())
+              );
+            
+            return (
+              <motion.div
+                key={subField.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2, delay: index * 0.1 }}
+              >
+                <AnimatePresence mode="wait" initial={false}>
+                  {shouldShowSubField && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0, overflow: "hidden" }}
+                      animate={{ opacity: 1, height: "auto", overflow: "visible" }}
+                      exit={{ opacity: 0, height: 0, overflow: "hidden" }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                    >
+                      <FormField
+                        control={form.control}
+                        name={subField.id as keyof FormSubmissionData}
+                        render={({ field: subFormField }) => (
+                          <FormItem className="space-y-2">
+                            {subField.label && (
+                              <FieldLabel field={subField} isRequired={shouldShowSubField && subField.required} />
+                            )}
+                            <FormControl>
+                              {renderField(subField, subFormField, form.formState)}
+                            </FormControl>
+                            {subField.description && (
+                              <p className="text-xs text-muted-foreground">
+                                {subField.description}
+                              </p>
+                            )}
+                            <AnimatedErrorMessage error={
+                              form.formState.errors[subField.id]?.message as string | undefined
+                            } />
+                          </FormItem>
+                        )}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                
+                {/* Add separator between conditional sub-fields */}
+                {/* Only show separator if current field is visible and there's a next visible field */}
+                {shouldShowSubField && hasNextVisibleField && (
+                  <Separator className="my-6 bg-muted/40" />
                 )}
-              />
-              
-              {/* Add separator between conditional sub-fields (but not after the last one) */}
-              {index < conditionalField.fields.length - 1 && (
-                <Separator className="my-4 bg-muted/40" />
-              )}
-            </motion.div>
-          ))}
+              </motion.div>
+            );
+          })}
         </motion.div>
       )}
     </AnimatePresence>
@@ -398,29 +464,60 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
 
     case "checkbox":
       const checkboxField = field as CheckboxField;
+      const currentValues = Array.isArray(formField.value) ? formField.value : [];
+      
+      // Special logic for window type field to handle mutual exclusion
+      const isWindowTypeField = field.id === "windowType";
+      const hasNewSelected = currentValues.includes("new");
+      const hasOriginalSelected = currentValues.includes("original");
+      
       return (
         <div className="flex flex-col gap-3">
-          {checkboxField.options.map((option) => (
+          {checkboxField.options.map((option) => {
+            let isDisabled = false;
+            let disabledReason = "";
+            
+            if (isWindowTypeField) {
+              // Disable "original" if "new" is selected
+              if (option.value === "original" && hasNewSelected) {
+                isDisabled = true;
+                disabledReason = "Nelze vybrat současně s novými okny";
+              }
+              // Disable "new" if "original" is selected
+              if (option.value === "new" && hasOriginalSelected) {
+                isDisabled = true;
+                disabledReason = "Nelze vybrat současně s původními okny";
+              }
+            }
+            
+            return (
             <FormItem key={option.value} className="flex items-center gap-2">
               <FormControl>
                 <Checkbox
                   id={`${field.id}_${option.value}`}
-                  checked={Array.isArray(formField.value) ? formField.value.includes(option.value) : false}
+                    checked={currentValues.includes(option.value)}
+                    disabled={isDisabled}
                   onCheckedChange={(checked: boolean | "indeterminate") => {
-                    const currentValue = Array.isArray(formField.value) ? formField.value : [];
                     if (checked) {
-                      formField.onChange([...currentValue, option.value]);
+                        formField.onChange([...currentValues, option.value]);
                     } else {
-                      formField.onChange(currentValue.filter((value: string) => value !== option.value));
+                        formField.onChange(currentValues.filter((value: string) => value !== option.value));
                     }
                   }}
                 />
               </FormControl>
-              <FormLabel htmlFor={`${field.id}_${option.value}`} className="font-normal cursor-pointer">
+                <FormLabel 
+                  htmlFor={`${field.id}_${option.value}`} 
+                  className={`font-normal cursor-pointer ${isDisabled ? 'text-muted-foreground' : ''}`}
+                >
                 {option.label}
+                  {isDisabled && (
+                    <span className="text-xs text-muted-foreground">({disabledReason})</span>
+                  )}
               </FormLabel>
             </FormItem>
-          ))}
+            );
+          })}
         </div>
       );
 
@@ -493,7 +590,7 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
     // Removed mode: "onChange"
   });
 
-  // Track form changes for warning dialog
+  // Track form changes for warning dialog and conditional field updates
   useEffect(() => {
     if (onFormChange) {
       const subscription = form.watch((value, { name, type }) => {
@@ -505,6 +602,9 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
       return () => subscription.unsubscribe();
     }
   }, [form, onFormChange]);
+
+  // Force re-render when form values change to update conditional fields
+  const formValues = form.watch();
 
   // Scroll to first error when errors appear
   useEffect(() => {
@@ -588,15 +688,30 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
                 )}
               </CardHeader>
               <CardContent>
-                {section.fields.map((field: FormFieldType, index: number) => (
+                {section.fields.map((field: FormFieldType, index: number) => {
+                  // Check if field should be shown based on its condition
+                  const shouldShowField = evaluateCondition(field.condition, formValues);
+                  
+                  // Determine if field should be required when visible
+                  const isRequiredWhenVisible = shouldShowField && field.required;
+                  
+                  return (
                   <React.Fragment key={field.id}>
+                      <AnimatePresence mode="wait" initial={false}>
+                        {shouldShowField && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0, overflow: "hidden" }}
+                            animate={{ opacity: 1, height: "auto", overflow: "visible" }}
+                            exit={{ opacity: 0, height: 0, overflow: "hidden" }}
+                            transition={{ duration: 0.3, ease: "easeInOut" }}
+                          >
                     <FormField
                       control={form.control}
                       name={field.id as keyof FormSubmissionData}
                       render={({ field: formField }) => (
                         <FormItem className="space-y-2">
                                               {field.type !== "conditional" && field.label && (
-                      <FieldLabel field={field} />
+                                    <FieldLabel field={field} isRequired={isRequiredWhenVisible} />
                     )}
                           <FormControl>
                             {renderField(field, formField, form.formState)}
@@ -615,17 +730,23 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
                         </FormItem>
                       )}
                     />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     
                     {/* Add separator between fields (but not after the last one, after conditional fields, or before conditional fields) */}
                     {index < section.fields.length - 1 && 
                      field.type !== "conditional" && 
                      section.fields[index + 1]?.type !== "conditional" && 
                      !(field.type === "radio" && section.fields[index + 1]?.type === "conditional" && 
-                       (section.fields[index + 1] as ConditionalField)?.condition?.field === field.id) && (
+                         (section.fields[index + 1] as ConditionalField)?.condition && 
+                         'field' in (section.fields[index + 1] as ConditionalField).condition && 
+                         ((section.fields[index + 1] as ConditionalField).condition as any).field === field.id) && (
                       <Separator className="my-6 bg-muted/40" />
                     )}
                   </React.Fragment>
-                ))}
+                  );
+                })}
               </CardContent>
             </Card>
           ))}

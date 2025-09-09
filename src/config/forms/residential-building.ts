@@ -73,8 +73,7 @@ const residentialBuildingSchema = z.object({
     }
     return val;
   }, z.union([z.number().min(1), z.literal('all'), z.undefined()])).optional(),
-  windowType: z.string().optional(),
-  windowAccessibility: z.array(z.string()).optional(),
+  windowType: z.array(z.string()).optional(),
   basementCleaning: z.string().optional(),
   basementCleaningDetails: z.string().optional(),
   winterMaintenance: z.string().min(1, "Vyberte, zda požadujete zimní údržbu"),
@@ -106,19 +105,39 @@ const residentialBuildingSchema = z.object({
         path: ["floorsWithWindows"]
       });
     }
-    if (!data.windowType) {
+    if (!data.windowType || data.windowType.length === 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Vyberte typ oken",
         path: ["windowType"]
       });
+    } else {
+      // Validate that at least one of "new" or "original" must be selected
+      if (!data.windowType.includes("new") && !data.windowType.includes("original")) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Musíte vybrat buď nová nebo původní okna",
+          path: ["windowType"]
+        });
+      }
+      // Validate that both "new" and "original" cannot be selected together
+      if (data.windowType.includes("new") && data.windowType.includes("original")) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Nelze vybrat současně nová i původní okna",
+          path: ["windowType"]
+        });
+      }
     }
-    if (!data.basementCleaning) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Vyberte způsob úklidu suterénních pater",
-        path: ["basementCleaning"]
-      });
+    // Only validate basement cleaning if general cleaning is yes and there are underground floors
+    if (data.generalCleaning === "yes" && data.undergroundFloors && data.undergroundFloors > 0) {
+      if (!data.basementCleaning) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Vyberte způsob úklidu suterénních pater",
+          path: ["basementCleaning"]
+        });
+      }
     }
     if (!data.basementCleaningDetails) {
       ctx.addIssue({
@@ -350,22 +369,13 @@ export const residentialBuildingFormConfig: FormConfig = {
             },
             {
               id: "windowType",
-              type: "radio",
+              type: "checkbox",
               label: "Typ oken",
               required: true,
               layout: "vertical",
               options: [
                 { value: "new", label: "nová plastová nebo dřevěná", coefficient: 1.0 },
-                { value: "original", label: "původní dřevěná nebo hliníková", coefficient: 1.1 }
-              ]
-            },
-            {
-              id: "windowAccessibility",
-              type: "checkbox",
-              label: "Dostupnost oken",
-              required: false,
-              layout: "vertical",
-              options: [
+                { value: "original", label: "původní dřevěná nebo hliníková", coefficient: 1.1 },
                 { value: "hard-to-reach", label: "některá jsou hůře dostupná z podlahy (nutno použít např. štafle nebo teleskopické tyče)", coefficient: 1.3 }
               ]
             },
@@ -375,6 +385,13 @@ export const residentialBuildingFormConfig: FormConfig = {
               label: "Úklid suterénních pater provádět v",
               required: true,
               layout: "vertical",
+              condition: {
+                operator: "and",
+                conditions: [
+                  { field: "generalCleaning", value: "yes", operator: "equals" },
+                  { field: "undergroundFloors", value: 0, operator: "greater_than" }
+                ]
+              },
               options: [
                 { value: "general", label: "rámci generálního úklidu", coefficient: 1.0 },
                 { value: "regular", label: "rámci pravidelného úklidu", coefficient: 1.0 }
@@ -386,6 +403,13 @@ export const residentialBuildingFormConfig: FormConfig = {
               label: "Součástí úklidu suterénních prostor je:",
               required: true,
               layout: "vertical",
+              condition: {
+                operator: "and",
+                conditions: [
+                  { field: "generalCleaning", value: "yes", operator: "equals" },
+                  { field: "undergroundFloors", value: 0, operator: "greater_than" }
+                ]
+              },
               options: [
                 { value: "corridors-only", label: "pouze úklid chodeb", coefficient: 1.0 },
                 { value: "corridors-and-rooms", label: "úklid chodeb včetně místností v suterénu, jako jsou například kočárkárny, prádelny, sušárny apod.", coefficient: 1.1 }
