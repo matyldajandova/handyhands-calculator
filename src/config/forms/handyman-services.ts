@@ -3,7 +3,7 @@ import { FormConfig } from "@/types/form-types";
 
 // Base prices and inflation
 const BASE_PRICES = {
-  hourlyRate: 395, // Base hourly rate for handyman services
+  hourlyRate: 385, // Base hourly rate for handyman services
 };
 
 const INFLATION_RATE = 0.04; // 4% annual inflation
@@ -35,57 +35,73 @@ const TIME_BRACKETS = {
 
 // Validation schema
 const handymanServicesSchema = z.object({
-  timeComplexity: z.string().min(1, "Vyberte orientační časovou náročnost"),
-  workTools: z.string().min(1, "Vyberte pracovní náčiní"),
+  cleaningType: z.string().min(1, "Vyberte typ čištění"),
+  roomCount: z.string().min(1, "Vyberte počet místností s okny"),
+  cleaningSupplies: z.array(z.string()).optional(),
   zipCode: z.string().min(1, "Zadejte PSČ").regex(/^\d{5}$/, "PSČ musí mít přesně 5 čísel"),
   notes: z.string().optional(),
 });
 
 export const handymanServicesFormConfig: FormConfig = {
   id: "handyman-services",
-  title: "Řemeslné služby",
-  description: `Vyplňte údaje pro výpočet ceny řemeslných služeb. Všechny údaje jsou povinné. Ceny jsou aktualizovány s inflací ${(INFLATION_RATE * 100).toFixed(1)}% od roku ${INFLATION_START_YEAR}.`,
+  title: "Mytí oken a ostatní služby",
+  description: `Vyplňte údaje pro výpočet ceny mytí oken a ostatních služeb.`,
   validationSchema: handymanServicesSchema,
   basePrice: CURRENT_PRICES.hourlyRate,
   conditions: [],
   sections: [
     {
-      id: "time-complexity",
-      title: "Orientační časová náročnost",
-      icon: "Clock",
+      id: "cleaning-type",
+      title: "Typ čištění",
+      icon: "Sparkles",
       fields: [
         {
-          id: "timeComplexity",
+          id: "cleaningType",
           type: "radio",
           label: "",
           required: true,
           layout: "vertical",
           options: [
-            { value: "up-to-30min", label: "Do 30 min.", coefficient: 2.0 },
-            { value: "30-60min", label: "30 až 60 min.", coefficient: 2.0 },
-            { value: "1-2hours", label: "1 hod. až 2 hod.", coefficient: 2.0 },
-            { value: "2-3hours", label: "2 hod. až 3 hod.", coefficient: 3.0 },
-            { value: "3-5hours", label: "3 hod. až 5 hod.", coefficient: 5.0 },
-            { value: "5-8hours", label: "5 hod. až 8 hod.", coefficient: 8.0 },
-            { value: "over-8hours", label: "Nad 8 hod. práce", coefficient: 8.0 }
+            { value: "after-reconstruction", label: "Po rekonstrukci, kolaudaci", coefficient: 1.1 },
+            { value: "regular-cleaning", label: "Běžné mytí", coefficient: 1.0 }
           ]
         }
       ]
     },
     {
-      id: "work-tools",
-      title: "Pracovní náčiní",
-      icon: "Wrench",
+      id: "room-count",
+      title: "Orientační počet místností, kde jsou okna určená k umytí",
+      icon: "Home",
       fields: [
         {
-          id: "workTools",
+          id: "roomCount",
           type: "radio",
           label: "",
           required: true,
           layout: "vertical",
           options: [
-            { value: "worker-brings", label: "Přiveze pracovník (+500 Kč)", fixedAddon: 500, note: "recommended" },
-            { value: "own-tools", label: "Mám vlastní odpovídající pracovní náčiní", fixedAddon: 0 }
+            { value: "up-to-2", label: "Do 2 (min. 2 hod. práce)", coefficient: 2.0 },
+            { value: "3", label: "3 (min. 2 hod. práce)", coefficient: 2.0 },
+            { value: "4", label: "4 (min. 3 hod. práce)", coefficient: 3.0 },
+            { value: "5-plus", label: "5 a více (min. 4 hod. práce)", coefficient: 4.0 }
+          ]
+        }
+      ]
+    },
+    {
+      id: "cleaning-supplies",
+      title: "Příplatky",
+      icon: "Droplets",
+      fields: [
+        {
+          id: "cleaningSupplies",
+          type: "checkbox",
+          label: "",
+          required: false,
+          layout: "vertical",
+          options: [
+            { value: "cleaning-supplies", label: "Úklidové náčiní včetně spotřebního zboží (hadry, utěrky atd.) (+400 Kč)", fixedAddon: 400 },
+            { value: "ladders", label: "K mytí oken jsou potřeba také štafle nebo schůdky (+250 Kč)", fixedAddon: 250 }
           ]
         }
       ]

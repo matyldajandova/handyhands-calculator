@@ -74,7 +74,7 @@ export function ZipCodeInput({
     }, 500); // 500ms debounce
 
     return () => clearTimeout(timeoutId);
-  }, [value]);
+  }, [value, onValidationChange]);
 
   return (
     <div className="space-y-2">
@@ -118,7 +118,7 @@ export function ZipCodeInput({
         </div>
       )}
       
-      {error && (
+      {error && error !== "Zadejte PSČ" && (
         <p className="text-sm text-destructive">{error}</p>
       )}
     </div>

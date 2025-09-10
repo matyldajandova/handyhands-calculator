@@ -53,7 +53,7 @@ export const serviceTypes: ServiceType[] = [
   {
     id: "handyman-services",
     title: "Mytí oken a ostatní služby",
-    description: "Výpočet ceny řemeslných prací podle délky jejich zhodnocení a zahrnutí dopravy a potřebného náčiní.",
+    description: "Zahrnuje přesný výpočet ceny mytí oken, výloh, žaluzií. Dále základní zahradnické práce, jako např. sekání trávníků nebo zimní údržbu chodníků a komunikací.",
     icon: "Wrench",
     formConfig: handymanServicesFormConfig,
   },

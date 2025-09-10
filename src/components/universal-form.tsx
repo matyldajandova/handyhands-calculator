@@ -537,9 +537,11 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
       
       return (
         <div className="flex flex-col gap-3">
-          <div className="text-sm font-medium text-foreground mb-1">
-            {getCleaningDaysLabel()}
-          </div>
+          {isCleaningDaysField && (
+            <div className="text-sm font-medium text-foreground mb-1">
+              {getCleaningDaysLabel()}
+            </div>
+          )}
           {checkboxField.options.map((option) => {
             let isDisabled = false;
             let disabledReason = "";
@@ -797,8 +799,7 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
           {config.sections.map((section) => {
-            const formValues = form.getValues();
-            const shouldShowSection = section.condition ? evaluateCondition(section.condition, formValues) : true;
+            const shouldShowSection = section.condition ? evaluateCondition(section.condition, form.getValues()) : true;
             
             return (
             <AnimatePresence key={section.id} mode="wait" initial={false}>
@@ -827,9 +828,9 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
                 )}
               </CardHeader>
               <CardContent>
-                {section.fields.map((field: FormFieldType, index: number) => {
-                  // Check if field should be shown based on its condition
-                  const shouldShowField = 'condition' in field && field.condition ? evaluateCondition(field.condition, formValues) : true;
+                  {section.fields.map((field: FormFieldType, index: number) => {
+                    // Check if field should be shown based on its condition
+                    const shouldShowField = 'condition' in field && field.condition ? evaluateCondition(field.condition, form.getValues()) : true;
                   
                   // Determine if field should be required when visible
                   const isRequiredWhenVisible = shouldShowField && 'required' in field && field.required;
