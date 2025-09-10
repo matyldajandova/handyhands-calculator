@@ -46,7 +46,7 @@ export const serviceTypes: ServiceType[] = [
   {
     id: "one-time-cleaning",
     title: "Jednorázový úklid",
-    description: "Výpočet ceny jednorázového úklidu podle délky jeho zhodnocení a zahrnutí dopravy a úklidové chemie.",
+    description: "Zahrnuje přesný výpočet ceny jednorázového úklidu podle délky jeho zhodnocení a zahrnutí dopravy a úklidové chemie + náčiní.",
     icon: "Clock",
     formConfig: oneTimeCleaningFormConfig,
   },

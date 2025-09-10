@@ -121,7 +121,17 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
 
 
 
-  const basePrice = formConfig.basePrice || 1500; // Use config base price or default to 1500
+  // Determine base price based on form type and pricing type
+  let basePrice = formConfig.basePrice || 1500; // Default base price
+  
+  // For home cleaning, use different base price based on pricing type
+  if (formConfig.id === "home-cleaning" && formData.pricingType) {
+    if (formData.pricingType === "monthly") {
+      basePrice = 3420; // Monthly tariff base price
+    } else if (formData.pricingType === "hourly") {
+      basePrice = 320; // Hourly rate base price
+    }
+  }
   let finalCoefficient = 1.0;
   const appliedCoefficients: Array<{
     field: string;
@@ -279,10 +289,16 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
     });
   }
 
-  // Add fixed regional fees for one-time cleaning and handyman services
+  // Add fixed regional fees for one-time cleaning, home cleaning (hourly only) and handyman services
   // These are added ON TOP of the calculated price (which already includes regional coefficients)
   let regionalFixedFee = 0;
-  if ((formConfig.id === "one-time-cleaning" || formConfig.id === "handyman-services") && formData.zipCode && typeof formData.zipCode === 'string') {
+  
+  // Determine if this service should get a fixed regional fee
+  const shouldApplyFixedFee = 
+    (formConfig.id === "one-time-cleaning" || formConfig.id === "handyman-services") ||
+    (formConfig.id === "home-cleaning" && formData.pricingType === "hourly");
+  
+  if (shouldApplyFixedFee && formData.zipCode && typeof formData.zipCode === 'string') {
     try {
       const regionKey = await getRegionFromZipCode(formData.zipCode);
       if (regionKey) {

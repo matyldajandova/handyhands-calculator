@@ -152,6 +152,18 @@ export interface FormSection {
   fields: FormField[];
   description?: string;
   note?: string;
+  condition?: {
+    field: string;
+    value: string | number | boolean;
+    operator?: 'equals' | 'not_equals' | 'greater_than' | 'less_than' | 'greater_than_or_equal' | 'less_than_or_equal';
+  } | {
+    operator: 'and' | 'or';
+    conditions: Array<{
+      field: string;
+      value: string | number | boolean;
+      operator?: 'equals' | 'not_equals' | 'greater_than' | 'less_than' | 'greater_than_or_equal' | 'less_than_or_equal';
+    }>;
+  };
 }
 
 export interface FormConfig {

@@ -796,8 +796,20 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-          {config.sections.map((section) => (
-            <Card key={section.id} id={section.id}>
+          {config.sections.map((section) => {
+            const formValues = form.getValues();
+            const shouldShowSection = section.condition ? evaluateCondition(section.condition, formValues) : true;
+            
+            return (
+            <AnimatePresence key={section.id} mode="wait" initial={false}>
+              {shouldShowSection && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0, overflow: "hidden" }}
+                  animate={{ opacity: 1, height: "auto", overflow: "visible" }}
+                  exit={{ opacity: 0, height: 0, overflow: "hidden" }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                >
+                  <Card id={section.id}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 scroll-m-20 text-2xl font-semibold tracking-tight text-foreground font-heading">
                   {getIconComponent(section.icon)}
@@ -885,9 +897,13 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
                   </React.Fragment>
                   );
                 })}
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            );
+          })}
 
           {/* Calculate Button - Centered and Larger */}
           <div className="flex justify-center pt-4">
