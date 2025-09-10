@@ -86,19 +86,12 @@ export function ZipCodeInput({
           onChange={(e) => onChange(e.target.value)}
           onBlur={onBlur}
           placeholder={placeholder}
-          className={`${className} ${error ? "border-destructive" : ""} ${
-            isValid === true ? "border-green-500" : isValid === false ? "border-destructive" : ""
-          }`}
+          className={`${className} ${error ? "border-destructive" : ""}`}
           maxLength={5}
         />
         {isLoading && (
           <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-          </div>
-        )}
-        {!isLoading && isValid === true && (
-          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-            <MapPin className="h-4 w-4 text-green-500" />
           </div>
         )}
       </div>
@@ -112,14 +105,14 @@ export function ZipCodeInput({
       )}
       
       {!isLoading && foundRegion && (
-        <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 border border-green-200 rounded-md px-3 py-2">
+        <div className="flex items-center gap-2 text-sm text-green-success bg-green-success/10 border border-green-success/20 rounded-md px-3 py-2">
           <MapPin className="h-3 w-3" />
           <span><strong>{foundRegion}</strong></span>
         </div>
       )}
       
       {!isLoading && isValid === false && value.length === 5 && (
-        <div className="flex items-center gap-2 text-sm text-destructive bg-red-50 border border-red-200 rounded-md px-3 py-2">
+        <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md px-3 py-2">
           <MapPin className="h-3 w-3" />
           <span>Pro zadané PSČ nebyl nalezen žádný region</span>
         </div>

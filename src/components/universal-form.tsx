@@ -304,7 +304,7 @@ function renderConditionalFields(field: FormFieldType, form: UseFormReturn<FormS
             duration: 0.3, 
             ease: "easeInOut"
           }}
-          className="mt-6 flex flex-col pl-6 border-l-2 border-accent/20"
+          className="mt-6 flex flex-col pl-6 border-l-2 border-border/50"
         >
           {conditionalField.fields.map((subField: FormFieldType, index: number) => {
             // Check if sub-field should be shown based on its condition
@@ -368,7 +368,7 @@ function renderConditionalFields(field: FormFieldType, form: UseFormReturn<FormS
                 {/* Add separator between conditional sub-fields */}
                 {/* Only show separator if current field is visible, there's a next visible field, and the next field has a label */}
                 {shouldShowSeparator ? (
-                  <Separator className="my-6 bg-muted/40" />
+                  <Separator className="my-6" />
                 ) : shouldShowSubField && hasNextVisibleField ? (
                   <div className="my-4" />
                 ) : null}
@@ -880,7 +880,7 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
                      // Check if the next field is also visible
                      ('condition' in section.fields[index + 1] && section.fields[index + 1].condition ? 
                        evaluateCondition(section.fields[index + 1].condition, formValues) : true) && (
-                      <Separator className="my-6 bg-muted/40" />
+                      <Separator className="my-6" />
                     )}
                   </React.Fragment>
                   );

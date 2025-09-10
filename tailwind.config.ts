@@ -14,6 +14,11 @@ const config: Config = {
         'heading': ['var(--font-raleway)', 'system-ui', 'sans-serif'],
         'sans': ['var(--font-open-sans)', 'system-ui', 'sans-serif'],
       },
+      colors: {
+        'green-success': 'var(--green-success)',
+        'green-light': 'var(--green-light)',
+        'green-dark': 'var(--green-dark)',
+      },
     },
   },
   plugins: [],

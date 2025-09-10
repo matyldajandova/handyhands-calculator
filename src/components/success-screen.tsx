@@ -102,7 +102,7 @@ export function SuccessScreen({ onBackToServices, serviceType, calculationResult
           transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
           className="flex justify-center mb-6"
         >
-          <CheckCircle className="h-20 w-20 text-green-500" />
+          <CheckCircle className="h-20 w-20 text-green-success" />
         </motion.div>
 
         <motion.div
@@ -185,12 +185,12 @@ export function SuccessScreen({ onBackToServices, serviceType, calculationResult
               
               {/* Conditions */}
               {formConfig?.conditions && formConfig.conditions.length > 0 && (
-                <div className="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                <div className="p-4 bg-muted rounded-lg border">
                   <div className="text-left">
-                    <h4 className="font-semibold text-amber-800 dark:text-amber-200 mb-2">
+                    <h4 className="font-semibold text-foreground mb-2">
                       Podmínky uvedené ceny:
                     </h4>
-                    <ul className="text-sm text-amber-700 dark:text-amber-300 space-y-1">
+                    <ul className="text-sm text-muted-foreground space-y-1">
                       {formConfig.conditions.map((condition, index) => (
                         <li key={index}>• {condition}</li>
                       ))}
@@ -211,7 +211,7 @@ export function SuccessScreen({ onBackToServices, serviceType, calculationResult
           <Button
             onClick={handleDownloadPDF}
             size="lg"
-            className="bg-green-600 hover:bg-green-700 text-white px-8 py-3"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3"
           >
             <Download className="h-5 w-5 mr-2" />
             Stáhnout PDF kalkulaci
