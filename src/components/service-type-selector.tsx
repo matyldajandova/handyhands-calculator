@@ -1,20 +1,23 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Building, Home, Warehouse, Store, Factory, School, FileText, Building2 } from "lucide-react";
+import { Building, Home, Warehouse, Store, Factory, School, FileText, Building2 } from "lucide-react";
 import { serviceTypes } from "@/config/services";
+import { getSlugFromServiceId } from "@/utils/slug-mapping";
 import Image from "next/image";
 
 interface ServiceTypeSelectorProps {
-  onServiceTypeSelect: (serviceType: string) => void;
+  onServiceTypeSelect?: (serviceType: string) => void; // Made optional for backward compatibility
 }
 
 export function ServiceTypeSelector({ onServiceTypeSelect }: ServiceTypeSelectorProps) {
+  const router = useRouter();
   const [selectedService, setSelectedService] = useState<string>("");
   const [hasAnimated, setHasAnimated] = useState(false);
 
@@ -29,7 +32,17 @@ export function ServiceTypeSelector({ onServiceTypeSelect }: ServiceTypeSelector
     const selectedServiceType = serviceTypes.find(service => service.id === value);
     if (selectedServiceType && selectedServiceType.formConfig) {
       setSelectedService(value);
-      onServiceTypeSelect(value);
+      
+      // Use new routing system
+      const slug = getSlugFromServiceId(value);
+      if (slug) {
+        router.push(`/kalkulator/${slug}`);
+      }
+      
+      // Fallback to callback for backward compatibility
+      if (onServiceTypeSelect) {
+        onServiceTypeSelect(value);
+      }
     }
   };
 
@@ -114,13 +127,8 @@ export function ServiceTypeSelector({ onServiceTypeSelect }: ServiceTypeSelector
                     : 'peer-checked:ring-2 peer-checked:ring-accent peer-checked:border-accent hover:shadow-lg'
                 }`}>
                   <CardHeader className="flex-shrink-0 gap-3">
-                    <div className="flex items-center justify-between">
-                      <div className={`${isDisabled ? 'text-muted-foreground/70' : 'text-accent'}`}>
-                        <IconComponent className="h-8 w-8" />
-                      </div>
-                      {selectedService === service.id && !isDisabled && (
-                        <CheckCircle className="h-6 w-6 text-accent" />
-                      )}
+                    <div className={`${isDisabled ? 'text-muted-foreground/70' : 'text-accent'}`}>
+                      <IconComponent className="h-8 w-8" />
                     </div>
                     <CardTitle className={`text-lg font-semibold font-heading ${
                       isDisabled ? 'text-foreground/80' : 'text-foreground'
