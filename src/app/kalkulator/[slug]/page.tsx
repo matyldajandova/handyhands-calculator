@@ -4,10 +4,9 @@ import { useEffect, useState } from "react";
 import { UniversalForm } from "@/components/universal-form";
 import { CalculatingScreen } from "@/components/calculating-screen";
 import { SuccessScreen } from "@/components/success-screen";
-import { Button } from "@/components/ui/button";
-import { getServiceIdFromSlug, getSlugFromServiceId } from "@/utils/slug-mapping";
+import { getServiceIdFromSlug } from "@/utils/slug-mapping";
 import { getServiceType } from "@/config/services";
-import { FormSubmissionData, CalculationResult, FormConfig } from "@/types/form-types";
+import { FormSubmissionData, CalculationResult } from "@/types/form-types";
 
 type CalculatorState = "form" | "calculating" | "success";
 
