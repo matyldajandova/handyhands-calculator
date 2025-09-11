@@ -178,6 +178,7 @@ export interface FormConfig {
     start: { month: number; day: number };
     end: { month: number; day: number };
   }; // Winter period configuration (optional)
+  hidden?: boolean; // Hide from service selector and sitemap (optional, defaults to false)
 }
 
 // Service type definitions

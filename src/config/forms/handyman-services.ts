@@ -49,6 +49,7 @@ export const handymanServicesFormConfig: FormConfig = {
   validationSchema: handymanServicesSchema,
   basePrice: CURRENT_PRICES.hourlyRate,
   conditions: [],
+  hidden: true,
   sections: [
     {
       id: "cleaning-type",

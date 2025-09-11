@@ -93,7 +93,7 @@ export function ServiceTypeSelector({ onServiceTypeSelect }: ServiceTypeSelector
         onValueChange={handleServiceSelect}
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
       >
-        {serviceTypes.map((service, index) => {
+        {serviceTypes.filter(service => !service.formConfig?.hidden).map((service, index) => {
           const isDisabled = !service.formConfig;
           const IconComponent = getIconComponent(service.icon);
           
