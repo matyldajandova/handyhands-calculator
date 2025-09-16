@@ -8,7 +8,9 @@
     "dev:kill": "pkill -f 'next dev'",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "pdf:css": "tailwindcss -i src/pdf/input.css -o dist/pdf.css --minify --content 'src/pdf/**/*.{ts,tsx,html}'",
+    "pdf:css:watch": "tailwindcss -i src/pdf/input.css -o dist/pdf.css --minify --watch --content 'src/pdf/**/*.{ts,tsx,html}'"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
@@ -35,12 +37,16 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.55.0",
+    "@tailwindcss/cli": "^4.1.13",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.4.6",
+    "playwright": "^1.55.0",
+    "puppeteer": "^24.21.0",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.3.6",
     "typescript": "^5"

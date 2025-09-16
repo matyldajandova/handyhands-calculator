@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+/* Embed fonts so headless print has Czech diacritics. Use the same variables as the app. */
+@layer base {
+  :root {
+    --font-open-sans: 'Open Sans', system-ui, sans-serif;
+    --font-raleway: 'Raleway', system-ui, sans-serif;
+  }
+  body { @apply bg-white text-gray-900 font-sans; }
+}
+
+/* Page setup for A4 output with proper margins for header/footer */
+@page {
+  size: A4;
+  /* Top ~30mm for header, bottom ~20mm for footer, sides 18mm */
+  margin: 30mm 18mm 20mm 18mm;
+}
+
+/* Utility for forced page break */
+.page-break { page-break-before: always; }
+
+/* Ensure printed colors match screen design, per Playwright guidance */
+html, body, * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+/* PDF-specific spacing adjustments */
+.pdf-content {
+  padding-top: 0;
+  padding-bottom: 20px;
+}
+
+/* Clean design helpers matching calculator style */
+.hh-section {
+  margin-top: 10mm;
+}
+.hh-divider {
+  height: 2px;
+  background: #FFCC00; /* yellow accent from sample */
+}
+.hh-muted { color: #525252; }
+.hh-small { font-size: 11px; }
+.hh-signature-block { margin-top: 14mm; }
+.hh-signature-line { height: 1px; background: #d4d4d4; margin-top: 14mm; }
+.hh-sign-name { font-weight: 600; margin-top: 6px; }
+.hh-note { font-size: 10px; color: #525252; }
+
+/* Card components for metrics - print-friendly, no shadows */
+.hh-card {
+  background: #FAFAFA;
+  border: 1px solid #E5E5E5;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+}
+.hh-card-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #262626;
+  margin-bottom: 4px;
+}
+.hh-card-subtitle {
+  font-size: 12px;
+  color: #525252;
+}
+
+/* Benefits list styling */
+.hh-benefits {
+  margin-top: 16px;
+}
+.hh-benefit-item {
+  margin-bottom: 12px;
+  padding-left: 16px;
+  position: relative;
+}
+.hh-benefit-item::before {
+  content: "•";
+  color: #FF6B35;
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+}
+.hh-benefit-title {
+  font-weight: 600;
+  color: #262626;
+  margin-bottom: 4px;
+}
+.hh-benefit-text {
+  color: #525252;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+
