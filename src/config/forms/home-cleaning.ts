@@ -68,6 +68,7 @@ export const homeCleaningFormConfig: FormConfig = {
   description: `Vyplňte údaje pro výpočet ceny úklidových služeb pro domácnosti. Všechny údaje jsou povinné.`,
   validationSchema: homeCleaningSchema,
   basePrice: CURRENT_PRICES.monthlyTariff, // Default to monthly tariff, will be overridden based on pricingType
+  hidden: true,
   conditions: [
     "Zajištění dostatečných úklidových prostředků a úklidového náčiní (včetně vysavače, pokud je to potřeba) objednatelem"
   ],
