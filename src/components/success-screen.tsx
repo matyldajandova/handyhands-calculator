@@ -16,48 +16,41 @@ interface SuccessScreenProps {
 }
 
 export function SuccessScreen({ onBackToServices, serviceType, calculationResult, formConfig, formData }: SuccessScreenProps) {
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     if (!calculationResult || !roundedResults || !formConfig) return;
     
-    // Create PDF content with actual calculation results (rounded to 10 Kč)
-    const pdfContent = `
-      Kalkulace úklidových služeb
-      Služba: ${serviceType}
-      Datum: ${new Date().toLocaleDateString('cs-CZ')}
+    try {
+      // Convert form data to OfferData format
+      const { convertFormDataToOfferData } = await import("@/utils/form-to-offer-data");
+      const offerData = convertFormDataToOfferData(formData, calculationResult, formConfig, serviceType);
       
-      Výsledek kalkulace:
-      - Cena za pravidelný úklid domu: ${roundedResults.totalMonthlyPrice.toLocaleString('cs-CZ')} Kč/měsíc
-      ${roundedResults.generalCleaningPrice ? `- Cena za generální úklid domu ${calculationResult.generalCleaningFrequency}: ${roundedResults.generalCleaningPrice.toLocaleString('cs-CZ')} Kč za provedený úklid` : ''}
-      ${calculationResult.winterServiceFee && isWinterMaintenancePeriod() ? `- Cena za zimní údržbu v období od ${formConfig.winterPeriod?.start.day}. ${formConfig.winterPeriod?.start.month}. do ${formConfig.winterPeriod?.end.day}. ${formConfig.winterPeriod?.end.month}. následujícího roku: ${calculationResult.winterServiceFee.toLocaleString('cs-CZ')} Kč/měsíc (tato položka platí pouze v zimních měsících)` : ''}
+      // Generate PDF via API
+      const response = await fetch('/api/pdf/offer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(offerData),
+      });
       
-      ${formConfig.conditions && formConfig.conditions.length > 0 ? `Podmínky uvedené ceny:
-      ${formConfig.conditions.map(condition => `- ${condition}`).join('\n')}
+      if (!response.ok) {
+        throw new Error('Failed to generate PDF');
+      }
       
-      ` : ''}      ${calculationResult.winterServiceFee && isWinterMaintenancePeriod() ? `DŮLEŽITÉ INFORMACE O ZIMNÍ ÚDRŽBĚ:
-      - Cena za zimní údržbu v období od ${formConfig.winterPeriod?.start.day}. ${formConfig.winterPeriod?.start.month}. do ${formConfig.winterPeriod?.end.day}. ${formConfig.winterPeriod?.end.month}. následujícího roku: ${calculationResult.winterServiceFee.toLocaleString('cs-CZ')} Kč/měsíc
-      - Tato položka platí pouze v zimních měsících
-      - Seznam běžně prováděných úkonů (specifikace prací) - bude uvedena ve vygenerovaném PDF
-      
-      ` : ''}      ${formData.notes ? `Poznámka zákazníka:
-      ${formData.notes}
-      
-      ⚠️ DŮLEŽITÉ: Poznámka zákazníka může ovlivnit celkovou cenu služeb.
-      
-      ` : ''}* Cena je zaokrouhlena na celé desetikoruny
-      
-      Detaily služby byly úspěšně vypočítány.
-    `;
-    
-    // Create and download file
-    const blob = new Blob([pdfContent], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `kalkulace-uklidovych-sluzeb-${new Date().toISOString().split('T')[0]}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+      // Create blob and download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `cenova-nabidka-uklidovych-sluzeb-${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Nepodařilo se vygenerovat PDF. Zkuste to prosím znovu.');
+    }
   };
 
   // Format currency for display - round to whole 10 Kč (desetikoruny)

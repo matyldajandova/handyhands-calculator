@@ -107,7 +107,6 @@ export async function GET(req: NextRequest) {
       "počet podzemních pater v domě 1",
       "převládající typ oken plastová",
       "požadavek generálního úklid domu ano",
-      "poznámka -",
       "počet nadzemních pater v domě včetně přízemí 4",
       "počet pater, kde jsou okna 4",
       "teplá voda v úklidové místnosti (nebo jinde v domě pro potřeby úklidu) ne",
@@ -121,6 +120,11 @@ export async function GET(req: NextRequest) {
       { label: "Frekvence úklidu", value: "Týdně" },
       { label: "Počet pater", value: "4" },
       { label: "Počet bytů na patře", value: "3" },
+    ],
+    notes: "Prosím o důkladný úklid schodišť a výtahu. Děkuji za profesionální služby.",
+    conditions: [
+      "Dostupnost alespoň studené vody v domě",
+      "Uzamykatelná místnost nebo uzamykatelná část domu (místo) na úklidové náčiní a úklidovou chemii"
     ]
   };
 
