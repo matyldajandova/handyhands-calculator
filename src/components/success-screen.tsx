@@ -9,20 +9,19 @@ import * as Icons from "lucide-react";
 
 interface SuccessScreenProps {
   onBackToServices: () => void;
-  serviceType: string;
   calculationResult: CalculationResult | null;
   formConfig: FormConfig | null;
   formData: FormSubmissionData;
 }
 
-export function SuccessScreen({ onBackToServices, serviceType, calculationResult, formConfig, formData }: SuccessScreenProps) {
+export function SuccessScreen({ onBackToServices, calculationResult, formConfig, formData }: SuccessScreenProps) {
   const handleDownloadPDF = async () => {
     if (!calculationResult || !roundedResults || !formConfig) return;
     
     try {
       // Convert form data to OfferData format
       const { convertFormDataToOfferData } = await import("@/utils/form-to-offer-data");
-      const offerData = convertFormDataToOfferData(formData, calculationResult, formConfig, serviceType);
+      const offerData = convertFormDataToOfferData(formData, calculationResult, formConfig);
       
       // Generate PDF via API
       const response = await fetch('/api/pdf/offer', {

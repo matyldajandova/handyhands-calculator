@@ -8,8 +8,7 @@ import { OfferData } from "@/pdf/templates/OfferPDF";
 export function convertFormDataToOfferData(
   formData: FormSubmissionData,
   calculationResult: CalculationResult,
-  formConfig: FormConfig,
-  serviceType: string
+  formConfig: FormConfig
 ): OfferData {
   // Round prices to nearest 10 Kč (desetikoruny)
   const roundedPrice = Math.round(calculationResult.totalMonthlyPrice / 10) * 10;
@@ -73,7 +72,7 @@ function generateSummaryItems(formData: FormSubmissionData, formConfig: FormConf
 /**
  * Gets display value for a field using its existing options or simple formatting
  */
-function getFieldDisplayValue(field: FormField, value: any): string {
+function getFieldDisplayValue(field: FormField, value: unknown): string {
   if (typeof value === 'boolean') {
     return value ? "ano" : "ne";
   }

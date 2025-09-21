@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
   });
   await browser.close();
 
-  return new NextResponse(pdf, {
+  return new NextResponse(pdf as BodyInit, {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": "inline; filename=handyhands-nabidka.pdf",
@@ -156,7 +156,7 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const postReq = new NextRequest("http://localhost", { method: "POST", body: JSON.stringify(demo) } as any);
+  const postReq = new NextRequest("http://localhost", { method: "POST", body: JSON.stringify(demo) });
   return POST(postReq);
 }
 

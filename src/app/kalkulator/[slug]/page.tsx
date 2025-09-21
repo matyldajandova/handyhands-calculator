@@ -96,7 +96,6 @@ export default function CalculatorPage() {
     return (
       <SuccessScreen
         onBackToServices={handleBackToServices}
-        serviceType={serviceId}
         calculationResult={calculationResult}
         formConfig={formConfig}
         formData={formData || {}}
