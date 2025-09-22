@@ -2,7 +2,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Download, FileText, Building } from "lucide-react";
+import { CheckCircle, Building } from "lucide-react";
 import { CalculationResult, FormConfig, FormSubmissionData } from "@/types/form-types";
 import { isWinterMaintenancePeriod } from "@/utils/date-utils";
 import * as Icons from "lucide-react";
@@ -211,11 +211,6 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
             onDownloadPDF={handleDownloadPDF}
             isDownloading={isDownloading}
           />
-          
-          <div className="text-sm text-muted-foreground text-center">
-            <FileText className="h-4 w-4 inline mr-1" />
-            PDF obsahuje detailní rozpis ceny a specifikace služeb
-          </div>
         </motion.div>
 
         <motion.div

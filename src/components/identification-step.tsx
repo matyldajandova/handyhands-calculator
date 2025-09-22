@@ -47,7 +47,7 @@ export function IdentificationStep({ onDownloadPDF, isDownloading = false }: Ide
       <CardHeader className="text-center mb-2">
         <CardTitle className="text-xl">Stažení PDF kalkulace</CardTitle>
         <CardDescription>
-          Pro stažení detailní kalkulace prosím vyplňte následující údaje
+          PDF obsahuje detailní rozpis ceny a specifikace služeb
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
