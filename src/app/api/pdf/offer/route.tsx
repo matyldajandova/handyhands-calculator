@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import puppeteer from "puppeteer";
+import chromium from "@sparticuz/chromium";
+import puppeteer from "puppeteer-core";
 import { renderOfferPdfBody, OfferData } from "@/pdf/templates/OfferPDF";
 import fs from "node:fs/promises";
 import path from "node:path";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
@@ -30,31 +32,16 @@ export async function POST(req: NextRequest) {
 
   const pageHtml = `<!doctype html><html><head><meta charset="utf-8"/><style>@page{size:A4;margin:30mm 18mm 20mm 18mm} ${css}</style></head><body class="font-sans text-sm">${htmlBodyWithBase64}</body></html>`;
 
-  // Resolve a Chromium executable path. Prefer Puppeteer's managed Chrome; if
-  // unavailable (common in WSL/CI), fall back to Playwright's local Chromium.
-  let executablePath: string | undefined = undefined;
-  try {
-    executablePath = puppeteer.executablePath();
-    // Fix WSL path issue: Puppeteer might report /root/.cache but actual path is /home/user/.cache
-    if (executablePath.includes('/root/.cache')) {
-      executablePath = executablePath.replace('/root/.cache', '/home/maty/.cache');
-    }
-  } catch {}
-  if (!executablePath) {
-    const pwPath = path.join(process.cwd(), 'node_modules/playwright-core/.local-browsers/chromium-1187/chrome-linux/chrome');
-    try {
-      await fs.stat(pwPath);
-      executablePath = pwPath;
-    } catch {}
-  }
-
+  // Launch serverless-compatible Chromium on Vercel
+  const executablePath = await chromium.executablePath();
   const browser = await puppeteer.launch({
-    headless: true,
-    executablePath,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    args: chromium.args,
+    defaultViewport: null,
+    executablePath: executablePath || undefined,
+    headless: chromium.headless,
   });
   const page = await browser.newPage();
-  await page.setContent(pageHtml, { waitUntil: "load" });
+  await page.setContent(pageHtml, { waitUntil: "networkidle0" });
   
   // Load header and footer templates and apply base64 replacements
   const headerTemplateRaw = await fs.readFile(path.join(process.cwd(), 'src/pdf/templates/header.html'), 'utf8');
