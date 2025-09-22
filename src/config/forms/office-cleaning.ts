@@ -27,9 +27,9 @@ const officeCleaningSchema = z.object({
   cleaningFrequency: z.string().min(1, "Vyberte četnost úklidu kanceláří"),
   cleaningDays: z.array(z.string()).optional(),
   calculationMethod: z.string().min(1, "Vyberte způsob výpočtu"),
-  hoursPerCleaning: z.string().min(1, "Vyberte požadovanou délku úklidu").optional(),
-  officeAreaNonDaily: z.string().min(1, "Vyberte orientační plochu kanceláře").optional(),
-  officeAreaDaily: z.string().min(1, "Vyberte orientační plochu kanceláře").optional(),
+  hoursPerCleaning: z.string().optional(),
+  officeAreaNonDaily: z.string().optional(),
+  officeAreaDaily: z.string().optional(),
   floorType: z.string().min(1, "Vyberte převládající typ podlahové krytiny"),
   generalCleaning: z.string().min(1, "Vyberte, zda požadujete generální úklid"),
   generalCleaningWindows: z.string().optional(),
@@ -216,6 +216,31 @@ export const officeCleaningFormConfig: FormConfig = {
   validationSchema: officeCleaningSchema,
   basePrice: CURRENT_PRICES.regularCleaning,
   conditions: [],
+  commonServices: {
+    perCleaning: [
+      "zametení a vytření všech místností a prostor kanceláří, kuchyňky, WC, schodiště, chodby, suterénu a přidružených prostor",
+      "úklid toalet včetně doplnění spotřebního materiálu ze skladu",
+      "odnos použitého nádobí do myčky",
+      "odstranění otisků prstů ze všech skleněných ploch",
+      "dle možností stírání povrchu stolů",
+      "otření nábytku",
+      "vysátí koberců",
+      "odstranění otisků prstů ze skleněných ploch",
+      "vyleštění zrcadel",
+      "mytí dřezu a kuchyňské linky",
+      "omytí použitého nádobí",
+      "vynesení odpadků"
+    ],
+    generalCleaning: [
+      "otření prachu z výšky 2,0 m a výše",
+      "vysmýčení pavučin",
+      "otření osvětlení atd.",
+      "čištění nerezových a skleněných ploch",
+      "mytí skleněných příček a dveří"
+    ],
+    monthly: [],
+    biAnnual: []
+  },
   sections: [
     {
       id: "cleaning-frequency",
@@ -292,7 +317,7 @@ export const officeCleaningFormConfig: FormConfig = {
               id: "hoursPerCleaning",
               type: "radio",
               label: "Požadujeme, aby každý úklid trval:",
-              required: true,
+              required: false,
               layout: "vertical",
               options: [
                 { value: "0.5", label: "0,5 hod.", coefficient: 0.85 },
@@ -317,7 +342,7 @@ export const officeCleaningFormConfig: FormConfig = {
               id: "officeAreaNonDaily",
               type: "radio",
               label: "Orientáční plocha kanceláře",
-              required: true,
+              required: false,
               layout: "vertical",
               condition: { 
                 operator: "or",
@@ -344,7 +369,7 @@ export const officeCleaningFormConfig: FormConfig = {
               id: "officeAreaDaily",
               type: "radio",
               label: "Orientáční plocha kanceláře",
-              required: true,
+              required: false,
               layout: "vertical",
               condition: { 
                 operator: "or",
@@ -417,7 +442,7 @@ export const officeCleaningFormConfig: FormConfig = {
               id: "generalCleaningWindows",
               type: "radio",
               label: "Typ mytí oken",
-              required: true,
+              required: false,
               layout: "vertical",
               options: [
                 { value: "both-sides", label: "Oboustranně" },
@@ -437,7 +462,7 @@ export const officeCleaningFormConfig: FormConfig = {
               id: "windowAreaBoth",
               type: "input",
               label: "Plocha oken v m²:",
-              required: true,
+              required: false,
               inputType: "number",
               min: 0.1,
               max: 1000,
@@ -458,7 +483,7 @@ export const officeCleaningFormConfig: FormConfig = {
               id: "windowCountBoth",
               type: "input",
               label: "Počet oken celkově:",
-              required: true,
+              required: false,
               inputType: "number",
               min: 1,
               max: 1000,
@@ -479,7 +504,7 @@ export const officeCleaningFormConfig: FormConfig = {
               id: "windowAreaInside",
               type: "input",
               label: "Plocha oken v m²:",
-              required: true,
+              required: false,
               inputType: "number",
               min: 0.1,
               max: 1000,
@@ -500,7 +525,7 @@ export const officeCleaningFormConfig: FormConfig = {
               id: "windowCountInside",
               type: "input",
               label: "Počet oken celkově:",
-              required: true,
+              required: false,
               inputType: "number",
               min: 1,
               max: 1000,
@@ -584,7 +609,7 @@ export const officeCleaningFormConfig: FormConfig = {
               id: "preferredTimeType",
               type: "radio",
               label: "Preferovaný čas úklidu:",
-              required: true,
+              required: false,
               layout: "vertical",
               options: [
                 { value: "morning", label: "Nejpozději ráno v" },
@@ -595,7 +620,7 @@ export const officeCleaningFormConfig: FormConfig = {
               id: "preferredHourMorning",
               type: "select",
               label: "",
-              required: true,
+              required: false,
               condition: { field: "preferredTimeType", value: "morning", operator: "equals" },
               options: [
                 { value: "3", label: "3:00" },
@@ -612,7 +637,7 @@ export const officeCleaningFormConfig: FormConfig = {
               id: "preferredHourEvening",
               type: "select",
               label: "",
-              required: true,
+              required: false,
               condition: { field: "preferredTimeType", value: "evening", operator: "equals" },
               options: [
                 { value: "16", label: "16:00" },

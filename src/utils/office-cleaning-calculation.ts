@@ -126,11 +126,21 @@ export function calculateOfficeCleaningPrice(
       methodCoefficient = getHourlyCoefficient(hours);
       calculationMethod = `Hodinový výpočet (${hours}h)`;
     }
-  } else if (formData.calculationMethod === "area" && formData.officeArea && !Array.isArray(formData.officeArea)) {
-    const area = typeof formData.officeArea === 'string' ? parseFloat(formData.officeArea) : formData.officeArea;
-    if (area && !isNaN(area) && area > 0) {
-      methodCoefficient = getAreaCoefficient(formData.cleaningFrequency, area);
-      calculationMethod = `Plošný výpočet (${area}m²)`;
+  } else if (formData.calculationMethod === "area") {
+    // Determine which area field to use based on cleaning frequency
+    let areaValue: string | number | string[] | undefined;
+    if (formData.cleaningFrequency === "daily") {
+      areaValue = formData.officeAreaDaily;
+    } else {
+      areaValue = formData.officeAreaNonDaily;
+    }
+    
+    if (areaValue && !Array.isArray(areaValue)) {
+      const area = typeof areaValue === 'string' ? parseFloat(areaValue) : areaValue;
+      if (area && !isNaN(area) && area > 0) {
+        methodCoefficient = getAreaCoefficient(formData.cleaningFrequency, area);
+        calculationMethod = `Plošný výpočet (${area}m²)`;
+      }
     }
   }
   
@@ -192,11 +202,11 @@ export function calculateOfficeCleaningPrice(
   addCoefficient("afterHours", "Úklid mimo pracovní dobu", afterHoursCoefficient);
 
   // 8. Location coefficient
-  if (!formData.location || typeof formData.location !== 'string') {
+  if (!formData.zipCode || typeof formData.zipCode !== 'string') {
     throw new Error('Lokalita je povinná');
   }
-  const locationCoefficient = getLocationCoefficient(formData.location);
-  addCoefficient("location", "Lokalita", locationCoefficient);
+  const locationCoefficient = getLocationCoefficient(formData.zipCode);
+  addCoefficient("zipCode", "Lokalita", locationCoefficient);
 
   // Calculate final price
   const finalPrice = Math.round(basePrice * finalCoefficient * 10) / 10; // Round to 0.1 Kč

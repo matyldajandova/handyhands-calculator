@@ -175,6 +175,13 @@ export interface FormConfig {
   validationSchema: z.ZodSchema<Record<string, unknown>>; // More specific than any
   basePrice?: number; // Base price for the service (optional, defaults to 1500)
   conditions?: string[]; // Pricing conditions (optional)
+  commonServices?: {
+    weekly?: string[];
+    monthly?: string[];
+    biAnnual?: string[];
+    perCleaning?: string[];
+    generalCleaning?: string[];
+  }; // Common services performed (optional)
   winterPeriod?: {
     start: { month: number; day: number };
     end: { month: number; day: number };

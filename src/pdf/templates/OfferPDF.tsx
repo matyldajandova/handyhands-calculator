@@ -12,6 +12,14 @@ export type OfferData = {
   notes?: string;
   // Form conditions/requirements
   conditions?: string[];
+  // Common services performed
+  commonServices?: {
+    weekly?: string[];
+    monthly?: string[];
+    biAnnual?: string[];
+    perCleaning?: string[];
+    generalCleaning?: string[];
+  };
 };
 /**
  * Returns the HTML body markup for the Offer PDF using Tailwind classes.
@@ -27,6 +35,7 @@ export function renderOfferPdfBody(data: OfferData): string {
         ${renderCompleteQATable(data.tasks, data.summaryItems)}
         
         ${renderNotesSection(data.notes)}
+        ${renderCommonServicesSection(data.commonServices)}
       </section>
 
       <div class="page-break"></div>
@@ -253,4 +262,56 @@ function renderConditionsSection(conditions?: string[]): string {
       </ul>
     </div>
   `;
+}
+
+function renderCommonServicesSection(commonServices?: { 
+  weekly?: string[]; 
+  monthly?: string[]; 
+  biAnnual?: string[];
+  perCleaning?: string[];
+  generalCleaning?: string[];
+}): string {
+  if (!commonServices) return "";
+  
+  // Define service categories with their labels
+  const serviceCategories = [
+    { key: 'perCleaning', label: 'Při každém úklidu' },
+    { key: 'generalCleaning', label: 'Generální úklid' },
+    { key: 'weekly', label: '1 x týdně' },
+    { key: 'monthly', label: '1 x měsíčně' },
+    { key: 'biAnnual', label: '2 x ročně (generální úklid, placený zvlášť)' }
+  ];
+  
+  // Filter to only categories that have content
+  const activeCategories = serviceCategories.filter(category => {
+    const services = commonServices[category.key as keyof typeof commonServices] as string[] | undefined;
+    return services && services.length > 0;
+  });
+  
+  if (activeCategories.length === 0) return "";
+  
+  let html = `
+    <div class="mt-6">
+      <div class="font-semibold mb-3 text-lg">Seznam běžně prováděných úkonů</div>
+  `;
+  
+  // Render each active category
+  activeCategories.forEach(category => {
+    const services = commonServices[category.key as keyof typeof commonServices] as string[];
+    const servicesList = services
+      .map(service => `<li class="text-sm">${escapeHtml(service)}</li>`)
+      .join("");
+    
+    html += `
+      <div class="mb-3">
+        <div class="font-medium mb-2 font-semibold">${category.label}</div>
+        <ul class="marker:text-primary list-outside list-disc ml-6 space-y-1">
+          ${servicesList}
+        </ul>
+      </div>
+    `;
+  });
+  
+  html += `</div>`;
+  return html;
 }

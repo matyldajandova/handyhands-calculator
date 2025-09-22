@@ -152,6 +152,27 @@ export const panelBuildingFormConfig: FormConfig = {
     "Dostupnost alespoň studené vody v domě",
     "Uzamykatelná místnost nebo místo na úklidové náčiní a úklidovou chemii"
   ],
+  commonServices: {
+    weekly: [
+      "zametání a mytí schodů, podest a chodeb ve všech patrech domu včetně přízemí",
+      "otírání madel zábradlí a okenních parapetů",
+      "schody do suterénu",
+      "hrubý úklid dvorku",
+      "oboustranné mytí skleněných vchodových dveří od otisků prstů a odstranění letáků"
+    ],
+    monthly: [
+      "odstranění reklam",
+      "vysmýčení pavučin"
+    ],
+    biAnnual: [
+      "zametení v suterénu domu",
+      "umytí všech otevíravých částí oken včetně rámů",
+      "očištění osvětlení zvenčí",
+      "mytí zábradlí",
+      "umytí nadsvětlíků u vchodových dveří",
+      "setření prachu z hydrantů, schránek, vypínačů a tech. rozvodů"
+    ]
+  },
   sections: [
     {
       id: "cleaning-frequency",

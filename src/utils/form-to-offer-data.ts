@@ -37,7 +37,8 @@ export function convertFormDataToOfferData(
     tasks: [], // Don't create tasks to avoid duplication
     summaryItems,
     notes: typeof formData.notes === 'string' ? formData.notes : undefined,
-    conditions: formConfig.conditions || []
+    conditions: formConfig.conditions || [],
+    commonServices: formConfig.commonServices
   };
 }
 
