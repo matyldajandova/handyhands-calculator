@@ -6,6 +6,7 @@
     "dev": "next dev --port 3000 --turbopack",
     "dev:smart": "./scripts/dev.sh",
     "dev:kill": "pkill -f 'next dev'",
+    "prebuild": "npm run pdf:css",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
