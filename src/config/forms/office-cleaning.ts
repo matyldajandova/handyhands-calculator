@@ -74,6 +74,8 @@ const officeCleaningSchema = z.object({
   cleaningChemicals: z.string().min(1, "Vyberte způsob dodávání úklidové chemie"),
   cleaningTools: z.string().min(1, "Vyberte způsob dodávání úklidového náčiní"),
   zipCode: z.string().min(1, "Zadejte PSČ").regex(/^\d{5}$/, "PSČ musí mít přesně 5 čísel"),
+  optionalServicesPerCleaning: z.array(z.string()).optional(),
+  optionalServicesMonthly: z.array(z.string()).optional(),
   notes: z.string().optional(),
 }).superRefine((data, ctx) => {
   // Validate calculation method specific fields
@@ -669,6 +671,49 @@ export const officeCleaningFormConfig: FormConfig = {
               label: "Zajišťuje zhotovitel a je započítán v cenové nabídce", 
               coefficient: 1.02 
             }
+          ]
+        }
+      ]
+    },
+    {
+      id: "optional-services",
+      title: "Příplatkové služby",
+      icon: "Plus",
+      fields: [
+        {
+          id: "optionalServicesPerCleaning",
+          type: "checkbox",
+          label: "Při každém úklidu",
+          required: false,
+          options: [
+            { value: "elevator-maintenance", label: "Olejování nerezových stěn interiéru výtahu včetně jejich údržby (+350 Kč/měsíc)", fixedAddon: 350 },
+            { value: "sweep-pathway", label: "Zametení venkovního přístupového chodníku nebo schodiště před objektem (+250 Kč/měsíc)", fixedAddon: 250 },
+            { value: "shredder-control", label: "Kontrola a vyprazdňování skartovacího zařízení (+150 Kč/měsíc)", fixedAddon: 150 },
+            { value: "clean-doormats", label: "Čištění vstupních rohoží v přízemí objektu (+120 Kč/měsíc)", fixedAddon: 120, hidden: true },
+            { value: "water-plants", label: "Zalévání pokojových květin (+250 Kč/měsíc)", fixedAddon: 250, hidden: true },
+            { value: "clean-coffee-machine", label: "Kontrola a čištění kávovaru (+200 Kč/měsíc)", fixedAddon: 200, hidden: true },
+            { value: "hand-wash-dishes", label: "Ruční domytí nádobí z myčky a jeho otření do sucha (+300 Kč/měsíc)", fixedAddon: 300, hidden: true },
+            { value: "take-out-recycling", label: "Vynášení tříděného odpadu na místa kontejnerového stání (mimo prostor kanceláří) (+300 Kč/měsíc)", fixedAddon: 300, hidden: true },
+            { value: "remove-fingerprints", label: "Odstraňování otisků prstů například v okolí klik u skleněných dveří (+200 Kč/měsíc)", fixedAddon: 200, hidden: true }
+          ]
+        },
+        {
+          id: "optionalServicesMonthly",
+          type: "checkbox",
+          label: "1x měsíčně",
+          required: false,
+          options: [
+            { value: "elevator-maintenance-monthly", label: "Olejování nerezových stěn interiéru výtahu včetně jejich údržby (+140 Kč/měsíc)", fixedAddon: 140 },
+            { value: "dust-high-furniture", label: "Otírání prachu z nábytku z výšek více než 2,2 m (+100 Kč/měsíc)", fixedAddon: 100 },
+            { value: "clean-coffee-machine-monthly", label: "Kontrola a čištění kávovaru (+150 Kč/měsíc)", fixedAddon: 150 },
+            { value: "disinfect-bins", label: "Vymytí a dezinfekce odpadkových košů (+120 Kč/měsíc)", fixedAddon: 120, hidden: true },
+            { value: "vacuum-upholstery", label: "Vysátí čalouněného nábytku (+300 Kč/měsíc)", fixedAddon: 300, hidden: true },
+            { value: "clean-chair-wheels", label: "Čištění podnoží kancelářských židli včetně koleček (+200 Kč/měsíc)", fixedAddon: 200, hidden: true },
+            { value: "clean-tiles-bathrooms", label: "Mytí celé plochy omyvatelných obkladů na sociálních zařízeních (+200 Kč/měsíc)", fixedAddon: 200, hidden: true },
+            { value: "wash-towels-internal", label: "Praní špinavých utěrek a hadrů v pračce, která je součástí prostor kanceláří (+200 Kč/měsíc)", fixedAddon: 200, hidden: true },
+            { value: "wash-towels-external", label: "Praní špinavých utěrek a hadrů v pračce, která není součástí prostor kanceláří / externí praní (+500 Kč/naplněná pračka)", fixedAddon: 500, hidden: true },
+            { value: "clean-handles-doors", label: "Čištění klik a dveří (+100 Kč/měsíc)", fixedAddon: 100, hidden: true },
+            { value: "clean-glass-partitions", label: "Čištění omyvatelných (například skleněných) příček v prostorách kanceláří (+300 Kč/měsíc)", fixedAddon: 300, hidden: true }
           ]
         }
       ]

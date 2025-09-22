@@ -139,6 +139,7 @@ export interface CheckboxField extends BaseField {
     label: string;
     coefficient?: number;
     fixedAddon?: number; // Fixed price addon in Kč
+    hidden?: boolean; // Whether this option should be hidden initially
   }>;
   layout?: 'horizontal' | 'vertical';
 }

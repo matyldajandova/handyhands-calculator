@@ -85,6 +85,8 @@ const panelBuildingSchema = z.object({
     return val;
   }, z.union([z.number().min(0.1).max(10000), z.undefined()])).optional(),
   spreadingMaterial: z.string().optional(),
+  optionalServicesWeekly: z.array(z.string()).optional(),
+  optionalServicesMonthly: z.array(z.string()).optional(),
   zipCode: z.string().min(1, "Zadejte PSČ").regex(/^\d{5}$/, "PSČ musí mít přesně 5 čísel"),
   notes: z.string().optional(),
 }).superRefine((data, ctx) => {
@@ -384,6 +386,41 @@ export const panelBuildingFormConfig: FormConfig = {
             }
           ]
         },
+      ]
+    },
+    {
+      id: "optional-services",
+      title: "Příplatkové služby",
+      icon: "Plus",
+      fields: [
+        {
+          id: "optionalServicesWeekly",
+          type: "checkbox",
+          label: "1x týdně",
+          required: false,
+          options: [
+            { value: "sweep-pathway", label: "Zametení venkovního přístupového chodníku nebo schodiště před domem (250 Kč/měsíc)", fixedAddon: 250 },
+            { value: "sweep-containers", label: "Zametení okolo kontejnerového stání včetně odstranění hrubých nečistot (200 Kč/měsíc)", fixedAddon: 200 },
+            { value: "remove-debris", label: "Odstranění hrubých nečistot kolem domu (200 Kč/měsíc)", fixedAddon: 200 },
+            { value: "clean-doormats", label: "Čištění vstupních rohoží v přízemí domu (150 Kč/měsíc)", fixedAddon: 150, hidden: true },
+            { value: "dispose-flyers", label: "Likvidace tiskovin / reklamních letáků (50 Kč/měsíc)", fixedAddon: 50, hidden: true },
+            { value: "elevator-maintenance", label: "Olejování nerezových stěn interiéru výtahu a jejich údržba (250 Kč/měsíc)", fixedAddon: 250, hidden: true },
+            { value: "report-issues", label: "Hlášení závad v domě (150 Kč/měsíc)", fixedAddon: 150, hidden: true },
+            { value: "sweep-under-mats", label: "Zametání a mytí podlah pod rohožkami u jednotlivých bytů (120 Kč/měsíc)", fixedAddon: 120, hidden: true }
+          ]
+        },
+        {
+          id: "optionalServicesMonthly",
+          type: "checkbox",
+          label: "1x měsíčně",
+          required: false,
+          options: [
+            { value: "remove-stickers", label: "Odstraňování samolepek (reklam) ze vstupních dveří (90 Kč/měsíc)", fixedAddon: 90 },
+            { value: "elevator-maintenance-monthly", label: "Olejování nerezových stěn interiéru výtahu a jejich údržba (140 Kč/měsíc)", fixedAddon: 140 },
+            { value: "clean-doors-handles", label: "Čištění povrchu dveří a otírání klik ve společných prostorách domu (250 Kč/měsíc)", fixedAddon: 250 },
+            { value: "clean-washable-walls", label: "Čištění omyvatelných stěn (např. linkrust) v přízemí domu (120 Kč/měsíc)", fixedAddon: 120, hidden: true }
+          ]
+        }
       ]
     },
     {

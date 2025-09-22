@@ -106,13 +106,13 @@ function FieldLabel({ field, isRequired }: { field: FormFieldType; isRequired?: 
   );
 }
 
-// Radio field component with hidden options support
-function RadioFieldWithHiddenOptions({ 
+// Shared component for handling hidden options with show more button
+function OptionsWithShowMore({ 
   field, 
-  formField
+  renderOption
 }: { 
-  field: RadioField; 
-  formField: ControllerRenderProps<FormSubmissionData>; 
+  field: RadioField | CheckboxField; 
+  renderOption: (option: any, isHidden?: boolean) => React.ReactNode;
 }) {
   const [showHiddenOptions, setShowHiddenOptions] = useState(false);
   const hasHiddenOptions = field.options.some(option => option.hidden);
@@ -122,119 +122,102 @@ function RadioFieldWithHiddenOptions({
 
   return (
     <div className="space-y-3">
-        <RadioGroup
-          value={formField.value?.toString() || ""}
-          onValueChange={(value) => {
-            // Convert back to the original type if it was numeric
-          const firstOption = field.options?.[0];
-            if (firstOption && typeof firstOption.value === "number") {
-              formField.onChange(parseInt(value, 10));
-            } else {
-              formField.onChange(value);
-            }
-          }}
-          className="flex flex-col gap-3"
-        >
-        {/* Render visible options */}
-        {visibleOptions.map((option) => (
-          <FormItem key={option.value} className="flex items-center gap-2">
-            <FormControl>
-              <RadioGroupItem value={option.value.toString()} id={`${field.id}_${option.value}`} />
-            </FormControl>
-            <FormLabel htmlFor={`${field.id}_${option.value}`} className="font-normal cursor-pointer">
-              <span>{option.label}</span>
-              <div className="flex items-center gap-2">
-                {option.note && (
-                  <Badge 
-                    variant={option.note === 'frequent' ? 'secondary' : 'default'}
-                    className={`text-xs ${
-                      option.note === 'frequent' 
-                        ? 'bg-muted text-muted-foreground' 
-                        : 'bg-accent text-accent-foreground'
-                    }`}
-                  >
-                    {option.note === 'frequent' ? 'Nejvyužívanější' : 'Doporučeno'}
-                  </Badge>
-                )}
-                {option.tooltip && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Icons.Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-accent transition-colors" />
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-xs">
-                      <p className="text-sm">{option.tooltip}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-              </div>
-            </FormLabel>
-          </FormItem>
-        ))}
-        
-        {/* Toggle button for hidden options */}
-        {hasHiddenOptions && !showHiddenOptions && (
-          <div className="flex justify-start pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowHiddenOptions(true)}
-            >
-              <Icons.ChevronDown className="h-4 w-4" />
-              Další možnosti
-            </Button>
-          </div>
+      {/* Render visible options */}
+      {visibleOptions.map((option) => renderOption(option))}
+      
+      {/* Toggle button for hidden options */}
+      {hasHiddenOptions && !showHiddenOptions && (
+        <div className="flex justify-start pt-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowHiddenOptions(true)}
+            className="text-sm text-muted-foreground hover:text-foreground border-muted-foreground/20 hover:border-muted-foreground/40"
+          >
+            <Icons.ChevronDown className="h-4 w-4" />
+            Další možnosti
+          </Button>
+        </div>
+      )}
+      
+      {/* Render hidden options when shown */}
+      <AnimatePresence>
+        {showHiddenOptions && hiddenOptions.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="flex flex-col gap-3"
+          >
+                    {hiddenOptions.map((option) => renderOption(option))}
+          </motion.div>
         )}
-        
-        {/* Render hidden options when shown */}
-        <AnimatePresence>
-          {showHiddenOptions && hiddenOptions.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="flex flex-col gap-3"
-            >
-              {hiddenOptions.map((option) => (
-            <FormItem key={option.value} className="flex items-center gap-2">
-              <FormControl>
-                <RadioGroupItem value={option.value.toString()} id={`${field.id}_${option.value}`} />
-              </FormControl>
-              <FormLabel htmlFor={`${field.id}_${option.value}`} className="font-normal cursor-pointer">
-                <span>{option.label}</span>
-                <div className="flex items-center gap-2">
-                  {option.note && (
-                    <Badge 
-                      variant={option.note === 'frequent' ? 'secondary' : 'default'}
-                      className={`text-xs ${
-                        option.note === 'frequent' 
-                          ? 'bg-muted text-muted-foreground' 
-                          : 'bg-accent text-accent-foreground'
-                      }`}
-                    >
-                      {option.note === 'frequent' ? 'Nejvyužívanější' : 'Doporučeno'}
-                    </Badge>
-                  )}
-                  {option.tooltip && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Icons.Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-accent transition-colors" />
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs">
-                        <p className="text-sm">{option.tooltip}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
-                </div>
-              </FormLabel>
-            </FormItem>
-          ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-        </RadioGroup>
+      </AnimatePresence>
     </div>
+  );
+}
+
+// Radio field component with hidden options support
+function RadioFieldWithHiddenOptions({ 
+  field, 
+  formField
+}: { 
+  field: RadioField; 
+  formField: ControllerRenderProps<FormSubmissionData>; 
+}) {
+  const renderOption = (option: any) => (
+    <FormItem key={option.value} className="flex items-center gap-2">
+      <FormControl>
+        <RadioGroupItem value={option.value.toString()} id={`${field.id}_${option.value}`} />
+      </FormControl>
+      <FormLabel htmlFor={`${field.id}_${option.value}`} className="font-normal cursor-pointer">
+        <span>{option.label}</span>
+        <div className="flex items-center gap-2">
+          {option.note && (
+            <Badge 
+              variant={option.note === 'frequent' ? 'secondary' : 'default'}
+              className={`text-xs ${
+                option.note === 'frequent' 
+                  ? 'bg-muted text-muted-foreground' 
+                  : 'bg-accent text-accent-foreground'
+              }`}
+            >
+              {option.note === 'frequent' ? 'Nejvyužívanější' : 'Doporučeno'}
+            </Badge>
+          )}
+          {option.tooltip && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Icons.Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-accent transition-colors" />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs">
+                <p className="text-sm">{option.tooltip}</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+      </FormLabel>
+    </FormItem>
+  );
+
+  return (
+    <RadioGroup
+      value={formField.value?.toString() || ""}
+      onValueChange={(value) => {
+        // Convert back to the original type if it was numeric
+        const firstOption = field.options?.[0];
+        if (firstOption && typeof firstOption.value === "number") {
+          formField.onChange(parseInt(value, 10));
+        } else {
+          formField.onChange(value);
+        }
+      }}
+      className="flex flex-col gap-3"
+    >
+      <OptionsWithShowMore field={field} renderOption={renderOption} />
+    </RadioGroup>
   );
 }
 
@@ -535,6 +518,72 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
         return "Vyberte preferované dny v týdnu pro úklid";
       };
       
+      const renderOption = (option: any) => {
+        let isDisabled = false;
+        let disabledReason = "";
+        
+        if (isWindowTypeField) {
+          // Disable "original" if "new" is selected
+          if (option.value === "original" && hasNewSelected) {
+            isDisabled = true;
+            disabledReason = "Nelze vybrat současně s novými okny";
+          }
+          // Disable "new" if "original" is selected
+          if (option.value === "new" && hasOriginalSelected) {
+            isDisabled = true;
+            disabledReason = "Nelze vybrat současně s původními okny";
+          }
+        }
+        
+        if (isCleaningDaysField) {
+          // If "no preference" is selected, disable all day options
+          if (hasNoPreferenceSelected && option.value !== "no-preference") {
+            isDisabled = true;
+            disabledReason = "";
+          }
+          // If we have reached the maximum number of days, disable remaining day options (but not selected ones)
+          else if (option.value !== "no-preference" && !hasNoPreferenceSelected && 
+                   !currentValues.includes(option.value) &&
+                   currentValues.filter(val => val !== "no-preference").length >= expectedDaysCount) {
+            isDisabled = true;
+            disabledReason = "";
+          }
+          // Disable "no preference" if any days are selected
+          else if (option.value === "no-preference" && currentValues.some(val => val !== "no-preference")) {
+            isDisabled = true;
+            disabledReason = "";
+          }
+        }
+        
+        return (
+          <FormItem key={option.value} className="flex items-center gap-2">
+            <FormControl>
+              <Checkbox
+                id={`${field.id}_${option.value}`}
+                checked={currentValues.includes(option.value)}
+                disabled={isDisabled}
+                onCheckedChange={(checked: boolean | "indeterminate") => {
+                  if (checked) {
+                    formField.onChange([...currentValues, option.value]);
+                  } else {
+                    formField.onChange(currentValues.filter((value: string) => value !== option.value));
+                  }
+                }}
+              />
+            </FormControl>
+            <FormLabel 
+              htmlFor={`${field.id}_${option.value}`} 
+              className={`font-normal cursor-pointer ${isDisabled ? 'text-muted-foreground' : ''}`}
+            >
+              {option.label}
+              {isDisabled && disabledReason && (
+                <span className="text-xs text-muted-foreground">({disabledReason})</span>
+              )}
+            </FormLabel>
+          </FormItem>
+        );
+      };
+
       return (
         <div className="flex flex-col gap-3">
           {isCleaningDaysField && (
@@ -542,71 +591,7 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
               {getCleaningDaysLabel()}
             </div>
           )}
-          {checkboxField.options.map((option) => {
-            let isDisabled = false;
-            let disabledReason = "";
-            
-            if (isWindowTypeField) {
-              // Disable "original" if "new" is selected
-              if (option.value === "original" && hasNewSelected) {
-                isDisabled = true;
-                disabledReason = "Nelze vybrat současně s novými okny";
-              }
-              // Disable "new" if "original" is selected
-              if (option.value === "new" && hasOriginalSelected) {
-                isDisabled = true;
-                disabledReason = "Nelze vybrat současně s původními okny";
-              }
-            }
-            
-            if (isCleaningDaysField) {
-              // If "no preference" is selected, disable all day options
-              if (hasNoPreferenceSelected && option.value !== "no-preference") {
-                isDisabled = true;
-                disabledReason = "";
-              }
-              // If we have reached the maximum number of days, disable remaining day options (but not selected ones)
-              else if (option.value !== "no-preference" && !hasNoPreferenceSelected && 
-                       !currentValues.includes(option.value) &&
-                       currentValues.filter(val => val !== "no-preference").length >= expectedDaysCount) {
-                isDisabled = true;
-                disabledReason = "";
-              }
-              // Disable "no preference" if any days are selected
-              else if (option.value === "no-preference" && currentValues.some(val => val !== "no-preference")) {
-                isDisabled = true;
-                disabledReason = "";
-              }
-            }
-            
-            return (
-            <FormItem key={option.value} className="flex items-center gap-2">
-              <FormControl>
-                <Checkbox
-                  id={`${field.id}_${option.value}`}
-                    checked={currentValues.includes(option.value)}
-                    disabled={isDisabled}
-                  onCheckedChange={(checked: boolean | "indeterminate") => {
-                    if (checked) {
-                      formField.onChange([...currentValues, option.value]);
-                    } else {
-                      formField.onChange(currentValues.filter((value: string) => value !== option.value));
-                    }
-                  }}
-                />
-              </FormControl>
-                <FormLabel 
-                  htmlFor={`${field.id}_${option.value}`} 
-                  className={`font-normal cursor-pointer ${isDisabled ? 'text-muted-foreground' : ''}`}
-                >
-                {option.label}
-                  {isDisabled && disabledReason && (
-                    <span className="text-xs text-muted-foreground">({disabledReason})</span>
-                  )}
-              </FormLabel>
-            </FormItem>
-            );
-          })}
+          <OptionsWithShowMore field={checkboxField} renderOption={renderOption} />
         </div>
       );
 

@@ -31,6 +31,7 @@ const homeCleaningSchema = z.object({
   cleaningDays: z.array(z.string()).optional(),
   homeArea: z.string().min(1, "Vyberte orientační plochu prostor domácnosti"),
   domesticAnimals: z.string().min(1, "Vyberte, zda máte domácí zvířata"),
+  optionalServices: z.array(z.string()).optional(),
   zipCode: z.string().min(1, "Zadejte PSČ").regex(/^\d{5}$/, "PSČ musí mít přesně 5 čísel"),
   notes: z.string().optional(),
 }).superRefine((data, ctx) => {
@@ -173,6 +174,22 @@ export const homeCleaningFormConfig: FormConfig = {
           options: [
             { value: "no", label: "Ne", coefficient: 0.98 },
             { value: "yes", label: "Ano", coefficient: 1.05 }
+          ]
+        }
+      ]
+    },
+    {
+      id: "optional-services",
+      title: "Příplatkové služby",
+      icon: "Plus",
+      fields: [
+        {
+          id: "optionalServices",
+          type: "checkbox",
+          label: "",
+          required: false,
+          options: [
+            { value: "english-speaking", label: "Požadavek anglicky mluvícího pracovníka", coefficient: 1.4 }
           ]
         }
       ]

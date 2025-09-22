@@ -41,6 +41,7 @@ const oneTimeCleaningSchema = z.object({
   windowCleaningArea: z.string().optional(),
   cleaningSupplies: z.string().min(1, "Vyberte úklidové náčiní a úklidovou chemii"),
   domesticAnimals: z.string().min(1, "Vyberte, zda máte domácí zvířata"),
+  optionalServices: z.array(z.string()).optional(),
   zipCode: z.string().min(1, "Zadejte PSČ").regex(/^\d{5}$/, "PSČ musí mít přesně 5 čísel"),
   notes: z.string().optional(),
 }).refine((data) => {
@@ -182,6 +183,22 @@ export const oneTimeCleaningFormConfig: FormConfig = {
           options: [
             { value: "no", label: "Ne", coefficient: 0.98 },
             { value: "yes", label: "Ano", coefficient: 1.05 }
+          ]
+        }
+      ]
+    },
+    {
+      id: "optional-services",
+      title: "Příplatkové služby",
+      icon: "Plus",
+      fields: [
+        {
+          id: "optionalServices",
+          type: "checkbox",
+          label: "",
+          required: false,
+          options: [
+            { value: "english-speaking", label: "Požadavek anglicky mluvícího pracovníka", coefficient: 1.4 }
           ]
         }
       ]
