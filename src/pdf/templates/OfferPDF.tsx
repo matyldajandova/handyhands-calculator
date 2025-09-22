@@ -118,6 +118,7 @@ export function renderOfferPdfBody(data: OfferData): string {
           <div>${escapeHtml(data.customer.name)}</div>
           ${data.customer.address ? `<div>${escapeHtml(data.customer.address)}</div>` : ""}
           ${data.customer.email ? `<div>${escapeHtml(data.customer.email)}</div>` : ""}
+          ${data.customer.phone ? `<div>${escapeHtml(data.customer.phone)}</div>` : ""}
         </div>
         <div>
           <div class="font-semibold">Údaje o nás:</div>

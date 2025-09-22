@@ -8,7 +8,8 @@ import { OfferData } from "@/pdf/templates/OfferPDF";
 export function convertFormDataToOfferData(
   formData: FormSubmissionData,
   calculationResult: CalculationResult,
-  formConfig: FormConfig
+  formConfig: FormConfig,
+  customerData?: { name: string; email: string }
 ): OfferData {
   // Round prices to nearest 10 Kč (desetikoruny)
   const roundedPrice = Math.round(calculationResult.totalMonthlyPrice / 10) * 10;
@@ -23,7 +24,10 @@ export function convertFormDataToOfferData(
     quoteDate: new Date().toLocaleDateString("cs-CZ"),
     price: roundedPrice,
     startDate,
-    customer: { 
+    customer: customerData ? {
+      name: customerData.name,
+      email: customerData.email
+    } : { 
       name: "Údaje o zákazníkovi budou doplněny později" // Placeholder as requested
     },
     company: { 

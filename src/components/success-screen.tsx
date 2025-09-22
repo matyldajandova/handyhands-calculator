@@ -6,6 +6,8 @@ import { CheckCircle, Download, FileText, Building } from "lucide-react";
 import { CalculationResult, FormConfig, FormSubmissionData } from "@/types/form-types";
 import { isWinterMaintenancePeriod } from "@/utils/date-utils";
 import * as Icons from "lucide-react";
+import { IdentificationStep } from "@/components/identification-step";
+import { useState } from "react";
 
 interface SuccessScreenProps {
   onBackToServices: () => void;
@@ -15,13 +17,16 @@ interface SuccessScreenProps {
 }
 
 export function SuccessScreen({ onBackToServices, calculationResult, formConfig, formData }: SuccessScreenProps) {
-  const handleDownloadPDF = async () => {
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadPDF = async (customerData: { name: string; email: string }) => {
     if (!calculationResult || !roundedResults || !formConfig) return;
     
+    setIsDownloading(true);
     try {
-      // Convert form data to OfferData format
+      // Convert form data to OfferData format with customer data
       const { convertFormDataToOfferData } = await import("@/utils/form-to-offer-data");
-      const offerData = convertFormDataToOfferData(formData, calculationResult, formConfig);
+      const offerData = convertFormDataToOfferData(formData, calculationResult, formConfig, customerData);
       
       // Generate PDF via API
       const response = await fetch('/api/pdf/offer', {
@@ -49,6 +54,8 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Nepodařilo se vygenerovat PDF. Zkuste to prosím znovu.');
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -200,16 +207,12 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
           transition={{ delay: 0.5, duration: 0.5 }}
           className="space-y-4"
         >
-          <Button
-            onClick={handleDownloadPDF}
-            size="lg"
-            className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3"
-          >
-            <Download className="h-5 w-5 mr-2" />
-            Stáhnout PDF kalkulaci
-          </Button>
+          <IdentificationStep 
+            onDownloadPDF={handleDownloadPDF}
+            isDownloading={isDownloading}
+          />
           
-          <div className="text-sm text-muted-foreground">
+          <div className="text-sm text-muted-foreground text-center">
             <FileText className="h-4 w-4 inline mr-1" />
             PDF obsahuje detailní rozpis ceny a specifikace služeb
           </div>
