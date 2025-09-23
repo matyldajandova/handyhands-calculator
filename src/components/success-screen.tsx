@@ -7,7 +7,7 @@ import { CalculationResult, FormConfig, FormSubmissionData } from "@/types/form-
 import { isWinterMaintenancePeriod } from "@/utils/date-utils";
 import * as Icons from "lucide-react";
 import { IdentificationStep } from "@/components/identification-step";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { hashService } from "@/services/hash-service";
 
@@ -37,12 +37,14 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
   }, []);
 
   // Round calculation results to whole 10 Kč
-  const roundedResults = calculationResult ? {
-    regularCleaningPrice: Math.round(calculationResult.regularCleaningPrice / 10) * 10,
-    generalCleaningPrice: calculationResult.generalCleaningPrice ? 
-      Math.round(calculationResult.generalCleaningPrice / 10) * 10 : undefined,
-    totalMonthlyPrice: Math.round(calculationResult.totalMonthlyPrice / 10) * 10
-  } : null;
+  const roundedResults = useMemo(() => {
+    return calculationResult ? {
+      regularCleaningPrice: Math.round(calculationResult.regularCleaningPrice / 10) * 10,
+      generalCleaningPrice: calculationResult.generalCleaningPrice ? 
+        Math.round(calculationResult.generalCleaningPrice / 10) * 10 : undefined,
+      totalMonthlyPrice: Math.round(calculationResult.totalMonthlyPrice / 10) * 10
+    } : null;
+  }, [calculationResult]);
 
   // Handle form data changes and update hash (with debouncing)
   const handleFormDataChange = useCallback((newCustomerData: { firstName: string; lastName: string; email: string }) => {

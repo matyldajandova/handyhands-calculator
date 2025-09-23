@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
             } : {}),
             // Include any additional form data that might be in the customer object
             // This will include company data, notes, etc. from the enhanced customer data
-            ...(data.customer as any)
+            ...(data.customer as Record<string, unknown>)
           }
         }
       };

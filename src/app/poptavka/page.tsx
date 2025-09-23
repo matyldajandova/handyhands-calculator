@@ -108,7 +108,7 @@ function PoptavkaContent() {
           const mergedData = {
             ...existingData,
             ...hashFormData
-          } as Record<string, any>;
+          } as Record<string, unknown>;
           
           // Ensure all string fields are never undefined
           const safeFormData: FormData = {
