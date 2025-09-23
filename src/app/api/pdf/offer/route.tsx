@@ -67,7 +67,9 @@ export async function POST(req: NextRequest) {
       data.poptavkaHash = hashService.generateHash(hashData);
     }
     
-    const htmlBody = renderOfferPdfBody(data);
+    // Determine base URL for links - use environment variable or fallback to production URL
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+    const htmlBody = renderOfferPdfBody(data, baseUrl);
 
   const cssPath = path.join(process.cwd(), "dist", "pdf.css");
   const css = await fs.readFile(cssPath, "utf8").catch(() => "");
@@ -224,7 +226,9 @@ export async function GET(req: NextRequest) {
 
   // If preview=true, return HTML instead of PDF
   if (preview === 'true') {
-    const htmlBody = renderOfferPdfBody(demo);
+    // Determine base URL for links - use environment variable or fallback to production URL
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://handyhands-calculator.vercel.app';
+    const htmlBody = renderOfferPdfBody(demo, baseUrl);
     const cssPath = path.join(process.cwd(), "dist", "pdf.css");
     const css = await fs.readFile(cssPath, "utf8").catch(() => "");
     

@@ -29,7 +29,7 @@ export type OfferData = {
  * Returns the HTML body markup for the Offer PDF using Tailwind classes.
  * We avoid JSX/react-dom usage so this can be safely called from a Route Handler.
  */
-export function renderOfferPdfBody(data: OfferData): string {
+export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
   const tasksHtml = (data.tasks?.length ?? 0) || (data.summaryItems?.length ?? 0)
     ? `
       <div class="page-break"></div>
@@ -146,7 +146,7 @@ export function renderOfferPdfBody(data: OfferData): string {
           <div class="text-muted-foreground">S úklidovými službami jsme schopni začít od tohoto dne</div>
           ${data.poptavkaHash ? `
             <div class="mt-4">
-              <a href="${process.env.PUBLIC_APP_URL}/poptavka?hash=${escapeHtml(data.poptavkaHash)}" 
+              <a href="${baseUrl}/poptavka?hash=${escapeHtml(data.poptavkaHash)}" 
                  class="text-orange-600 font-bold hover:text-orange-800 inline-flex items-center gap-1">
                 Závazná poptávka
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
