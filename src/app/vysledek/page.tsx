@@ -34,7 +34,6 @@ function VysledekContent() {
           return;
         }
 
-        console.log('Loading result data from hash:', hash);
         
         // Basic validation of hash format
         if (!hash || hash.length < 10) {
@@ -47,8 +46,7 @@ function VysledekContent() {
         let decodedData;
         try {
           decodedData = hashService.decodeHash(hash);
-        } catch (error) {
-          console.error('Error decoding hash:', error);
+        } catch {
           setError('Neplatný hash - nelze načíst data');
           setIsLoading(false);
           return;
@@ -60,14 +58,12 @@ function VysledekContent() {
           return;
         }
 
-        console.log('Successfully decoded result data:', decodedData);
         
         // Set the result data
         setResultData(decodedData);
         setIsLoading(false);
         
-      } catch (error) {
-        console.error('Error loading result data:', error);
+      } catch {
         setError('Chyba při načítání výsledků');
         setIsLoading(false);
       }

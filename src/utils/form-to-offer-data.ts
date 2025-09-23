@@ -61,27 +61,23 @@ function generateSummaryItems(formData: FormSubmissionData, formConfig: FormConf
   
   // Validate formConfig structure
   if (!formConfig) {
-    console.error('Invalid formConfig: formConfig is null/undefined');
     return items;
   }
   
   if (!formConfig.sections || !Array.isArray(formConfig.sections)) {
-    console.error('Invalid formConfig: missing sections array', formConfig);
     return items;
   }
   
   // Process each form section
-  formConfig.sections.forEach((section, sectionIndex) => {
+  formConfig.sections.forEach((section) => {
     // Validate section structure
     if (!section || !section.fields) {
-      console.error(`Invalid section at index ${sectionIndex}: missing fields`, section);
       return;
     }
     
-    section.fields.forEach((field, fieldIndex) => {
+    section.fields.forEach((field) => {
       // Validate field structure
       if (!field || !field.id) {
-        console.error(`Invalid field at section ${sectionIndex}, field ${fieldIndex}: missing id`, field);
         return;
       }
       

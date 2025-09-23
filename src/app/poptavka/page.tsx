@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { hashService } from "@/services/hash-service";
+import { orderStorage } from "@/services/order-storage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,41 +74,28 @@ function PoptavkaContent() {
   // Load hash data on component mount
   useEffect(() => {
     const hash = searchParams.get('hash');
-    console.log('URL search params:', Object.fromEntries(searchParams.entries()));
-    console.log('Hash from URL:', hash);
     
     if (hash) {
-      console.log('Decoding reversible hash:', hash);
-      
       // Use centralized hash service to decode the hash
       const decodedData = hashService.decodeHash(hash);
       
       if (decodedData) {
-        console.log('Successfully decoded hash data:', decodedData);
         setHashData(decodedData);
         
         // Prefill form data if available in hash
         if (decodedData.calculationData?.formData) {
           const hashFormData = decodedData.calculationData.formData as Record<string, unknown>;
           
-          // Load existing localStorage data first
-          let existingData = {};
-          try {
-            const savedData = localStorage.getItem('poptavka-form-data');
-            if (savedData) {
-              existingData = JSON.parse(savedData);
-              console.log('Loading existing localStorage data:', existingData);
-            }
-          } catch (error) {
-            console.error('Failed to parse existing data:', error);
-          }
+          // Load existing order data first
+          const orderData = orderStorage.get();
+          const existingData = orderData?.poptavka || {};
           
-          console.log('Hash form data:', hashFormData);
-          
-          // Merge: localStorage data + hash data
+          // Merge: customer data + existing poptavka data + hash data
+          const customerData = orderData?.customer || {};
           const mergedData = {
-            ...existingData,
-            ...hashFormData
+            ...customerData, // Customer data (firstName, lastName, email)
+            ...existingData, // Existing poptavka data
+            ...hashFormData   // Hash data (takes precedence)
           } as Record<string, unknown>;
           
           // Ensure all string fields are never undefined
@@ -129,69 +117,63 @@ function PoptavkaContent() {
             notes: String(mergedData.notes || ''),
           };
           
-          console.log('Merged form data:', safeFormData);
           setFormData(safeFormData);
         }
-      } else {
-        console.error('Failed to decode hash data');
       }
     }
   }, [searchParams]);
 
-  // Load from localStorage on component mount (separate from hash loading)
+  // Load from order storage on component mount (separate from hash loading)
   useEffect(() => {
-    // Only load localStorage if there's no hash in URL
+    // Only load order storage if there's no hash in URL
     const hash = searchParams.get('hash');
     if (!hash) {
-      const savedData = localStorage.getItem('poptavka-form-data');
-      if (savedData) {
-        try {
-          const parsedData = JSON.parse(savedData);
-          console.log('Loading form data from localStorage:', parsedData);
-          
-          // Ensure all string fields are never undefined
-          const safeFormData: FormData = {
-            firstName: String(parsedData.firstName || ''),
-            lastName: String(parsedData.lastName || ''),
-            email: String(parsedData.email || ''),
-            phone: String(parsedData.phone || ''),
-            propertyStreet: String(parsedData.propertyStreet || ''),
-            propertyCity: String(parsedData.propertyCity || ''),
-            propertyZipCode: String(parsedData.propertyZipCode || ''),
-            isCompany: Boolean(parsedData.isCompany || false),
-            companyName: String(parsedData.companyName || ''),
-            companyIco: String(parsedData.companyIco || ''),
-            companyDic: String(parsedData.companyDic || ''),
-            companyStreet: String(parsedData.companyStreet || ''),
-            companyCity: String(parsedData.companyCity || ''),
-            companyZipCode: String(parsedData.companyZipCode || ''),
-            notes: String(parsedData.notes || ''),
-          };
-          
-          setFormData(safeFormData);
-        } catch (error) {
-          console.error('Failed to parse saved form data:', error);
-        }
+      const orderData = orderStorage.get();
+      const poptavkaData = orderData?.poptavka;
+      
+      if (poptavkaData || orderData?.customer) {
+        // Merge customer data with poptavka data
+        const customerData = orderData?.customer;
+        const mergedData = {
+          ...(customerData || {}), // Customer data (firstName, lastName, email)
+          ...poptavkaData  // Poptavka data (phone, address, company, notes)
+        };
+        
+        // Ensure all string fields are never undefined
+        const safeFormData: FormData = {
+          firstName: String(customerData?.firstName || ''),
+          lastName: String(customerData?.lastName || ''),
+          email: String(customerData?.email || ''),
+          phone: String(mergedData.phone || ''),
+          propertyStreet: String(mergedData.propertyStreet || ''),
+          propertyCity: String(mergedData.propertyCity || ''),
+          propertyZipCode: String(mergedData.propertyZipCode || ''),
+          isCompany: Boolean(mergedData.isCompany || false),
+          companyName: String(mergedData.companyName || ''),
+          companyIco: String(mergedData.companyIco || ''),
+          companyDic: String(mergedData.companyDic || ''),
+          companyStreet: String(mergedData.companyStreet || ''),
+          companyCity: String(mergedData.companyCity || ''),
+          companyZipCode: String(mergedData.companyZipCode || ''),
+          notes: String(mergedData.notes || ''),
+        };
+        
+        setFormData(safeFormData);
       }
     }
   }, [searchParams]); // Run when searchParams change
 
-  // Simple persistence: Save form data to localStorage and update hash
+  // Simple persistence: Save form data to order storage and update hash
   useEffect(() => {
     if (Object.keys(formData).length > 0) {
-      // Save to localStorage for persistence
-      console.log('Saving form data to localStorage:', formData);
-      localStorage.setItem('poptavka-form-data', JSON.stringify(formData));
+      // Split form data into customer and poptavka parts
+      const { firstName, lastName, email, ...poptavkaData } = formData;
       
-      // Also save customer data for success screen
-      if (formData.firstName || formData.lastName || formData.email) {
-        const customerData = {
-          firstName: formData.firstName || '',
-          lastName: formData.lastName || '',
-          email: formData.email || ''
-        };
-        localStorage.setItem('success-screen-customer-data', JSON.stringify(customerData));
-      }
+      // Save customer data and poptavka data separately
+      orderStorage.updateCustomerAndPoptavka(
+        { firstName, lastName, email },
+        poptavkaData
+      );
       
       // Update hash after delay to avoid excessive updates
       const timeoutId = setTimeout(() => {
@@ -252,7 +234,6 @@ function PoptavkaContent() {
     setIsSubmitting(true);
     try {
       // TODO: Implement form submission to your backend/email service
-      console.log("Form submitted:", formData);
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -278,8 +259,7 @@ function PoptavkaContent() {
         companyZipCode: "",
         notes: "",
       });
-    } catch (error) {
-      console.error("Form submission error:", error);
+    } catch {
       alert("Nepodařilo se odeslat poptávku. Zkuste to prosím znovu.");
     } finally {
       setIsSubmitting(false);

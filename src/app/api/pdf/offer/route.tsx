@@ -5,6 +5,7 @@ import { renderOfferPdfBody, OfferData } from "@/pdf/templates/OfferPDF";
 import { uploadPdfToDrive } from "@/utils/google-drive";
 import fs from "node:fs/promises";
 import { hashService } from "@/services/hash-service";
+import { buildPoptavkaHashData } from "@/utils/hash-data-builder";
 import path from "node:path";
 
 export const runtime = "nodejs";
@@ -14,7 +15,6 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   try {
     const data = (await req.json()) as OfferData;
-    console.log("PDF generation request received for:", data.serviceTitle);
     
     // Generate hash for poptavka form if not already present
     if (!data.poptavkaHash) {
@@ -31,32 +31,38 @@ export async function POST(req: NextRequest) {
       const customerAddress = data.customer?.address || '';
       const customerPhone = data.customer?.phone || '';
       
-      const hashData = {
-        serviceType: data.serviceTitle || 'Ostatní služby',
+      // Build form data for hash
+      const formData = {
+        firstName: firstName,
+        lastName: lastName,
+        email: customerEmail,
+        phone: customerPhone,
+        // Parse address into separate fields if available
+        ...(customerAddress ? {
+          propertyStreet: customerAddress.split(',')[0] || '',
+          propertyCity: customerAddress.split(',')[1] || '',
+          propertyZipCode: customerAddress.split(',')[2] || ''
+        } : {}),
+        // Include any additional form data that might be in the customer object
+        // This will include company data, notes, etc. from the enhanced customer data
+        ...(data.customer as Record<string, unknown>)
+      };
+
+      const hashData = buildPoptavkaHashData({
         serviceTitle: data.serviceTitle || 'Ostatní služby',
         totalPrice: data.price,
-        currency: 'Kč',
-        calculationData: {
-          timestamp: Date.now(),
-          price: data.price,
-          serviceTitle: data.serviceTitle,
-          formData: {
-            firstName: firstName,
-            lastName: lastName,
-            email: customerEmail,
-            phone: customerPhone,
-            // Parse address into separate fields if available
-            ...(customerAddress ? {
-              propertyStreet: customerAddress.split(',')[0] || '',
-              propertyCity: customerAddress.split(',')[1] || '',
-              propertyZipCode: customerAddress.split(',')[2] || ''
-            } : {}),
-            // Include any additional form data that might be in the customer object
-            // This will include company data, notes, etc. from the enhanced customer data
-            ...(data.customer as Record<string, unknown>)
+        calculationResult: {
+          regularCleaningPrice: 0,
+          generalCleaningPrice: 0,
+          totalMonthlyPrice: data.price,
+          calculationDetails: {
+            basePrice: 0,
+            appliedCoefficients: [],
+            finalCoefficient: 1
           }
-        }
-      };
+        },
+        formData
+      });
       
       data.poptavkaHash = hashService.generateHash(hashData);
     }
@@ -129,19 +135,16 @@ export async function POST(req: NextRequest) {
       const date = new Date().toLocaleDateString("cs-CZ").replace(/\//g, "-");
       const filename = `${serviceTitle.replace(/\s+/g, "_")}_${customer.replace(/\s+/g, "_")}_${email}_${date}`;
       const subfolder = serviceTitle;
-      console.log("Uploading to Drive:", { parentFolderId, subfolder, filename });
-      const result = await uploadPdfToDrive({
+      await uploadPdfToDrive({
         tokens,
         parentFolderId,
         subfolderName: subfolder,
         filename,
         pdfBuffer: pdf,
       });
-      console.log("Drive upload complete:", result);
     }
-  } catch (err) {
+  } catch {
     // Swallow upload errors to not block PDF delivery
-    console.error("Drive upload failed", err);
   }
 
   return new NextResponse(pdf as BodyInit, {
@@ -151,7 +154,6 @@ export async function POST(req: NextRequest) {
     },
   });
   } catch (error) {
-    console.error("PDF generation error:", error);
     return NextResponse.json(
       { error: "Failed to generate PDF", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

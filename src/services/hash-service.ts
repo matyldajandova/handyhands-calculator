@@ -12,7 +12,6 @@ class HashService {
    * Generate a reversible hash that contains the data itself
    */
   generateHash(data: PoptavkaHashData): string {
-    console.log('Generating reversible hash for data:', data);
     return generatePoptavkaHash(data);
   }
 
@@ -20,10 +19,7 @@ class HashService {
    * Decode hash back to original data
    */
   decodeHash(hash: string): PoptavkaHashData | null {
-    console.log('Decoding hash:', hash);
-    const data = decodePoptavkaHash(hash);
-    console.log('Decoded data:', data);
-    return data;
+    return decodePoptavkaHash(hash);
   }
 
   /**
@@ -39,18 +35,10 @@ class HashService {
    */
   async navigateToPoptavka(data: PoptavkaHashData, router: { push: (path: string) => void }): Promise<void> {
     try {
-      console.log('Starting navigation to poptavka with data:', data);
-      
       // Generate reversible hash that contains the data
       const hash = this.generateHash(data);
-      
-      console.log('Generated reversible hash:', hash);
-      
-      console.log('Navigating to:', `/poptavka?hash=${hash}`);
       router.push(`/poptavka?hash=${hash}`);
-      
-    } catch (error) {
-      console.error('Navigation failed:', error);
+    } catch {
       router.push('/poptavka');
     }
   }

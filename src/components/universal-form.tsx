@@ -739,7 +739,6 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
     if (onSubmit) {
       onSubmit(values);
     } else {
-      console.log("Form submitted:", values);
     }
   };
 

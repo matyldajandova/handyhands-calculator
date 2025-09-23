@@ -7,6 +7,7 @@ import { getServiceIdFromSlug } from "@/utils/slug-mapping";
 import { getServiceType } from "@/config/services";
 import { FormSubmissionData, CalculationResult } from "@/types/form-types";
 import { hashService } from "@/services/hash-service";
+import { buildPoptavkaHashData } from "@/utils/hash-data-builder";
 
 type CalculatorState = "form" | "calculating";
 
@@ -39,19 +40,12 @@ export default function CalculatorPage() {
 
   const handleCalculationComplete = (result: CalculationResult) => {
     // Generate hash for the result and redirect to /vysledek
-    const hashData = {
-      serviceType: formConfig?.id || 'Unknown Service',
-      serviceTitle: formConfig?.title || 'Unknown Service',
+    const hashData = buildPoptavkaHashData({
       totalPrice: result.totalMonthlyPrice,
-      currency: 'CZK',
-      calculationData: {
-        ...result,
-        timestamp: Date.now(),
-        price: result.totalMonthlyPrice,
-        serviceTitle: formConfig?.title,
-        formData: formData || {}
-      }
-    };
+      calculationResult: result,
+      formData: formData || {},
+      formConfig
+    });
     
     const hash = hashService.generateHash(hashData);
     router.push(`/vysledek?hash=${hash}`);

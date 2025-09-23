@@ -47,11 +47,9 @@ export function AppProvider({ children }: AppProviderProps) {
   const [showWarningDialog, setShowWarningDialog] = useState(false);
 
   const handleServiceTypeSelect = useCallback((serviceType: string) => {
-    console.log("handleServiceTypeSelect called with:", serviceType);
     
     const service = getServiceType(serviceType);
     if (!service || !service.formConfig) {
-      console.log("Service not found or no form config:", serviceType);
       return;
     }
 
@@ -61,7 +59,6 @@ export function AppProvider({ children }: AppProviderProps) {
   }, []);
 
   const handleBackToServiceSelection = useCallback(() => {
-    console.log("handleBackToServiceSelection called");
     
     // Clear state immediately
     setAppState("service-selection");
@@ -73,14 +70,12 @@ export function AppProvider({ children }: AppProviderProps) {
   }, []);
 
   const handleFormSubmit = useCallback((data: FormSubmissionData) => {
-    console.log("handleFormSubmit called with:", data);
     
     setFormData(data);
     setAppState("calculating");
   }, []);
 
   const handleCalculationComplete = useCallback((result: CalculationResult) => {
-    console.log("handleCalculationComplete called with:", result);
     
     setCalculationResult(result);
     setAppState("success");
