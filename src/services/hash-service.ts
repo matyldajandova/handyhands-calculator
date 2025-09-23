@@ -37,7 +37,7 @@ class HashService {
   /**
    * Navigate to poptavka with hash (client-side only)
    */
-  async navigateToPoptavka(data: PoptavkaHashData, router: any): Promise<void> {
+  async navigateToPoptavka(data: PoptavkaHashData, router: { push: (path: string) => void }): Promise<void> {
     try {
       console.log('Starting navigation to poptavka with data:', data);
       

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,13 +11,41 @@ interface IdentificationStepProps {
   onDownloadPDF: (customerData: { firstName: string; lastName: string; email: string }) => void;
   isDownloading?: boolean;
   initialData?: { firstName?: string; lastName?: string; email?: string };
+  onDataChange?: (customerData: { firstName: string; lastName: string; email: string }) => void;
 }
 
-export function IdentificationStep({ onDownloadPDF, isDownloading = false, initialData }: IdentificationStepProps) {
+export function IdentificationStep({ onDownloadPDF, isDownloading = false, initialData, onDataChange }: IdentificationStepProps) {
   const [firstName, setFirstName] = useState(initialData?.firstName || "");
   const [lastName, setLastName] = useState(initialData?.lastName || "");
   const [email, setEmail] = useState(initialData?.email || "");
   const [errors, setErrors] = useState<{ firstName?: string; lastName?: string; email?: string }>({});
+  const hasPopulatedRef = useRef(false);
+
+  // Update form fields when initialData changes, but only once per mount
+  useEffect(() => {
+    if (initialData && !hasPopulatedRef.current) {
+      setFirstName(initialData.firstName || "");
+      setLastName(initialData.lastName || "");
+      setEmail(initialData.email || "");
+      hasPopulatedRef.current = true;
+    }
+  }, [initialData]);
+
+  // Only notify parent when form data changes, but don't update hash automatically
+  // This prevents infinite loops while still allowing the parent to track changes
+  const lastDataRef = useRef<string>('');
+  
+  useEffect(() => {
+    if (onDataChange && (firstName || lastName || email)) {
+      const currentData = `${firstName}|${lastName}|${email}`;
+      
+      // Only call onDataChange if the data actually changed
+      if (currentData !== lastDataRef.current) {
+        lastDataRef.current = currentData;
+        onDataChange({ firstName, lastName, email });
+      }
+    }
+  }, [firstName, lastName, email, onDataChange]);
 
   const validateForm = () => {
     const newErrors: { firstName?: string; lastName?: string; email?: string } = {};
@@ -124,12 +152,12 @@ export function IdentificationStep({ onDownloadPDF, isDownloading = false, initi
         >
           {isDownloading ? (
             <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
               Generuji PDF...
             </>
           ) : (
             <>
-              <Download className="h-4 w-4 mr-2" />
+              <Download className="h-4 w-4" />
               Stáhnout PDF kalkulaci
             </>
           )}

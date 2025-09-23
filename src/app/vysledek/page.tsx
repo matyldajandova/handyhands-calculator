@@ -1,21 +1,27 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { hashService } from "@/services/hash-service";
 import { SuccessScreen } from "@/components/success-screen";
-import { FormConfig } from "@/types/form-types";
 import { Button } from "@/components/ui/button";
 import * as Icons from "lucide-react";
 import Image from "next/image";
 import { getFormConfig } from "@/config/services";
+import { CalculationResult } from "@/types/form-types";
 
-export default function VysledekPage() {
+function VysledekContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [resultData, setResultData] = useState<any>(null);
+  const [resultData, setResultData] = useState<{
+    serviceType: string;
+    serviceTitle: string;
+    totalPrice: number;
+    currency: string;
+    calculationData?: Record<string, unknown>;
+  } | null>(null);
 
   useEffect(() => {
     const loadResultData = async () => {
@@ -85,6 +91,7 @@ export default function VysledekPage() {
               alt="HandyHands"
               width={300}
               height={90}
+              style={{ height: 'auto' }}
               className="mx-auto"
               priority
             />
@@ -110,6 +117,7 @@ export default function VysledekPage() {
               alt="HandyHands"
               width={300}
               height={90}
+              style={{ height: 'auto' }}
               className="mx-auto"
               priority
             />
@@ -142,7 +150,7 @@ export default function VysledekPage() {
   }
 
   // Extract the necessary data from the hash
-  const { calculationData, serviceTitle, totalPrice, serviceType } = resultData;
+  const { calculationData, serviceTitle, serviceType } = resultData;
   
   if (!calculationData) {
     setError('Chybí data kalkulace');
@@ -159,9 +167,9 @@ export default function VysledekPage() {
 
   // Create the data structure expected by SuccessScreen
   const successScreenData = {
-    calculationResult: calculationData,
+    calculationResult: calculationData as unknown as CalculationResult,
     formConfig: formConfig,
-    formData: calculationData.formData || {},
+    formData: (calculationData.formData as Record<string, string | number | string[] | boolean | undefined>) || {},
   };
 
   return (
@@ -171,5 +179,31 @@ export default function VysledekPage() {
       formConfig={successScreenData.formConfig}
       formData={successScreenData.formData}
     />
+  );
+}
+
+export default function VysledekPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background p-4 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto">
+          <div className="mb-8">
+            <Image
+              src="/handyhands_horizontal.svg"
+              alt="HandyHands"
+              width={300}
+              height={90}
+              style={{ height: 'auto' }}
+              className="mx-auto"
+              priority
+            />
+          </div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <h1 className="text-xl font-semibold text-foreground mb-2">Načítání...</h1>
+        </div>
+      </div>
+    }>
+      <VysledekContent />
+    </Suspense>
   );
 }

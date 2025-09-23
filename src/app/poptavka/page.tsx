@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
@@ -9,9 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { FileText, User, Building, MapPin, Phone, Mail, Check } from "lucide-react";
+import { User, Building, Check } from "lucide-react";
 
 interface FormData {
   // Personal information
@@ -40,7 +40,7 @@ interface FormData {
   notes: string;
 }
 
-export default function PoptavkaPage() {
+function PoptavkaContent() {
   const searchParams = useSearchParams();
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
@@ -62,7 +62,13 @@ export default function PoptavkaPage() {
 
   const [errors, setErrors] = useState<Partial<FormData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hashData, setHashData] = useState<any>(null);
+  const [hashData, setHashData] = useState<{
+    serviceType: string;
+    serviceTitle: string;
+    totalPrice: number;
+    currency: string;
+    calculationData?: Record<string, unknown>;
+  } | null>(null);
 
   // Load hash data on component mount
   useEffect(() => {
@@ -82,23 +88,134 @@ export default function PoptavkaPage() {
         
         // Prefill form data if available in hash
         if (decodedData.calculationData?.formData) {
-          const hashFormData = decodedData.calculationData.formData;
+          const hashFormData = decodedData.calculationData.formData as Record<string, unknown>;
           
-          // Extract name and email if available
-          if (hashFormData.firstName || hashFormData.lastName || hashFormData.email) {
-            setFormData(prev => ({
-              ...prev,
-              firstName: hashFormData.firstName || prev.firstName,
-              lastName: hashFormData.lastName || prev.lastName,
-              email: hashFormData.email || prev.email,
-            }));
+          // Load existing localStorage data first
+          let existingData = {};
+          try {
+            const savedData = localStorage.getItem('poptavka-form-data');
+            if (savedData) {
+              existingData = JSON.parse(savedData);
+              console.log('Loading existing localStorage data:', existingData);
+            }
+          } catch (error) {
+            console.error('Failed to parse existing data:', error);
           }
+          
+          console.log('Hash form data:', hashFormData);
+          
+          // Merge: localStorage data + hash data
+          const mergedData = {
+            ...existingData,
+            ...hashFormData
+          } as Record<string, any>;
+          
+          // Ensure all string fields are never undefined
+          const safeFormData: FormData = {
+            firstName: String(mergedData.firstName || ''),
+            lastName: String(mergedData.lastName || ''),
+            email: String(mergedData.email || ''),
+            phone: String(mergedData.phone || ''),
+            propertyStreet: String(mergedData.propertyStreet || ''),
+            propertyCity: String(mergedData.propertyCity || ''),
+            propertyZipCode: String(mergedData.propertyZipCode || ''),
+            isCompany: Boolean(mergedData.isCompany || false),
+            companyName: String(mergedData.companyName || ''),
+            companyIco: String(mergedData.companyIco || ''),
+            companyDic: String(mergedData.companyDic || ''),
+            companyStreet: String(mergedData.companyStreet || ''),
+            companyCity: String(mergedData.companyCity || ''),
+            companyZipCode: String(mergedData.companyZipCode || ''),
+            notes: String(mergedData.notes || ''),
+          };
+          
+          console.log('Merged form data:', safeFormData);
+          setFormData(safeFormData);
         }
       } else {
         console.error('Failed to decode hash data');
       }
     }
   }, [searchParams]);
+
+  // Load from localStorage on component mount (separate from hash loading)
+  useEffect(() => {
+    // Only load localStorage if there's no hash in URL
+    const hash = searchParams.get('hash');
+    if (!hash) {
+      const savedData = localStorage.getItem('poptavka-form-data');
+      if (savedData) {
+        try {
+          const parsedData = JSON.parse(savedData);
+          console.log('Loading form data from localStorage:', parsedData);
+          
+          // Ensure all string fields are never undefined
+          const safeFormData: FormData = {
+            firstName: String(parsedData.firstName || ''),
+            lastName: String(parsedData.lastName || ''),
+            email: String(parsedData.email || ''),
+            phone: String(parsedData.phone || ''),
+            propertyStreet: String(parsedData.propertyStreet || ''),
+            propertyCity: String(parsedData.propertyCity || ''),
+            propertyZipCode: String(parsedData.propertyZipCode || ''),
+            isCompany: Boolean(parsedData.isCompany || false),
+            companyName: String(parsedData.companyName || ''),
+            companyIco: String(parsedData.companyIco || ''),
+            companyDic: String(parsedData.companyDic || ''),
+            companyStreet: String(parsedData.companyStreet || ''),
+            companyCity: String(parsedData.companyCity || ''),
+            companyZipCode: String(parsedData.companyZipCode || ''),
+            notes: String(parsedData.notes || ''),
+          };
+          
+          setFormData(safeFormData);
+        } catch (error) {
+          console.error('Failed to parse saved form data:', error);
+        }
+      }
+    }
+  }, [searchParams]); // Run when searchParams change
+
+  // Simple persistence: Save form data to localStorage and update hash
+  useEffect(() => {
+    if (Object.keys(formData).length > 0) {
+      // Save to localStorage for persistence
+      console.log('Saving form data to localStorage:', formData);
+      localStorage.setItem('poptavka-form-data', JSON.stringify(formData));
+      
+      // Also save customer data for success screen
+      if (formData.firstName || formData.lastName || formData.email) {
+        const customerData = {
+          firstName: formData.firstName || '',
+          lastName: formData.lastName || '',
+          email: formData.email || ''
+        };
+        localStorage.setItem('success-screen-customer-data', JSON.stringify(customerData));
+      }
+      
+      // Update hash after delay to avoid excessive updates
+      const timeoutId = setTimeout(() => {
+        if (hashData) {
+          const enhancedHashData = {
+            ...hashData,
+            calculationData: {
+              ...(hashData.calculationData || {}),
+              formData: {
+                ...(hashData.calculationData?.formData || {}),
+                ...formData
+              }
+            }
+          };
+          
+          const newHash = hashService.generateHash(enhancedHashData);
+          const newUrl = `/poptavka?hash=${newHash}`;
+          window.history.replaceState({}, '', newUrl);
+        }
+      }, 1000); // 1 second delay
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [formData, hashData]);
 
   const validateForm = (): boolean => {
     const newErrors: Partial<FormData> = {};
@@ -193,7 +310,6 @@ export default function PoptavkaPage() {
               width={240}
               height={96}
               className="h-16 md:h-20 lg:h-24 w-auto"
-              style={{ width: 'auto' }}
               priority
             />
           </div>
@@ -257,7 +373,7 @@ export default function PoptavkaPage() {
                     <Label htmlFor="firstName">Jméno</Label>
                     <Input
                       id="firstName"
-                      value={formData.firstName}
+                      value={formData.firstName || ''}
                       onChange={(e) => handleInputChange("firstName", e.target.value)}
                       placeholder="Vaše jméno"
                       className={errors.firstName ? "border-destructive" : ""}
@@ -271,7 +387,7 @@ export default function PoptavkaPage() {
                     <Label htmlFor="lastName">Příjmení</Label>
                     <Input
                       id="lastName"
-                      value={formData.lastName}
+                      value={formData.lastName || ''}
                       onChange={(e) => handleInputChange("lastName", e.target.value)}
                       placeholder="Vaše příjmení"
                       className={errors.lastName ? "border-destructive" : ""}
@@ -286,7 +402,7 @@ export default function PoptavkaPage() {
                     <Input
                       id="email"
                       type="email"
-                      value={formData.email}
+                      value={formData.email || ''}
                       onChange={(e) => handleInputChange("email", e.target.value)}
                       placeholder="vas.email@example.com"
                       className={errors.email ? "border-destructive" : ""}
@@ -301,7 +417,7 @@ export default function PoptavkaPage() {
                     <Input
                       id="phone"
                       type="tel"
-                      value={formData.phone}
+                      value={formData.phone || ''}
                       onChange={(e) => handleInputChange("phone", e.target.value)}
                       placeholder="+420 123 456 789"
                       className={errors.phone ? "border-destructive" : ""}
@@ -322,7 +438,7 @@ export default function PoptavkaPage() {
                         <Label htmlFor="propertyStreet">Ulice a číslo popisné</Label>
                         <Input
                           id="propertyStreet"
-                          value={formData.propertyStreet}
+                          value={formData.propertyStreet || ''}
                           onChange={(e) => handleInputChange("propertyStreet", e.target.value)}
                           placeholder="Např. Václavské náměstí 123"
                           className={errors.propertyStreet ? "border-destructive" : ""}
@@ -337,7 +453,7 @@ export default function PoptavkaPage() {
                           <Label htmlFor="propertyCity">Město</Label>
                           <Input
                             id="propertyCity"
-                            value={formData.propertyCity}
+                            value={formData.propertyCity || ''}
                             onChange={(e) => handleInputChange("propertyCity", e.target.value)}
                             placeholder="Praha"
                             className={errors.propertyCity ? "border-destructive" : ""}
@@ -351,7 +467,7 @@ export default function PoptavkaPage() {
                           <Label htmlFor="propertyZipCode">PSČ</Label>
                           <Input
                             id="propertyZipCode"
-                            value={formData.propertyZipCode}
+                            value={formData.propertyZipCode || ''}
                             onChange={(e) => handleInputChange("propertyZipCode", e.target.value)}
                             placeholder="110 00"
                             className={errors.propertyZipCode ? "border-destructive" : ""}
@@ -391,7 +507,7 @@ export default function PoptavkaPage() {
                           <Label htmlFor="companyName">Název firmy</Label>
                           <Input
                             id="companyName"
-                            value={formData.companyName}
+                            value={formData.companyName || ''}
                             onChange={(e) => handleInputChange("companyName", e.target.value)}
                             placeholder="Název vaší firmy"
                             className={errors.companyName ? "border-destructive" : ""}
@@ -405,7 +521,7 @@ export default function PoptavkaPage() {
                           <Label htmlFor="companyIco">IČO</Label>
                           <Input
                             id="companyIco"
-                            value={formData.companyIco}
+                            value={formData.companyIco || ''}
                             onChange={(e) => handleInputChange("companyIco", e.target.value)}
                             placeholder="12345678"
                             className={errors.companyIco ? "border-destructive" : ""}
@@ -419,7 +535,7 @@ export default function PoptavkaPage() {
                           <Label htmlFor="companyDic">DIČ</Label>
                           <Input
                             id="companyDic"
-                            value={formData.companyDic}
+                            value={formData.companyDic || ''}
                             onChange={(e) => handleInputChange("companyDic", e.target.value)}
                             placeholder="CZ12345678"
                           />
@@ -436,7 +552,7 @@ export default function PoptavkaPage() {
                             <Label htmlFor="companyStreet">Ulice a číslo popisné</Label>
                             <Input
                               id="companyStreet"
-                              value={formData.companyStreet}
+                              value={formData.companyStreet || ''}
                               onChange={(e) => handleInputChange("companyStreet", e.target.value)}
                               placeholder="Např. Václavské náměstí 123"
                               className={errors.companyStreet ? "border-destructive" : ""}
@@ -451,7 +567,7 @@ export default function PoptavkaPage() {
                               <Label htmlFor="companyCity">Město</Label>
                               <Input
                                 id="companyCity"
-                                value={formData.companyCity}
+                                value={formData.companyCity || ''}
                                 onChange={(e) => handleInputChange("companyCity", e.target.value)}
                                 placeholder="Praha"
                                 className={errors.companyCity ? "border-destructive" : ""}
@@ -465,7 +581,7 @@ export default function PoptavkaPage() {
                               <Label htmlFor="companyZipCode">PSČ</Label>
                               <Input
                                 id="companyZipCode"
-                                value={formData.companyZipCode}
+                                value={formData.companyZipCode || ''}
                                 onChange={(e) => handleInputChange("companyZipCode", e.target.value)}
                                 placeholder="110 00"
                                 className={errors.companyZipCode ? "border-destructive" : ""}
@@ -488,7 +604,7 @@ export default function PoptavkaPage() {
                   </Label>
                   <Textarea
                     id="notes"
-                    value={formData.notes}
+                    value={formData.notes || ''}
                     onChange={(e) => handleInputChange("notes", e.target.value)}
                     placeholder="Máte nějaké speciální požadavky nebo poznámky?"
                     rows={4}
@@ -531,5 +647,31 @@ export default function PoptavkaPage() {
         </motion.div>
       </div>
     </div>
+  );
+}
+
+export default function PoptavkaPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background p-4 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto">
+          <div className="mb-8">
+            <Image
+              src="/handyhands_horizontal.svg"
+              alt="HandyHands"
+              width={300}
+              height={90}
+              style={{ height: 'auto' }}
+              className="mx-auto"
+              priority
+            />
+          </div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <h1 className="text-xl font-semibold text-foreground mb-2">Načítání...</h1>
+        </div>
+      </div>
+    }>
+      <PoptavkaContent />
+    </Suspense>
   );
 }

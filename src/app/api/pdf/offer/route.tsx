@@ -4,7 +4,6 @@ import puppeteer from "puppeteer-core";
 import { renderOfferPdfBody, OfferData } from "@/pdf/templates/OfferPDF";
 import { uploadPdfToDrive } from "@/utils/google-drive";
 import fs from "node:fs/promises";
-import { generatePoptavkaHash } from "@/utils/hash-generator";
 import { hashService } from "@/services/hash-service";
 import path from "node:path";
 
@@ -19,15 +18,43 @@ export async function POST(req: NextRequest) {
     
     // Generate hash for poptavka form if not already present
     if (!data.poptavkaHash) {
+      // Extract customer data from the customer name and email
+      const customerName = data.customer?.name || '';
+      const customerEmail = data.customer?.email || '';
+      
+      // Parse name into firstName and lastName if possible
+      const nameParts = customerName.split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+      
+      // Extract additional customer info from OfferData
+      const customerAddress = data.customer?.address || '';
+      const customerPhone = data.customer?.phone || '';
+      
       const hashData = {
-        serviceType: data.serviceTitle || 'Unknown Service',
-        serviceTitle: data.serviceTitle || 'Unknown Service',
+        serviceType: data.serviceTitle || 'Ostatní služby',
+        serviceTitle: data.serviceTitle || 'Ostatní služby',
         totalPrice: data.price,
-        currency: 'CZK',
+        currency: 'Kč',
         calculationData: {
           timestamp: Date.now(),
           price: data.price,
-          serviceTitle: data.serviceTitle
+          serviceTitle: data.serviceTitle,
+          formData: {
+            firstName: firstName,
+            lastName: lastName,
+            email: customerEmail,
+            phone: customerPhone,
+            // Parse address into separate fields if available
+            ...(customerAddress ? {
+              propertyStreet: customerAddress.split(',')[0] || '',
+              propertyCity: customerAddress.split(',')[1] || '',
+              propertyZipCode: customerAddress.split(',')[2] || ''
+            } : {}),
+            // Include any additional form data that might be in the customer object
+            // This will include company data, notes, etc. from the enhanced customer data
+            ...(data.customer as any)
+          }
         }
       };
       

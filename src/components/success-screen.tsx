@@ -7,7 +7,7 @@ import { CalculationResult, FormConfig, FormSubmissionData } from "@/types/form-
 import { isWinterMaintenancePeriod } from "@/utils/date-utils";
 import * as Icons from "lucide-react";
 import { IdentificationStep } from "@/components/identification-step";
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { hashService } from "@/services/hash-service";
 
@@ -20,16 +20,116 @@ interface SuccessScreenProps {
 
 export function SuccessScreen({ onBackToServices, calculationResult, formConfig, formData }: SuccessScreenProps) {
   const [isDownloading, setIsDownloading] = useState(false);
+  const [customerData, setCustomerData] = useState<{ firstName: string; lastName: string; email: string } | null>(null);
   const router = useRouter();
+
+  // Load customer data from localStorage on mount
+  useEffect(() => {
+    const savedData = localStorage.getItem('success-screen-customer-data');
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData);
+        setCustomerData(parsedData);
+      } catch (error) {
+        console.error('Failed to parse saved customer data:', error);
+      }
+    }
+  }, []);
+
+  // Round calculation results to whole 10 Kč
+  const roundedResults = calculationResult ? {
+    regularCleaningPrice: Math.round(calculationResult.regularCleaningPrice / 10) * 10,
+    generalCleaningPrice: calculationResult.generalCleaningPrice ? 
+      Math.round(calculationResult.generalCleaningPrice / 10) * 10 : undefined,
+    totalMonthlyPrice: Math.round(calculationResult.totalMonthlyPrice / 10) * 10
+  } : null;
+
+  // Handle form data changes and update hash (with debouncing)
+  const handleFormDataChange = useCallback((newCustomerData: { firstName: string; lastName: string; email: string }) => {
+    setCustomerData(newCustomerData);
+    
+    // Save to localStorage for persistence
+    localStorage.setItem('success-screen-customer-data', JSON.stringify(newCustomerData));
+    
+    // Update hash after a short delay to avoid excessive updates
+    setTimeout(() => {
+      if (calculationResult && formConfig && roundedResults) {
+        // Get existing poptavka data to preserve notes and other fields
+        let existingPoptavkaData = {};
+        try {
+          const savedPoptavkaData = localStorage.getItem('poptavka-form-data');
+          if (savedPoptavkaData) {
+            existingPoptavkaData = JSON.parse(savedPoptavkaData);
+          }
+        } catch (error) {
+          console.error('Failed to load existing poptavka data:', error);
+        }
+        
+        const enhancedFormData = {
+          ...formData,
+          ...existingPoptavkaData, // Preserve existing poptavka data (including notes)
+          firstName: newCustomerData.firstName,
+          lastName: newCustomerData.lastName,
+          email: newCustomerData.email
+        };
+        
+        const hashData = {
+          serviceType: formConfig?.id || 'Ostatní služby',
+          serviceTitle: formConfig?.title || 'Ostatní služby',
+          totalPrice: roundedResults.totalMonthlyPrice,
+          currency: 'Kč',
+          calculationData: {
+            ...calculationResult,
+            timestamp: Date.now(),
+            price: roundedResults.totalMonthlyPrice,
+            serviceTitle: formConfig?.title,
+            formData: enhancedFormData
+          }
+        };
+        
+        const hash = hashService.generateHash(hashData);
+        const newUrl = `/vysledek?hash=${hash}`;
+        window.history.replaceState({}, '', newUrl);
+      }
+    }, 1000); // 1 second delay
+  }, [calculationResult, formConfig, formData, roundedResults]);
 
   const handleDownloadPDF = async (customerData: { firstName: string; lastName: string; email: string }) => {
     if (!calculationResult || !roundedResults || !formConfig) return;
     
+    console.log('PDF download started with customer data:', customerData);
+    
+    // Store customer data for later use in "Závazná poptávka"
+    setCustomerData(customerData);
+    console.log('Customer data set in state:', customerData);
+    
     setIsDownloading(true);
     try {
-      // Convert form data to OfferData format with customer data
+      // Get existing poptavka form data to include in PDF hash
+      let existingPoptavkaData = {};
+      try {
+        const savedPoptavkaData = localStorage.getItem('poptavka-form-data');
+        if (savedPoptavkaData) {
+          existingPoptavkaData = JSON.parse(savedPoptavkaData);
+          console.log('Loading existing poptavka data for PDF:', existingPoptavkaData);
+        }
+      } catch (error) {
+        console.error('Failed to load existing poptavka data for PDF:', error);
+      }
+      
+      // Merge customer data with existing poptavka data
+      const enhancedCustomerData = {
+        ...existingPoptavkaData,
+        firstName: customerData.firstName,
+        lastName: customerData.lastName,
+        email: customerData.email
+      };
+      
+      console.log('Enhanced customer data for PDF:', enhancedCustomerData);
+      
+      // Convert form data to OfferData format with enhanced customer data
       const { convertFormDataToOfferData } = await import("@/utils/form-to-offer-data");
-      const offerData = convertFormDataToOfferData(formData, calculationResult, formConfig, customerData);
+      const offerData = convertFormDataToOfferData(formData, calculationResult, formConfig, enhancedCustomerData);
       
       // Generate PDF via API
       const response = await fetch('/api/pdf/offer', {
@@ -56,6 +156,9 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
+
+      // Note: We don't update the URL here anymore to avoid interfering with "Závazná poptávka" navigation
+      // The customer data is stored in the component state and will be used when "Závazná poptávka" is clicked
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Nepodařilo se vygenerovat PDF. Zkuste to prosím znovu.');
@@ -69,14 +172,6 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
     const roundedAmount = Math.round(amount / 10) * 10; // Round to nearest 10 Kč
     return `${roundedAmount.toLocaleString('cs-CZ')} Kč`;
   };
-
-  // Round calculation results to whole 10 Kč
-  const roundedResults = calculationResult ? {
-    regularCleaningPrice: Math.round(calculationResult.regularCleaningPrice / 10) * 10,
-    generalCleaningPrice: calculationResult.generalCleaningPrice ? 
-      Math.round(calculationResult.generalCleaningPrice / 10) * 10 : undefined,
-    totalMonthlyPrice: Math.round(calculationResult.totalMonthlyPrice / 10) * 10
-  } : null;
 
   if (!calculationResult || !roundedResults) {
     return (
@@ -206,10 +301,10 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
                   onClick={() => {
                     // Generate a hash for sharing results
                     const hashData = {
-                      serviceType: formConfig?.id || 'Unknown Service',
-                      serviceTitle: formConfig?.title || 'Unknown Service',
+                      serviceType: formConfig?.id || 'Ostatní služby',
+                      serviceTitle: formConfig?.title || 'Ostatní služby',
                       totalPrice: roundedResults.totalMonthlyPrice,
-                      currency: 'CZK',
+                      currency: 'Kč',
                       calculationData: {
                         ...calculationResult, // Include the full calculation result
                         timestamp: Date.now(),
@@ -233,26 +328,69 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
                   size="lg"
                   className=""
                 >
-                  <Share className="h-4 w-4 mr-2" />
+                  <Share className="h-4 w-4" />
                   Sdílet výsledky
                 </Button>
                 
                 <Button 
                   onClick={() => {
-                    // Generate a hash for the current calculation
+                    console.log('=== ZÁVAZNÁ POPTÁVKA BUTTON CLICKED ===');
+                    console.log('customerData state:', customerData);
+                    
+                    // Get customer data from state or localStorage
+                    let currentCustomerData = customerData;
+                    if (!currentCustomerData) {
+                      try {
+                        const savedData = localStorage.getItem('success-screen-customer-data');
+                        if (savedData) {
+                          currentCustomerData = JSON.parse(savedData);
+                          console.log('Loaded customer data from localStorage:', currentCustomerData);
+                        }
+                      } catch (error) {
+                        console.error('Failed to load customer data from localStorage:', error);
+                      }
+                    }
+                    
+                    // Get existing poptavka form data to preserve address/company info
+                    let existingPoptavkaData = {};
+                    try {
+                      const savedPoptavkaData = localStorage.getItem('poptavka-form-data');
+                      if (savedPoptavkaData) {
+                        existingPoptavkaData = JSON.parse(savedPoptavkaData);
+                        console.log('Loading existing poptavka data:', existingPoptavkaData);
+                      }
+                    } catch (error) {
+                      console.error('Failed to load existing poptavka data:', error);
+                    }
+                    
+                    // Merge: existing poptavka data + calculation form data + updated customer data
+                    const enhancedFormData = {
+                      ...existingPoptavkaData, // Preserve address, company info, etc.
+                      ...formData, // Original calculation form data
+                      ...(currentCustomerData ? {
+                        firstName: currentCustomerData.firstName || '',
+                        lastName: currentCustomerData.lastName || '',
+                        email: currentCustomerData.email || ''
+                      } : {})
+                    };
+
+                    console.log('Enhanced formData preserving poptavka data:', enhancedFormData);
+
                     const hashData = {
-                      serviceType: formConfig?.id || 'Unknown Service',
-                      serviceTitle: formConfig?.title || 'Unknown Service',
+                      serviceType: formConfig?.id || 'Ostatní služby',
+                      serviceTitle: formConfig?.title || 'Ostatní služby',
                       totalPrice: roundedResults.totalMonthlyPrice,
-                      currency: 'CZK',
+                      currency: 'Kč',
                       calculationData: {
-                        ...calculationResult, // Include the full calculation result
+                        ...calculationResult,
                         timestamp: Date.now(),
                         price: roundedResults.totalMonthlyPrice,
                         serviceTitle: formConfig?.title,
-                        formData: formData
+                        formData: enhancedFormData
                       }
                     };
+                    
+                    console.log('Hash data being sent:', hashData);
                     
                     // Use centralized hash service
                     hashService.navigateToPoptavka(hashData, router);
@@ -276,6 +414,8 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
           <IdentificationStep 
             onDownloadPDF={handleDownloadPDF}
             isDownloading={isDownloading}
+            initialData={customerData || undefined}
+            onDataChange={handleFormDataChange}
           />
         </motion.div>
 

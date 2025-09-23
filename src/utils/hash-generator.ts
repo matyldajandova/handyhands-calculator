@@ -3,7 +3,7 @@ export interface PoptavkaHashData {
   serviceTitle: string;
   totalPrice: number;
   currency: string;
-  calculationData?: any; // Detailed calculation data
+  calculationData?: Record<string, unknown>; // Detailed calculation data
 }
 
 /**
@@ -49,7 +49,7 @@ function isValidBase64(str: string): { isValid: boolean; fixedString?: string } 
     // Try to decode to see if it's actually valid
     atob(fixedStr);
     return { isValid: true, fixedString: fixedStr };
-  } catch (error) {
+  } catch {
     // If atob fails, it's not valid base64
     return { isValid: false };
   }
@@ -75,7 +75,7 @@ export function decodePoptavkaHash(encodedHash: string): PoptavkaHashData | null
     // Base64 decode with proper UTF-8 handling
     const dataString = decodeURIComponent(escape(atob(finalBase64)));
     return JSON.parse(dataString);
-  } catch (error) {
+  } catch {
     // Silently fail - invalid hash
     return null;
   }

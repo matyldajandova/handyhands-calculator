@@ -80,9 +80,6 @@ export default function CalculatorPage() {
     setShowWarningDialog(false);
   };
 
-  const handleBackToServices = () => {
-    router.push("/");
-  };
 
   // Show loading while checking service validity
   if (!serviceId || !service || !formConfig) {

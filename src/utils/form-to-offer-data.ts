@@ -27,7 +27,13 @@ export function convertFormDataToOfferData(
     serviceTitle: formConfig.title,
     customer: customerData ? {
       name: `${customerData.firstName} ${customerData.lastName}`,
-      email: customerData.email
+      email: customerData.email,
+      phone: (customerData as any).phone || '',
+      address: (customerData as any).propertyStreet && (customerData as any).propertyCity && (customerData as any).propertyZipCode 
+        ? `${(customerData as any).propertyStreet}, ${(customerData as any).propertyCity}, ${(customerData as any).propertyZipCode}`
+        : '',
+      // Include all additional form data (company info, notes, etc.)
+      ...(customerData as any)
     } : { 
       name: "Údaje o zákazníkovi budou doplněny později" // Placeholder as requested
     },
