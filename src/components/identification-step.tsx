@@ -5,23 +5,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Download } from "lucide-react";
+import { Download, FileText } from "lucide-react";
 
 interface IdentificationStepProps {
-  onDownloadPDF: (customerData: { name: string; email: string }) => void;
+  onDownloadPDF: (customerData: { firstName: string; lastName: string; email: string }) => void;
   isDownloading?: boolean;
+  initialData?: { firstName?: string; lastName?: string; email?: string };
 }
 
-export function IdentificationStep({ onDownloadPDF, isDownloading = false }: IdentificationStepProps) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [errors, setErrors] = useState<{ name?: string; email?: string }>({});
+export function IdentificationStep({ onDownloadPDF, isDownloading = false, initialData }: IdentificationStepProps) {
+  const [firstName, setFirstName] = useState(initialData?.firstName || "");
+  const [lastName, setLastName] = useState(initialData?.lastName || "");
+  const [email, setEmail] = useState(initialData?.email || "");
+  const [errors, setErrors] = useState<{ firstName?: string; lastName?: string; email?: string }>({});
 
   const validateForm = () => {
-    const newErrors: { name?: string; email?: string } = {};
+    const newErrors: { firstName?: string; lastName?: string; email?: string } = {};
 
-    if (!name.trim()) {
-      newErrors.name = "Jméno je povinné";
+    if (!firstName.trim()) {
+      newErrors.firstName = "Jméno je povinné";
+    }
+
+    if (!lastName.trim()) {
+      newErrors.lastName = "Příjmení je povinné";
     }
 
     if (!email.trim()) {
@@ -36,35 +42,61 @@ export function IdentificationStep({ onDownloadPDF, isDownloading = false }: Ide
 
   const handleDownload = () => {
     if (validateForm()) {
-      onDownloadPDF({ name: name.trim(), email: email.trim() });
+      onDownloadPDF({ 
+        firstName: firstName.trim(), 
+        lastName: lastName.trim(), 
+        email: email.trim() 
+      });
     }
   };
 
-  const isFormValid = name.trim() && email.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const isFormValid = firstName.trim() && lastName.trim() && email.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   return (
-    <Card className="w-full">
+    <Card className="w-full border-green-200 bg-green-50/50 dark:bg-green-950/10 dark:border-green-800">
       <CardHeader className="text-center mb-2">
-        <CardTitle className="text-xl">Stažení PDF kalkulace</CardTitle>
+        <CardTitle className="text-xl flex items-center justify-center gap-2">
+          <FileText className="h-5 w-5 text-green-success" />
+          Stažení PDF kalkulace
+        </CardTitle>
         <CardDescription>
-          PDF obsahuje detailní rozpis ceny a specifikace služeb
+          PDF obsahuje detailní rozpis ceny a specifikace služeb.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Name field */}
-        <div className="space-y-2">
-          <Label htmlFor="name">Jméno a příjmení</Label>
-          <Input
-            id="name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Jan Novák"
-            className={errors.name ? "border-red-500" : ""}
-          />
-          {errors.name && (
-            <p className="text-sm text-red-600">{errors.name}</p>
-          )}
+        {/* Name fields side by side */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* First Name field */}
+          <div className="space-y-2">
+            <Label htmlFor="firstName">Jméno</Label>
+            <Input
+              id="firstName"
+              type="text"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="Jan"
+              className={errors.firstName ? "border-destructive" : "hover:border-green-light focus:border-green-success focus-visible:border-green-success focus:ring-green-success/30 focus-visible:ring-green-success/30 focus-visible:ring-[3px]"}
+            />
+            {errors.firstName && (
+              <p className="text-sm text-red-600">{errors.firstName}</p>
+            )}
+          </div>
+
+          {/* Last Name field */}
+          <div className="space-y-2">
+            <Label htmlFor="lastName">Příjmení</Label>
+            <Input
+              id="lastName"
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="Novák"
+              className={errors.lastName ? "border-destructive" : "hover:border-green-light focus:border-green-success focus-visible:border-green-success focus:ring-green-success/30 focus-visible:ring-green-success/30 focus-visible:ring-[3px]"}
+            />
+            {errors.lastName && (
+              <p className="text-sm text-red-600">{errors.lastName}</p>
+            )}
+          </div>
         </div>
 
         {/* Email field */}
@@ -76,7 +108,7 @@ export function IdentificationStep({ onDownloadPDF, isDownloading = false }: Ide
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="jan.novak@email.cz"
-            className={errors.email ? "border-red-500" : ""}
+            className={errors.email ? "border-destructive" : "hover:border-green-light focus:border-green-success focus-visible:border-green-success focus:ring-green-success/30 focus-visible:ring-green-success/30 focus-visible:ring-[3px]"}
           />
           {errors.email && (
             <p className="text-sm text-red-600">{errors.email}</p>
@@ -87,7 +119,7 @@ export function IdentificationStep({ onDownloadPDF, isDownloading = false }: Ide
         <Button
           onClick={handleDownload}
           disabled={!isFormValid || isDownloading}
-          className="mt-2"
+          className="mt-2 bg-green-600 hover:bg-green-700 text-white"
           size="lg"
         >
           {isDownloading ? (

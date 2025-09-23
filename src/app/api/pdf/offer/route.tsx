@@ -4,6 +4,8 @@ import puppeteer from "puppeteer-core";
 import { renderOfferPdfBody, OfferData } from "@/pdf/templates/OfferPDF";
 import { uploadPdfToDrive } from "@/utils/google-drive";
 import fs from "node:fs/promises";
+import { generatePoptavkaHash } from "@/utils/hash-generator";
+import { hashService } from "@/services/hash-service";
 import path from "node:path";
 
 export const runtime = "nodejs";
@@ -14,6 +16,24 @@ export async function POST(req: NextRequest) {
   try {
     const data = (await req.json()) as OfferData;
     console.log("PDF generation request received for:", data.serviceTitle);
+    
+    // Generate hash for poptavka form if not already present
+    if (!data.poptavkaHash) {
+      const hashData = {
+        serviceType: data.serviceTitle || 'Unknown Service',
+        serviceTitle: data.serviceTitle || 'Unknown Service',
+        totalPrice: data.price,
+        currency: 'CZK',
+        calculationData: {
+          timestamp: Date.now(),
+          price: data.price,
+          serviceTitle: data.serviceTitle
+        }
+      };
+      
+      data.poptavkaHash = hashService.generateHash(hashData);
+    }
+    
     const htmlBody = renderOfferPdfBody(data);
 
   const cssPath = path.join(process.cwd(), "dist", "pdf.css");

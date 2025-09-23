@@ -3,12 +3,12 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { UniversalForm } from "@/components/universal-form";
 import { CalculatingScreen } from "@/components/calculating-screen";
-import { SuccessScreen } from "@/components/success-screen";
 import { getServiceIdFromSlug } from "@/utils/slug-mapping";
 import { getServiceType } from "@/config/services";
 import { FormSubmissionData, CalculationResult } from "@/types/form-types";
+import { hashService } from "@/services/hash-service";
 
-type CalculatorState = "form" | "calculating" | "success";
+type CalculatorState = "form" | "calculating";
 
 export default function CalculatorPage() {
   const params = useParams();
@@ -17,7 +17,6 @@ export default function CalculatorPage() {
   
   const [calculatorState, setCalculatorState] = useState<CalculatorState>("form");
   const [formData, setFormData] = useState<FormSubmissionData | null>(null);
-  const [calculationResult, setCalculationResult] = useState<CalculationResult | null>(null);
   const [hasFormChanges, setHasFormChanges] = useState(false);
   const [showWarningDialog, setShowWarningDialog] = useState(false);
 
@@ -39,8 +38,23 @@ export default function CalculatorPage() {
   };
 
   const handleCalculationComplete = (result: CalculationResult) => {
-    setCalculationResult(result);
-    setCalculatorState("success");
+    // Generate hash for the result and redirect to /vysledek
+    const hashData = {
+      serviceType: formConfig?.id || 'Unknown Service',
+      serviceTitle: formConfig?.title || 'Unknown Service',
+      totalPrice: result.totalMonthlyPrice,
+      currency: 'CZK',
+      calculationData: {
+        ...result,
+        timestamp: Date.now(),
+        price: result.totalMonthlyPrice,
+        serviceTitle: formConfig?.title,
+        formData: formData || {}
+      }
+    };
+    
+    const hash = hashService.generateHash(hashData);
+    router.push(`/vysledek?hash=${hash}`);
   };
 
   const handleFormChange = () => {
@@ -92,16 +106,6 @@ export default function CalculatorPage() {
     );
   }
 
-  if (calculatorState === "success") {
-    return (
-      <SuccessScreen
-        onBackToServices={handleBackToServices}
-        calculationResult={calculationResult}
-        formConfig={formConfig}
-        formData={formData || {}}
-      />
-    );
-  }
 
   return (
     <>

@@ -22,6 +22,8 @@ export type OfferData = {
     perCleaning?: string[];
     generalCleaning?: string[];
   };
+  // Hash for linking to poptavka form
+  poptavkaHash?: string;
 };
 /**
  * Returns the HTML body markup for the Offer PDF using Tailwind classes.
@@ -42,7 +44,7 @@ export function renderOfferPdfBody(data: OfferData): string {
 
       <div class="page-break"></div>
       <section class="hh-section">
-        <div class="text-xl font-bold">4. Proč si vybrat právě nás? - klíčové benefity úklidové služby HandyHands</div>
+        <div class="text-xl font-bold">4. Proč si vybrat právě nás?</div>
         <div class="hh-divider mt-2"></div>
         
         <div class="grid grid-cols-2 gap-6 mt-6">
@@ -142,6 +144,17 @@ export function renderOfferPdfBody(data: OfferData): string {
         <div>
           <div class="text-2xl font-bold">${escapeHtml(data.startDate)}</div>
           <div class="text-muted-foreground">S úklidovými službami jsme schopni začít od tohoto dne</div>
+          ${data.poptavkaHash ? `
+            <div class="mt-4">
+              <a href="${process.env.PUBLIC_APP_URL}/poptavka?hash=${escapeHtml(data.poptavkaHash)}" 
+                 class="text-orange-600 font-bold hover:text-orange-800 inline-flex items-center gap-1">
+                Závazná poptávka
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+            </div>
+          ` : ''}
         </div>
       </div>
       ${renderConditionsSection(data.conditions)}

@@ -2,12 +2,14 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Building } from "lucide-react";
+import { CheckCircle, Building, Share } from "lucide-react";
 import { CalculationResult, FormConfig, FormSubmissionData } from "@/types/form-types";
 import { isWinterMaintenancePeriod } from "@/utils/date-utils";
 import * as Icons from "lucide-react";
 import { IdentificationStep } from "@/components/identification-step";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { hashService } from "@/services/hash-service";
 
 interface SuccessScreenProps {
   onBackToServices: () => void;
@@ -18,8 +20,9 @@ interface SuccessScreenProps {
 
 export function SuccessScreen({ onBackToServices, calculationResult, formConfig, formData }: SuccessScreenProps) {
   const [isDownloading, setIsDownloading] = useState(false);
+  const router = useRouter();
 
-  const handleDownloadPDF = async (customerData: { name: string; email: string }) => {
+  const handleDownloadPDF = async (customerData: { firstName: string; lastName: string; email: string }) => {
     if (!calculationResult || !roundedResults || !formConfig) return;
     
     setIsDownloading(true);
@@ -137,12 +140,9 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
               {/* Main Price Display */}
               <div className="text-center">
                 <div className="text-4xl font-bold text-accent mb-2">
-                  {formatCurrency(roundedResults.totalMonthlyPrice)}
+                  {formatCurrency(roundedResults.totalMonthlyPrice)} <span className="text-base font-normal text-muted-foreground">za měsíc</span>
                 </div>
-                <div className="text-lg text-muted-foreground">
-                  za měsíc
-                </div>
-                <div className="text-sm text-muted-foreground mt-2">
+                <div className="text-sm text-muted-foreground">
                   Cena za pravidelný úklid domu bez 21 % DPH
                 </div>
               </div>
@@ -199,6 +199,70 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
                   </div>
                 </div>
               )}
+
+              {/* Action buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button 
+                  onClick={() => {
+                    // Generate a hash for sharing results
+                    const hashData = {
+                      serviceType: formConfig?.id || 'Unknown Service',
+                      serviceTitle: formConfig?.title || 'Unknown Service',
+                      totalPrice: roundedResults.totalMonthlyPrice,
+                      currency: 'CZK',
+                      calculationData: {
+                        ...calculationResult, // Include the full calculation result
+                        timestamp: Date.now(),
+                        price: roundedResults.totalMonthlyPrice,
+                        serviceTitle: formConfig?.title,
+                        formData: formData
+                      }
+                    };
+                    
+                    const hash = hashService.generateHash(hashData);
+                    const resultUrl = `/vysledek?hash=${hash}`;
+                    
+                    // Copy to clipboard
+                    navigator.clipboard.writeText(window.location.origin + resultUrl).then(() => {
+                      alert('Odkaz na výsledky byl zkopírován do schránky!');
+                    }).catch(() => {
+                      alert(`Odkaz na výsledky: ${window.location.origin}${resultUrl}`);
+                    });
+                  }}
+                  variant="outline"
+                  size="lg"
+                  className=""
+                >
+                  <Share className="h-4 w-4 mr-2" />
+                  Sdílet výsledky
+                </Button>
+                
+                <Button 
+                  onClick={() => {
+                    // Generate a hash for the current calculation
+                    const hashData = {
+                      serviceType: formConfig?.id || 'Unknown Service',
+                      serviceTitle: formConfig?.title || 'Unknown Service',
+                      totalPrice: roundedResults.totalMonthlyPrice,
+                      currency: 'CZK',
+                      calculationData: {
+                        ...calculationResult, // Include the full calculation result
+                        timestamp: Date.now(),
+                        price: roundedResults.totalMonthlyPrice,
+                        serviceTitle: formConfig?.title,
+                        formData: formData
+                      }
+                    };
+                    
+                    // Use centralized hash service
+                    hashService.navigateToPoptavka(hashData, router);
+                  }}
+                  size="lg"
+                  className=""
+                >
+                  Závazná poptávka
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -219,7 +283,7 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6, duration: 0.5 }}
-          className="mt-12"
+          className="mt-8"
         >
           <Button
             onClick={onBackToServices}

@@ -9,7 +9,7 @@ export function convertFormDataToOfferData(
   formData: FormSubmissionData,
   calculationResult: CalculationResult,
   formConfig: FormConfig,
-  customerData?: { name: string; email: string }
+  customerData?: { firstName: string; lastName: string; email: string }
 ): OfferData {
   // Round prices to nearest 10 Kč (desetikoruny)
   const roundedPrice = Math.round(calculationResult.totalMonthlyPrice / 10) * 10;
@@ -26,7 +26,7 @@ export function convertFormDataToOfferData(
     startDate,
     serviceTitle: formConfig.title,
     customer: customerData ? {
-      name: customerData.name,
+      name: `${customerData.firstName} ${customerData.lastName}`,
       email: customerData.email
     } : { 
       name: "Údaje o zákazníkovi budou doplněny později" // Placeholder as requested
@@ -53,9 +53,32 @@ export function convertFormDataToOfferData(
 function generateSummaryItems(formData: FormSubmissionData, formConfig: FormConfig): { label: string; value: string }[] {
   const items: { label: string; value: string }[] = [];
   
+  // Validate formConfig structure
+  if (!formConfig) {
+    console.error('Invalid formConfig: formConfig is null/undefined');
+    return items;
+  }
+  
+  if (!formConfig.sections || !Array.isArray(formConfig.sections)) {
+    console.error('Invalid formConfig: missing sections array', formConfig);
+    return items;
+  }
+  
   // Process each form section
-  formConfig.sections.forEach(section => {
-    section.fields.forEach(field => {
+  formConfig.sections.forEach((section, sectionIndex) => {
+    // Validate section structure
+    if (!section || !section.fields) {
+      console.error(`Invalid section at index ${sectionIndex}: missing fields`, section);
+      return;
+    }
+    
+    section.fields.forEach((field, fieldIndex) => {
+      // Validate field structure
+      if (!field || !field.id) {
+        console.error(`Invalid field at section ${sectionIndex}, field ${fieldIndex}: missing id`, field);
+        return;
+      }
+      
       const value = formData[field.id];
       if (value === undefined || value === null || value === "") return;
       
