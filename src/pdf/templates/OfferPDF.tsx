@@ -2,6 +2,8 @@ export type OfferData = {
   quoteDate: string;
   price: number;
   startDate: string;
+  // Human-readable service title (e.g., form title) – used for Drive subfolder naming
+  serviceTitle?: string;
   customer: { name: string; address?: string; email?: string; phone?: string };
   company: { name: string; address: string; ico: string; registerInfo: string; email: string; phone: string };
   // List bullets for quick summary (e.g., services selected)

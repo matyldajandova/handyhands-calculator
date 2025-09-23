@@ -24,6 +24,7 @@ export function convertFormDataToOfferData(
     quoteDate: new Date().toLocaleDateString("cs-CZ"),
     price: roundedPrice,
     startDate,
+    serviceTitle: formConfig.title,
     customer: customerData ? {
       name: customerData.name,
       email: customerData.email

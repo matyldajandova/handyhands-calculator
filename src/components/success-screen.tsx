@@ -38,7 +38,9 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
       });
       
       if (!response.ok) {
-        throw new Error('Failed to generate PDF');
+        const errorText = await response.text();
+        console.error('PDF generation failed:', response.status, errorText);
+        throw new Error(`Failed to generate PDF: ${response.status} ${errorText}`);
       }
       
       // Create blob and download

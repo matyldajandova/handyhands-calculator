@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import chromium from "@sparticuz/chromium";
 import puppeteer from "puppeteer-core";
 import { renderOfferPdfBody, OfferData } from "@/pdf/templates/OfferPDF";
+import { uploadPdfToDrive } from "@/utils/google-drive";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -10,8 +11,10 @@ export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const data = (await req.json()) as OfferData;
-  const htmlBody = renderOfferPdfBody(data);
+  try {
+    const data = (await req.json()) as OfferData;
+    console.log("PDF generation request received for:", data.serviceTitle);
+    const htmlBody = renderOfferPdfBody(data);
 
   const cssPath = path.join(process.cwd(), "dist", "pdf.css");
   const css = await fs.readFile(cssPath, "utf8").catch(() => "");
@@ -67,12 +70,46 @@ export async function POST(req: NextRequest) {
   });
   await browser.close();
 
+  // Optional: upload to Google Drive if cookie with tokens is set and env has folder id
+  try {
+    const tokensCookie = req.cookies.get("gg_tokens")?.value;
+    const parentFolderId = process.env.GDRIVE_PARENT_FOLDER_ID;
+    if (tokensCookie && parentFolderId) {
+      const tokens = JSON.parse(tokensCookie);
+      const customer = data.customer?.name || "zakaznik";
+      const email = data.customer?.email || "bez-emailu";
+      const serviceTitle = data.serviceTitle || "Ostatní";
+      const date = new Date().toLocaleDateString("cs-CZ").replace(/\//g, "-");
+      const filename = `${serviceTitle.replace(/\s+/g, "_")}_${customer.replace(/\s+/g, "_")}_${email}_${date}`;
+      const subfolder = serviceTitle;
+      console.log("Uploading to Drive:", { parentFolderId, subfolder, filename });
+      const result = await uploadPdfToDrive({
+        tokens,
+        parentFolderId,
+        subfolderName: subfolder,
+        filename,
+        pdfBuffer: pdf,
+      });
+      console.log("Drive upload complete:", result);
+    }
+  } catch (err) {
+    // Swallow upload errors to not block PDF delivery
+    console.error("Drive upload failed", err);
+  }
+
   return new NextResponse(pdf as BodyInit, {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": "inline; filename=handyhands-nabidka.pdf",
     },
   });
+  } catch (error) {
+    console.error("PDF generation error:", error);
+    return NextResponse.json(
+      { error: "Failed to generate PDF", details: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    );
+  }
 }
 
 export async function GET(req: NextRequest) {
