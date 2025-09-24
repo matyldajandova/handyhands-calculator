@@ -190,7 +190,7 @@ export const panelBuildingFormConfig: FormConfig = {
             { value: "twice-weekly", label: "2x týdně", coefficient: 1.67 },
             { value: "biweekly", label: "1x za 14 dní", coefficient: 0.75 },
             { value: "mixed-weekly", label: "1x týdně nadzemní patra a 2x týdně přízemí", coefficient: 1.45, hidden: true, tooltip: "Kromě přízemí domu se myslí také úklid podlahy výtahové kabiny, pokud je v domě výtah." },
-            { value: "seasonal", label: "1x týdně v letním období a 2x týdně v zimním období", coefficient: 1.35, hidden: true, tooltip: "Letní období se rozumí období od 1. dubna do 30. září a zimním období se myslí období od 1. října do 30. března." }
+            { value: "seasonal", label: "1x týdně v letním období a 2x týdně v zimním období", coefficient: 1.35, hidden: true, tooltip: "Letní období se rozumí období od 1. dubna do 30. září a zimním obdobím se myslí období od 1. října do 31. března." }
           ]
         }
       ]
@@ -287,6 +287,7 @@ export const panelBuildingFormConfig: FormConfig = {
       id: "general-cleaning",
       title: "Požadavek generálního úklidu domu",
       icon: "Sparkles",
+      note: "Generálním úklidem se myslí zejména oboustranné mytí oken včetně jejich rámů a parapetů ve všech společných prostorech domu, celoplošné mytí vchodových dveří, odstranění samolepek, mytí osvětlovacích zařízení z vnější části, mytí vypínačů, poštovních schránek, hasících přístrojů, odstranění pavučin.",
       fields: [
         {
           id: "generalCleaning",
@@ -309,7 +310,7 @@ export const panelBuildingFormConfig: FormConfig = {
             {
               id: "windowsPerFloor",
               type: "radio",
-              label: "Počet oken na patře",
+              label: "Orientáční počet oken na patře",
               required: true,
               layout: "vertical",
               options: [
@@ -328,7 +329,7 @@ export const panelBuildingFormConfig: FormConfig = {
       id: "winter-maintenance",
       title: "Zimní údržba",
       icon: "Snowflake",
-      note: "Odklizení čerstvě napadlého sněhu, odstranění náledí a zajištění vhodného posypu chodníků a udržování těchto ploch pro chodce ve stavu, aby nedošlo k újmě na zdraví a byla zajištěna bezpečnost osob.",
+      note: "Odklízení čerstvě napadlého sněhu, odstranění náledí a zajištění vhodného posypu chodníků a udržování těchto ploch pro chodce ve stavu, aby nedošlo k újmě na zdraví a byla zajištěna bezpečnost osob.",
       fields: [
         ...(isWinterMaintenancePeriod() ? [{
           id: "winterMaintenanceAlert",
@@ -345,7 +346,7 @@ export const panelBuildingFormConfig: FormConfig = {
           required: true,
           layout: "horizontal",
           options: [
-            { value: "yes", label: "Ano, mám zájem i o zimní údržbu kolem domu" },
+            { value: "yes", label: "Ano, mám zájem i o zimní údržbu kolem domu", tooltip: "Pro zimní údržbu platí pohotovost vždy v kalendářním roce od 15. 11. do 14. 3. následujícího roku a v tomto období jsou prováděny výjezdy – úklidu sněhu nebo náledí. Úklid sněhu se provádí, pokud je minimální sněhová pokrývka výšky 2 cm. V jednom dni je možné provést maximálně 2 výjezdy (většinou ráno a poté odpoledne nebo večer). V případě úklidu chodníků se vždy provádí schůdná cestička na šířku kočárku – cca 75 cm." },
             { value: "no", label: "Ne" }
           ]
         },
@@ -420,14 +421,14 @@ export const panelBuildingFormConfig: FormConfig = {
           label: "1x týdně",
           required: false,
           options: [
-            { value: "sweep-pathway", label: "Zametení venkovního přístupového chodníku nebo schodiště před domem (250 Kč/měsíc)", fixedAddon: 250 },
-            { value: "sweep-containers", label: "Zametení okolo kontejnerového stání včetně odstranění hrubých nečistot (200 Kč/měsíc)", fixedAddon: 200 },
-            { value: "remove-debris", label: "Odstranění hrubých nečistot kolem domu (200 Kč/měsíc)", fixedAddon: 200 },
-            { value: "clean-doormats", label: "Čištění vstupních rohoží v přízemí domu (150 Kč/měsíc)", fixedAddon: 150, hidden: true },
-            { value: "dispose-flyers", label: "Likvidace tiskovin / reklamních letáků (50 Kč/měsíc)", fixedAddon: 50, hidden: true },
-            { value: "elevator-maintenance", label: "Olejování nerezových stěn interiéru výtahu a jejich údržba (250 Kč/měsíc)", fixedAddon: 250, hidden: true },
-            { value: "report-issues", label: "Hlášení závad v domě (150 Kč/měsíc)", fixedAddon: 150, hidden: true },
-            { value: "sweep-under-mats", label: "Zametání a mytí podlah pod rohožkami u jednotlivých bytů (120 Kč/měsíc)", fixedAddon: 120, hidden: true }
+            { value: "remove-debris", label: "Odstranění hrubých nečistot kolem domu (+200 Kč/měsíc)", fixedAddon: 200 },
+            { value: "report-defects", label: "Hlášení závad v domě (+150 Kč/měsíc)", fixedAddon: 150 },
+            { value: "sweep-under-mats", label: "Zametání a mytí podlah pod rohožkami u jednotlivých bytů (+120 Kč/měsíc)", fixedAddon: 120 },
+            { value: "sweep-pathway", label: "Zametání venkovního přístupového chodníku nebo schodiště před domem, případně i zametání cest na pozemcích domu jako je dvůr nebo zahrada (+250 Kč/měsíc)", fixedAddon: 250, hidden: true },
+            { value: "sweep-containers", label: "Zametení okolo kontejnerového stání včetně odstranění hrubých nečistot u kontejnerového stání (+200 Kč/měsíc)", fixedAddon: 200, hidden: true },
+            { value: "clean-doormats", label: "Čistění vstupních rohoží v přízemí domu (+150 Kč/měsíc)", fixedAddon: 150, hidden: true },
+            { value: "dispose-flyers", label: "Likvidace tiskovin / reklamních letáků (+50 Kč/měsíc)", fixedAddon: 50, hidden: true },
+            { value: "elevator-maintenance", label: "Olejování nerezových stěn interiéru výtahu a jejich údržba", fixedAddon: 250, hidden: true },
           ]
         },
         {

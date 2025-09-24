@@ -121,7 +121,7 @@ function OptionsWithShowMore({
   const hiddenOptions = field.options.filter(option => option.hidden);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {/* Render visible options */}
       {visibleOptions.map((option) => renderOption(option))}
       
@@ -149,7 +149,7 @@ function OptionsWithShowMore({
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="flex flex-col gap-3"
+            className="flex flex-col gap-2"
           >
                     {hiddenOptions.map((option) => renderOption(option))}
           </motion.div>
@@ -326,7 +326,7 @@ function renderConditionalFields(field: FormFieldType, form: UseFormReturn<FormS
                         control={form.control}
                         name={subField.id as keyof FormSubmissionData}
                         render={({ field: subFormField }) => (
-                          <FormItem className={subField.label || subField.description ? "space-y-2" : ""}>
+                          <FormItem className={subField.label || subField.description ? "" : ""}>
                             {subField.label && (
                               <FieldLabel field={subField} isRequired={shouldShowSubField && subField.required} />
                             )}
@@ -806,7 +806,7 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
                   </p>
                 )}
                 {section.note && (
-                  <p className="text-sm text-muted-foreground mt-2 mb-2">
+                  <p className="text-sm text-muted-foreground mt-2">
                     {section.note}
                   </p>
                 )}
@@ -830,7 +830,7 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
                             transition={{ duration: 0.3, ease: "easeInOut" }}
                           >
                     {field.type === "alert" ? (
-                      <div className="space-y-2">
+                      <div className="">
                         {renderField(field, {} as ControllerRenderProps<FormSubmissionData>, form.formState, form, handleZipCodeValidationChange)}
                       </div>
                     ) : (
@@ -838,7 +838,7 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
                         control={form.control}
                         name={field.id as keyof FormSubmissionData}
                         render={({ field: formField }) => (
-                          <FormItem className="space-y-2">
+                          <FormItem className="">
                             {field.type !== "conditional" && 'label' in field && field.label && field.id !== "cleaningDays" && (
                               <FieldLabel field={field} isRequired={isRequiredWhenVisible} />
                             )}

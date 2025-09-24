@@ -81,10 +81,10 @@ export function ServiceTypeSelector({ onServiceTypeSelect }: ServiceTypeSelector
         </div>
         
         <h1 className="text-4xl font-bold text-foreground font-heading mb-4">
-          Kalkulátor úklidových a řemeslných služeb
+          Kalkulátor úklidových služeb
         </h1>
         <p className="text-xl text-muted-foreground font-sans max-w-2xl mx-auto">
-          Vyberte typ služby a získejte obratem přesnou kalkulaci našich prací
+          Vyberte typ služby a získejte obratem přesnou kalkulaci našich prací.
         </p>
       </div>
 
@@ -121,12 +121,12 @@ export function ServiceTypeSelector({ onServiceTypeSelect }: ServiceTypeSelector
                 htmlFor={service.id}
                 className={`block cursor-pointer h-full ${isDisabled ? 'cursor-not-allowed' : ''}`}
               >
-                <Card className={`peer-checked:ring-2 peer-checked:ring-accent peer-checked:border-accent transition-all duration-200 hover:shadow-lg h-full flex flex-col gap-2 ${
+                <Card className={`peer-checked:ring-2 peer-checked:ring-accent peer-checked:border-accent transition-all duration-200 hover:shadow-lg h-full grid grid-rows-[auto_1fr] gap-2 ${
                   isDisabled 
                     ? 'cursor-not-allowed'
                     : 'peer-checked:ring-2 peer-checked:ring-accent peer-checked:border-accent hover:shadow-lg'
                 }`}>
-                  <CardHeader className="flex-shrink-0 gap-3">
+                  <CardHeader className="flex-shrink-0 gap-3 min-h-24">
                     <div className={`${isDisabled ? 'text-muted-foreground/70' : 'text-accent'}`}>
                       <IconComponent className="h-8 w-8" />
                     </div>
@@ -136,7 +136,7 @@ export function ServiceTypeSelector({ onServiceTypeSelect }: ServiceTypeSelector
                       {service.title}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="flex-grow">
+                  <CardContent>
                     <p className={`text-sm leading-relaxed font-sans font-normal ${
                       isDisabled ? 'text-muted-foreground/70' : 'text-muted-foreground'
                     }`}>
