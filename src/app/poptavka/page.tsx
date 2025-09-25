@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { User, Building, Check } from "lucide-react";
+import { User, Building, Check, ShieldCheck } from "lucide-react";
 
 interface FormData {
   // Personal information
@@ -37,6 +37,12 @@ interface FormData {
   companyCity: string;
   companyZipCode: string;
   
+  // Service start date
+  serviceStartDate: string;
+  
+  // Invoice email (optional if different from contact email)
+  invoiceEmail: string;
+  
   // Additional notes
   notes: string;
 }
@@ -58,6 +64,8 @@ function PoptavkaContent() {
     companyStreet: "",
     companyCity: "",
     companyZipCode: "",
+    serviceStartDate: "",
+    invoiceEmail: "",
     notes: "",
   });
 
@@ -114,6 +122,8 @@ function PoptavkaContent() {
             companyStreet: String(mergedData.companyStreet || ''),
             companyCity: String(mergedData.companyCity || ''),
             companyZipCode: String(mergedData.companyZipCode || ''),
+            serviceStartDate: String(mergedData.serviceStartDate || ''),
+            invoiceEmail: String(mergedData.invoiceEmail || ''),
             notes: String(mergedData.notes || ''),
           };
           
@@ -155,6 +165,8 @@ function PoptavkaContent() {
           companyStreet: String(mergedData.companyStreet || ''),
           companyCity: String(mergedData.companyCity || ''),
           companyZipCode: String(mergedData.companyZipCode || ''),
+          serviceStartDate: String(mergedData.serviceStartDate || ''),
+          invoiceEmail: String(mergedData.invoiceEmail || ''),
           notes: String(mergedData.notes || ''),
         };
         
@@ -213,6 +225,9 @@ function PoptavkaContent() {
     if (!formData.propertyStreet.trim()) newErrors.propertyStreet = "Ulice je povinná";
     if (!formData.propertyCity.trim()) newErrors.propertyCity = "Město je povinné";
     if (!formData.propertyZipCode.trim()) newErrors.propertyZipCode = "PSČ je povinné";
+    if (!formData.serviceStartDate.trim()) {
+      newErrors.serviceStartDate = "Datum zahájení plnění je povinné";
+    }
 
     if (formData.isCompany) {
       if (!formData.companyName.trim()) newErrors.companyName = "Název firmy je povinný";
@@ -220,6 +235,11 @@ function PoptavkaContent() {
       if (!formData.companyStreet.trim()) newErrors.companyStreet = "Ulice je povinná";
       if (!formData.companyCity.trim()) newErrors.companyCity = "Město je povinné";
       if (!formData.companyZipCode.trim()) newErrors.companyZipCode = "PSČ je povinné";
+    }
+
+    // Validate invoice email if provided
+    if (formData.invoiceEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.invoiceEmail)) {
+      newErrors.invoiceEmail = "Zadejte platný e-mail pro faktury";
     }
 
     setErrors(newErrors);
@@ -257,6 +277,8 @@ function PoptavkaContent() {
         companyStreet: "",
         companyCity: "",
         companyZipCode: "",
+        serviceStartDate: "",
+        invoiceEmail: "",
         notes: "",
       });
     } catch {
@@ -295,9 +317,6 @@ function PoptavkaContent() {
           </div>
           
           <h1 className="text-3xl font-bold text-foreground mb-4">Poptávka úklidových služeb</h1>
-          <p className="text-lg text-muted-foreground">
-            Vyplňte formulář a my vás budeme kontaktovat s detailní nabídkou
-          </p>
         </motion.div>
 
         {/* Service Information Card (when loaded from hash) */}
@@ -324,7 +343,7 @@ function PoptavkaContent() {
                   <div>
                     <h3 className="font-semibold text-foreground mb-2">Celková cena</h3>
                     <p className="text-2xl font-bold text-primary">
-                      {hashData.totalPrice.toLocaleString('cs-CZ')} Kč <span className="text-sm font-normal text-muted-foreground">za měsíc</span>
+                      {hashData.totalPrice.toLocaleString('cs-CZ')} Kč <span className="font-normal text-muted-foreground">za měsíc</span>
                     </p>
                   </div>
                 </div>
@@ -408,60 +427,8 @@ function PoptavkaContent() {
                   </div>
                 </div>
 
-                {/* Property Address */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold">Adresa nemovitosti k úklidu</h3>
-                  </div>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="propertyStreet">Ulice a číslo popisné</Label>
-                        <Input
-                          id="propertyStreet"
-                          value={formData.propertyStreet || ''}
-                          onChange={(e) => handleInputChange("propertyStreet", e.target.value)}
-                          placeholder="Např. Václavské náměstí 123"
-                          className={errors.propertyStreet ? "border-destructive" : ""}
-                        />
-                        {errors.propertyStreet && (
-                          <p className="text-sm text-destructive">{errors.propertyStreet}</p>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="propertyCity">Město</Label>
-                          <Input
-                            id="propertyCity"
-                            value={formData.propertyCity || ''}
-                            onChange={(e) => handleInputChange("propertyCity", e.target.value)}
-                            placeholder="Praha"
-                            className={errors.propertyCity ? "border-destructive" : ""}
-                          />
-                          {errors.propertyCity && (
-                            <p className="text-sm text-destructive">{errors.propertyCity}</p>
-                          )}
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="propertyZipCode">PSČ</Label>
-                          <Input
-                            id="propertyZipCode"
-                            value={formData.propertyZipCode || ''}
-                            onChange={(e) => handleInputChange("propertyZipCode", e.target.value)}
-                            placeholder="110 00"
-                            className={errors.propertyZipCode ? "border-destructive" : ""}
-                          />
-                          {errors.propertyZipCode && (
-                            <p className="text-sm text-destructive">{errors.propertyZipCode}</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                </div>
-
                 {/* Company Information */}
-                <div className="border-t pt-6">
+                <div className="">
                   <div className="flex items-center space-x-2 mb-4">
                     <Checkbox
                       id="isCompany"
@@ -577,8 +544,99 @@ function PoptavkaContent() {
                   )}
                 </div>
 
+                {/* Property Address */}
+                <div className="space-y-4 pt-6 border-t pb-6 border-b">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold">Adresa nemovitosti k úklidu</h3>
+                  </div>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="propertyStreet">Ulice a číslo popisné</Label>
+                        <Input
+                          id="propertyStreet"
+                          value={formData.propertyStreet || ''}
+                          onChange={(e) => handleInputChange("propertyStreet", e.target.value)}
+                          placeholder="Např. Václavské náměstí 123"
+                          className={errors.propertyStreet ? "border-destructive" : ""}
+                        />
+                        {errors.propertyStreet && (
+                          <p className="text-sm text-destructive">{errors.propertyStreet}</p>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="propertyCity">Město</Label>
+                          <Input
+                            id="propertyCity"
+                            value={formData.propertyCity || ''}
+                            onChange={(e) => handleInputChange("propertyCity", e.target.value)}
+                            placeholder="Praha"
+                            className={errors.propertyCity ? "border-destructive" : ""}
+                          />
+                          {errors.propertyCity && (
+                            <p className="text-sm text-destructive">{errors.propertyCity}</p>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="propertyZipCode">PSČ</Label>
+                          <Input
+                            id="propertyZipCode"
+                            value={formData.propertyZipCode || ''}
+                            onChange={(e) => handleInputChange("propertyZipCode", e.target.value)}
+                            placeholder="110 00"
+                            className={errors.propertyZipCode ? "border-destructive" : ""}
+                          />
+                          {errors.propertyZipCode && (
+                            <p className="text-sm text-destructive">{errors.propertyZipCode}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                </div>
+
+
+                {/* Service Start Date */}
+                <div className="space-y-2 max-w-1/3">
+                  <Label htmlFor="serviceStartDate">
+                    Zahájení plnění je dnem
+                  </Label>
+                  <Input
+                    id="serviceStartDate"
+                    type="date"
+                    value={formData.serviceStartDate || ''}
+                    onChange={(e) => handleInputChange("serviceStartDate", e.target.value)}
+                    className={errors.serviceStartDate ? "border-destructive" : ""}
+                  />
+                  {errors.serviceStartDate && (
+                    <p className="text-sm text-destructive">{errors.serviceStartDate}</p>
+                  )}
+                </div>
+
+                {/* Invoice Email */}
+                <div className="space-y-2 mt-6">
+                  <Label htmlFor="invoiceEmail">
+                    Email, kam mají být zasílány faktury <span className="text-muted-foreground">(volitelné)</span>
+                  </Label>
+                  <Input
+                    id="invoiceEmail"
+                    type="email"
+                    value={formData.invoiceEmail || ''}
+                    onChange={(e) => handleInputChange("invoiceEmail", e.target.value)}
+                    placeholder="faktury@example.com"
+                    className={errors.invoiceEmail ? "border-destructive" : ""}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Pokud není uvedeno, budou faktury zasílány na email uvedený v kontaktních údajích
+                  </p>
+                  {errors.invoiceEmail && (
+                    <p className="text-sm text-destructive">{errors.invoiceEmail}</p>
+                  )}
+                </div>
+
                 {/* Additional Notes */}
-                <div className="space-y-2 mt-12">
+                <div className="space-y-2 mt-6">
                   <Label htmlFor="notes">
                     Poznámka <span className="text-muted-foreground">(volitelné)</span>
                   </Label>
@@ -586,7 +644,7 @@ function PoptavkaContent() {
                     id="notes"
                     value={formData.notes || ''}
                     onChange={(e) => handleInputChange("notes", e.target.value)}
-                    placeholder="Máte nějaké speciální požadavky nebo poznámky?"
+                    placeholder="např. jméno jednatele/jednatelky společnosti"
                     rows={4}
                   />
                 </div>
@@ -621,8 +679,9 @@ function PoptavkaContent() {
           transition={{ delay: 0.4, duration: 0.6 }}
           className="mt-6 text-center text-sm text-muted-foreground"
         >
-          <p>
-            Po odeslání poptávky vás budeme kontaktovat do 24 hodin s detailní nabídkou.<br/>Vaše údaje jsou chráněny a používáme je pouze pro zpracování vaší poptávky.
+          <p className="flex items-center justify-center gap-2">
+            <ShieldCheck className="h-4 w-4" />
+            Vaše údaje jsou chráněny a používáme je pouze pro zpracování Vaší poptávky.
           </p>
         </motion.div>
       </div>

@@ -204,10 +204,10 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
               {/* Main Price Display */}
               <div className="text-center">
                 <div className="text-4xl font-bold text-accent mb-2">
-                  {formatCurrency(roundedResults.totalMonthlyPrice)} <span className="text-base font-normal text-muted-foreground">za měsíc</span>
+                  {formatCurrency(roundedResults.totalMonthlyPrice)} <span className="font-normal text-muted-foreground">za měsíc</span>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Cena za pravidelný úklid domu bez 21 % DPH
+                <div className="text-base text-muted-foreground">
+                  Cena za pravidelný úklid domu
                 </div>
               </div>
 
@@ -236,10 +236,10 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
                       + Zimní údržba
                     </div>
                     <div className="text-2xl font-bold text-slate-800 dark:text-slate-200">
-                      {formatCurrency(calculationResult.winterServiceFee)}
+                      {formatCurrency(calculationResult.winterServiceFee)} měsíčně
                     </div>
                       <div className="text-sm text-slate-600 dark:text-slate-400">
-                        měsíčně v období od {formConfig?.winterPeriod?.start.day}. {formConfig?.winterPeriod?.start.month}. do {formConfig?.winterPeriod?.end.day}. {formConfig?.winterPeriod?.end.month}. následujícího roku
+                        v období od {formConfig?.winterPeriod?.start.day}. {formConfig?.winterPeriod?.start.month}. do {formConfig?.winterPeriod?.end.day}. {formConfig?.winterPeriod?.end.month}. následujícího roku
                       </div>
                     <div className="text-xs text-slate-500 dark:text-slate-500 mt-1">
                       (tato položka platí pouze v zimních měsících)
@@ -264,83 +264,44 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
                 </div>
               )}
 
-              {/* Action buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Button 
-                  onClick={() => {
-                    // Generate a hash for sharing results
-                    const hashData = {
-                      serviceType: formConfig?.id || 'Ostatní služby',
-                      serviceTitle: formConfig?.title || 'Ostatní služby',
-                      totalPrice: roundedResults.totalMonthlyPrice,
-                      currency: 'Kč',
-                      calculationData: {
-                        ...calculationResult, // Include the full calculation result
-                        timestamp: Date.now(),
-                        price: roundedResults.totalMonthlyPrice,
-                        serviceTitle: formConfig?.title,
-                        formData: formData
-                      }
-                    };
-                    
-                    const hash = hashService.generateHash(hashData);
-                    const resultUrl = `/vysledek?hash=${hash}`;
-                    
-                    // Copy to clipboard
-                    navigator.clipboard.writeText(window.location.origin + resultUrl).then(() => {
-                      alert('Odkaz na výsledky byl zkopírován do schránky!');
-                    }).catch(() => {
-                      alert(`Odkaz na výsledky: ${window.location.origin}${resultUrl}`);
-                    });
-                  }}
-                  variant="outline"
-                  size="lg"
-                  className=""
-                >
-                  <Share className="h-4 w-4" />
-                  Sdílet výsledky
-                </Button>
-                
-                <Button 
-                  onClick={() => {
-                    // Get customer data from state or unified storage
-                    let currentCustomerData = customerData;
-                    if (!currentCustomerData) {
-                      const orderData = orderStorage.get();
-                      currentCustomerData = orderData?.customer || null;
-                    }
-                    
-                    // Get existing poptavka form data to preserve address/company info
+              <Button 
+                onClick={() => {
+                  // Get customer data from state or unified storage
+                  let currentCustomerData = customerData;
+                  if (!currentCustomerData) {
                     const orderData = orderStorage.get();
-                    const existingPoptavkaData = orderData?.poptavka || {};
-                    
-                    // Merge: existing poptavka data + calculation form data + updated customer data
-                    const enhancedFormData = {
-                      ...existingPoptavkaData, // Preserve address, company info, etc.
-                      ...formData, // Original calculation form data
-                      ...(currentCustomerData ? {
-                        firstName: currentCustomerData.firstName || '',
-                        lastName: currentCustomerData.lastName || '',
-                        email: currentCustomerData.email || ''
-                      } : {})
-                    };
+                    currentCustomerData = orderData?.customer || null;
+                  }
+                  
+                  // Get existing poptavka form data to preserve address/company info
+                  const orderData = orderStorage.get();
+                  const existingPoptavkaData = orderData?.poptavka || {};
+                  
+                  // Merge: existing poptavka data + calculation form data + updated customer data
+                  const enhancedFormData = {
+                    ...existingPoptavkaData, // Preserve address, company info, etc.
+                    ...formData, // Original calculation form data
+                    ...(currentCustomerData ? {
+                      firstName: currentCustomerData.firstName || '',
+                      lastName: currentCustomerData.lastName || '',
+                      email: currentCustomerData.email || ''
+                    } : {})
+                  };
 
-                    const hashData = buildPoptavkaHashData({
-                      totalPrice: roundedResults.totalMonthlyPrice,
-                      calculationResult,
-                      formData: enhancedFormData,
-                      formConfig
-                    });
-                    
-                    // Use centralized hash service
-                    hashService.navigateToPoptavka(hashData, router);
-                  }}
-                  size="lg"
-                  className=""
-                >
-                  Závazná poptávka
-                </Button>
-              </div>
+                  const hashData = buildPoptavkaHashData({
+                    totalPrice: roundedResults.totalMonthlyPrice,
+                    calculationResult,
+                    formData: enhancedFormData,
+                    formConfig
+                  });
+                  
+                  // Use centralized hash service
+                  hashService.navigateToPoptavka(hashData, router);
+                }}
+                size="lg"
+              >
+                Návrh smlouvy
+              </Button>
             </CardContent>
           </Card>
         </motion.div>

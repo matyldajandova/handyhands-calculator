@@ -85,10 +85,10 @@ export function IdentificationStep({ onDownloadPDF, isDownloading = false, initi
       <CardHeader className="text-center mb-2">
         <CardTitle className="text-xl flex items-center justify-center gap-2">
           <FileText className="h-5 w-5 text-green-success" />
-          Stažení PDF kalkulace
+          Stažení kalkulace do PDF
         </CardTitle>
-        <CardDescription>
-          PDF obsahuje detailní rozpis ceny a specifikace služeb.
+        <CardDescription className="text-base">
+          s uvedením kompletního rozpisu služeb a data možného zahájení služeb.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -158,7 +158,7 @@ export function IdentificationStep({ onDownloadPDF, isDownloading = false, initi
           ) : (
             <>
               <Download className="h-4 w-4" />
-              Stáhnout PDF kalkulaci
+              Stáhnout kalkulaci v PDF
             </>
           )}
         </Button>

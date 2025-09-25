@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3000 --turbopack",
+    "dev": "NODE_OPTIONS='--no-deprecation' next dev --port 3000 --turbopack",
     "dev:smart": "./scripts/dev.sh",
     "dev:kill": "pkill -f 'next dev'",
     "prebuild": "npm run pdf:css",
-    "build": "next build",
-    "start": "next start",
+    "build": "NODE_OPTIONS='--no-deprecation' next build",
+    "start": "NODE_OPTIONS='--no-deprecation' next start",
     "lint": "next lint",
     "pdf:css": "tailwindcss -i src/pdf/input.css -o dist/pdf.css --minify --content 'src/pdf/**/*.{ts,tsx,html}'",
     "pdf:css:watch": "tailwindcss -i src/pdf/input.css -o dist/pdf.css --minify --watch --content 'src/pdf/**/*.{ts,tsx,html}'"
