@@ -2,7 +2,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Building, Share } from "lucide-react";
+import { CheckCircle, Building } from "lucide-react";
 import { CalculationResult, FormConfig, FormSubmissionData } from "@/types/form-types";
 import { isWinterMaintenancePeriod } from "@/utils/date-utils";
 import * as Icons from "lucide-react";
@@ -256,9 +256,17 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
                       Podmínky uvedené ceny:
                     </h4>
                     <ul className="text-sm text-muted-foreground space-y-1">
-                      {formConfig.conditions.map((condition, index) => (
-                        <li key={index}>• {condition}</li>
-                      ))}
+                      {formConfig.conditions
+                        .filter((condition) => {
+                          // Hide general cleaning condition if not selected
+                          if (condition.includes("pravidelný generální úklid") && formData.generalCleaning === "no") {
+                            return false;
+                          }
+                          return true;
+                        })
+                        .map((condition, index) => (
+                          <li key={index}>• {condition}</li>
+                        ))}
                     </ul>
                   </div>
                 </div>

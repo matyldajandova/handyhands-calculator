@@ -144,10 +144,10 @@ function PoptavkaContent() {
       if (poptavkaData || orderData?.customer) {
         // Merge customer data with poptavka data
         const customerData = orderData?.customer;
-        const mergedData = {
-          ...(customerData || {}), // Customer data (firstName, lastName, email)
-          ...poptavkaData  // Poptavka data (phone, address, company, notes)
-        };
+          const mergedData = {
+            ...(customerData || {}), // Customer data (firstName, lastName, email)
+            ...poptavkaData  // Poptavka data (phone, address, company, notes)
+          } as Record<string, unknown>;
         
         // Ensure all string fields are never undefined
         const safeFormData: FormData = {
