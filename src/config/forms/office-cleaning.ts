@@ -41,14 +41,6 @@ const officeCleaningSchema = z.object({
     }
     return val;
   }, z.union([z.number().min(0.1), z.undefined()])).optional(),
-  windowCountBoth: z.preprocess((val) => {
-    if (val === undefined || val === null || val === "") return undefined;
-    if (typeof val === 'string') {
-      const num = parseInt(val, 10);
-      return isNaN(num) ? undefined : num;
-    }
-    return val;
-  }, z.union([z.number().min(1), z.undefined()])).optional(),
   windowAreaInside: z.preprocess((val) => {
     if (val === undefined || val === null || val === "") return undefined;
     if (typeof val === 'string') {
@@ -57,14 +49,6 @@ const officeCleaningSchema = z.object({
     }
     return val;
   }, z.union([z.number().min(0.1), z.undefined()])).optional(),
-  windowCountInside: z.preprocess((val) => {
-    if (val === undefined || val === null || val === "") return undefined;
-    if (typeof val === 'string') {
-      const num = parseInt(val, 10);
-      return isNaN(num) ? undefined : num;
-    }
-    return val;
-  }, z.union([z.number().min(1), z.undefined()])).optional(),
   dishwashing: z.string().min(1, "Vyberte požadavek na pravidelné mytí nádobí"),
   toiletCleaning: z.string().min(1, "Vyberte, zda je součástí úklidu i úklid WC"),
   afterHours: z.string().min(1, "Vyberte, zda úklid probíhá mimo pracovní dobu"),
@@ -126,26 +110,12 @@ const officeCleaningSchema = z.object({
           path: ["windowAreaBoth"]
         });
       }
-      if (!data.windowCountBoth || data.windowCountBoth <= 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Zadejte počet oken (oboustranně)",
-          path: ["windowCountBoth"]
-        });
-      }
     } else if (data.generalCleaningWindows === "inside-only") {
       if (!data.windowAreaInside || data.windowAreaInside <= 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "Zadejte plochu oken v m² (jednostranně)",
           path: ["windowAreaInside"]
-        });
-      }
-      if (!data.windowCountInside || data.windowCountInside <= 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Zadejte počet oken (jednostranně)",
-          path: ["windowCountInside"]
         });
       }
     }
@@ -259,8 +229,8 @@ export const officeCleaningFormConfig: FormConfig = {
             { value: "2x-weekly", label: "2x týdně", coefficient: 1.67 },
             { value: "weekly", label: "1x týdně", coefficient: 1.0 },
             { value: "biweekly", label: "1x za 14 dní", coefficient: 0.75 },
-            { value: "daily-basic-weekly", label: "Každý pracovní den pouze vynášení košů + úklid WC a úklid podlah a povrchů 1x týdně", coefficient: 2.5, hidden: true },
-            { value: "daily-basic-weekly-wc", label: "Každý pracovní den pouze vynášení košů a úklid podlah a povrchů včetně WC 1x týdně", coefficient: 2.0, hidden: true }
+            { value: "daily-basic-weekly", label: "Každý pracovní den pouze vynášení košů + úklid WC a úklid podlah a povrchů 1x týdně", tooltip: "Každý pracovní den se provádní pouze vynášení košů a uklízí se WC. Úklid podlah a porvrchů se provádí jen 1x týdne.", coefficient: 2.5, hidden: true },
+            { value: "daily-basic-weekly-wc", label: "Každý pracovní den pouze vynášení košů a úklid podlah a povrchů včetně WC 1x týdně", tooltip: "Každý pracovní den se provádní pouze vynášení košů. Úklid WC, podlah a porvrchů se provádí jen 1x týdne.", coefficient: 2.0, hidden: true }
           ]
         },
         {
@@ -302,8 +272,8 @@ export const officeCleaningFormConfig: FormConfig = {
           required: true,
           layout: "horizontal",
           options: [
-            { value: "hourly", label: "Hodinová" },
-            { value: "area", label: "Plošná" }
+            { value: "hourly", label: "Varianta hodinová" },
+            { value: "area", label: "Varianta plošná" }
           ]
         },
         {
@@ -316,7 +286,7 @@ export const officeCleaningFormConfig: FormConfig = {
             {
               id: "hoursPerCleaning",
               type: "radio",
-              label: "Požadujeme, aby každý úklid trval:",
+              label: "Požadujeme, aby každý úklid trval",
               required: false,
               layout: "vertical",
               options: [
@@ -408,8 +378,8 @@ export const officeCleaningFormConfig: FormConfig = {
           required: true,
           layout: "vertical",
           options: [
-            { value: "smooth", label: "Hladké (povrchy udržované mokrým způsobem, např. PVC, linoleum, keramika, plovoucí podlaha, kámen)", coefficient: 0.96 },
-            { value: "carpet", label: "Koberce (povrchy čístěné vysavačem)", tooltip: "Vysavač je v režii objednatele a jeho pořízení a správa není zahrnuta v cenové nabídce.", coefficient: 1.06 },
+            { value: "smooth", label: "Hladké (prach a nečistoty odstraňované mokrým způsobem – mopem, např. PVC, linoleum, keramika, plovoucí podlaha, kámen)", coefficient: 0.96 },
+            { value: "carpet", label: "Koberce (prach a nečistoty odstraňované vysavačem)", tooltip: "Vysavač je v režii objednatele a jeho pořízení a správa není zahrnuta v cenové nabídce.", coefficient: 1.06 },
             { value: "combination", label: "Kombinace těchto povrchů (k údržbě je potřeba jak mop, tak vysavač)", tooltip: "Vysavač je v režii objednatele a jeho pořízení a správa není zahrnuta v cenové nabídce.", coefficient: 1.03 }
           ]
         }
@@ -423,7 +393,7 @@ export const officeCleaningFormConfig: FormConfig = {
         {
           id: "generalCleaning",
           type: "radio",
-          label: "Generální úklid se provádí 2x ročně (mytí osvětlení, dezinfekce kuchyňských spotřebičů)",
+          label: "Generální úklid se provádí 2x ročně (mytí oken, osvětlení, dezinfekce kuchyňských spotřebičů)",
           required: true,
           layout: "horizontal",
           options: [
@@ -454,14 +424,20 @@ export const officeCleaningFormConfig: FormConfig = {
         {
           id: "window-area-both",
           type: "conditional",
-          label: "Plocha oken (oboustranně)",
+          label: "Orientační plocha oken (oboustranně)",
           required: false,
-          condition: { field: "generalCleaningWindows", value: "both-sides" },
+          condition: { 
+            operator: "and",
+            conditions: [
+              { field: "generalCleaning", value: "yes", operator: "equals" },
+              { field: "generalCleaningWindows", value: "both-sides", operator: "equals" }
+            ]
+          },
           fields: [
             {
               id: "windowAreaBoth",
               type: "input",
-              label: "Plocha oken v m²:",
+              label: "Orientační plocha oken v m²:",
               required: false,
               inputType: "number",
               min: 0.1,
@@ -469,41 +445,26 @@ export const officeCleaningFormConfig: FormConfig = {
               step: 0.1,
               placeholder: "např. 25.5",
               description: "Zadejte plochu oken v m² (max. 1000 m²)"
-            }
-          ]
-        },
-        {
-          id: "window-count-both",
-          type: "conditional",
-          label: "Počet oken (oboustranně)",
-          required: false,
-          condition: { field: "generalCleaningWindows", value: "both-sides" },
-          fields: [
-            {
-              id: "windowCountBoth",
-              type: "input",
-              label: "Počet oken celkově:",
-              required: false,
-              inputType: "number",
-              min: 1,
-              max: 1000,
-              step: 1,
-              placeholder: "např. 8",
-              description: "Zadejte celkový počet oken (max. 1000)"
             }
           ]
         },
         {
           id: "window-area-inside",
           type: "conditional",
-          label: "Plocha oken (jednostranně)",
+          label: "Orientační plocha oken (jednostranně)",
           required: false,
-          condition: { field: "generalCleaningWindows", value: "inside-only" },
+          condition: { 
+            operator: "and",
+            conditions: [
+              { field: "generalCleaning", value: "yes", operator: "equals" },
+              { field: "generalCleaningWindows", value: "inside-only", operator: "equals" }
+            ]
+          },
           fields: [
             {
               id: "windowAreaInside",
               type: "input",
-              label: "Plocha oken v m²:",
+              label: "Orientační plocha oken v m²:",
               required: false,
               inputType: "number",
               min: 0.1,
@@ -511,27 +472,6 @@ export const officeCleaningFormConfig: FormConfig = {
               step: 0.1,
               placeholder: "např. 25.5",
               description: "Zadejte plochu oken v m² (max. 1000 m²)"
-            }
-          ]
-        },
-        {
-          id: "window-count-inside",
-          type: "conditional",
-          label: "Počet oken (jednostranně)",
-          required: false,
-          condition: { field: "generalCleaningWindows", value: "inside-only" },
-          fields: [
-            {
-              id: "windowCountInside",
-              type: "input",
-              label: "Počet oken celkově:",
-              required: false,
-              inputType: "number",
-              min: 1,
-              max: 1000,
-              step: 1,
-              placeholder: "např. 8",
-              description: "Zadejte celkový počet oken (max. 1000)"
             }
           ]
         }
@@ -582,7 +522,7 @@ export const officeCleaningFormConfig: FormConfig = {
         {
           id: "afterHours",
           type: "radio",
-          label: "Úklidové práce budou probíhat mimo pracovní dobu v kancelářích (brzo ráno před 8:00 hod nebo večer po 17:00 hod)",
+          label: "Úklidové práce budou probíhat mimo pracovní dobu v kancelářích (tedy např. brzo ráno před 8:00 hod. nebo večer po 17:00 hod.)",
           required: true,
           layout: "vertical",
           options: [
@@ -612,8 +552,8 @@ export const officeCleaningFormConfig: FormConfig = {
               required: false,
               layout: "vertical",
               options: [
-                { value: "morning", label: "Nejpozději ráno v" },
-                { value: "evening", label: "Nejdříve večer začít v" }
+                { value: "morning", label: "Nejpozději ráno má být uklizeno v" },
+                { value: "evening", label: "Nejdříve se může večer začít v" }
               ]
             },
             {
@@ -711,13 +651,13 @@ export const officeCleaningFormConfig: FormConfig = {
           label: "Při každém úklidu",
           required: false,
           options: [
-            { value: "elevator-maintenance", label: "Olejování nerezových stěn interiéru výtahu včetně jejich údržby (+350 Kč/měsíc)", fixedAddon: 350 },
-            { value: "sweep-pathway", label: "Zametení venkovního přístupového chodníku nebo schodiště před objektem (+250 Kč/měsíc)", fixedAddon: 250 },
-            { value: "shredder-control", label: "Kontrola a vyprazdňování skartovacího zařízení (+150 Kč/měsíc)", fixedAddon: 150 },
+            { value: "clean-coffee-machine", label: "Kontrola a čištění kávovaru (+200 Kč/měsíc)", fixedAddon: 200 },
+            { value: "hand-wash-dishes", label: "Ruční domytí nádobí z myčky a jeho otření do sucha (+300 Kč/měsíc)", fixedAddon: 300 },
+            { value: "water-plants", label: "Zalévání pokojových květin (+250 Kč/měsíc)", fixedAddon: 250 },
+            { value: "elevator-maintenance", label: "Olejování nerezových stěn interiéru výtahu včetně jejich údržby (+350 Kč/měsíc)", fixedAddon: 350, hidden: true },
+            { value: "sweep-pathway", label: "Zametení venkovního přístupového chodníku nebo schodiště před objektem (+250 Kč/měsíc)", fixedAddon: 250, hidden: true },
+            { value: "shredder-control", label: "Kontrola a vyprazdňování skartovacího zařízení (+150 Kč/měsíc)", fixedAddon: 150, hidden: true },
             { value: "clean-doormats", label: "Čištění vstupních rohoží v přízemí objektu (+120 Kč/měsíc)", fixedAddon: 120, hidden: true },
-            { value: "water-plants", label: "Zalévání pokojových květin (+250 Kč/měsíc)", fixedAddon: 250, hidden: true },
-            { value: "clean-coffee-machine", label: "Kontrola a čištění kávovaru (+200 Kč/měsíc)", fixedAddon: 200, hidden: true },
-            { value: "hand-wash-dishes", label: "Ruční domytí nádobí z myčky a jeho otření do sucha (+300 Kč/měsíc)", fixedAddon: 300, hidden: true },
             { value: "take-out-recycling", label: "Vynášení tříděného odpadu na místa kontejnerového stání (mimo prostor kanceláří) (+300 Kč/měsíc)", fixedAddon: 300, hidden: true },
             { value: "remove-fingerprints", label: "Odstraňování otisků prstů například v okolí klik u skleněných dveří (+200 Kč/měsíc)", fixedAddon: 200, hidden: true }
           ]
@@ -728,9 +668,9 @@ export const officeCleaningFormConfig: FormConfig = {
           label: "1x měsíčně",
           required: false,
           options: [
-            { value: "elevator-maintenance-monthly", label: "Olejování nerezových stěn interiéru výtahu včetně jejich údržby (+140 Kč/měsíc)", fixedAddon: 140 },
             { value: "dust-high-furniture", label: "Otírání prachu z nábytku z výšek více než 2,2 m (+100 Kč/měsíc)", fixedAddon: 100 },
             { value: "clean-coffee-machine-monthly", label: "Kontrola a čištění kávovaru (+150 Kč/měsíc)", fixedAddon: 150 },
+            { value: "elevator-maintenance-monthly", label: "Olejování nerezových stěn interiéru výtahu včetně jejich údržby (+140 Kč/měsíc)", fixedAddon: 140 },
             { value: "disinfect-bins", label: "Vymytí a dezinfekce odpadkových košů (+120 Kč/měsíc)", fixedAddon: 120, hidden: true },
             { value: "vacuum-upholstery", label: "Vysátí čalouněného nábytku (+300 Kč/měsíc)", fixedAddon: 300, hidden: true },
             { value: "clean-chair-wheels", label: "Čištění podnoží kancelářských židli včetně koleček (+200 Kč/měsíc)", fixedAddon: 200, hidden: true },

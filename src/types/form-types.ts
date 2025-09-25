@@ -137,6 +137,8 @@ export interface CheckboxField extends BaseField {
   options: Array<{
     value: string;
     label: string;
+    note?: NoteType; // Special note: 'frequent' or 'recommended'
+    tooltip?: string; // Custom tooltip text
     coefficient?: number;
     fixedAddon?: number; // Fixed price addon in Kč
     hidden?: boolean; // Whether this option should be hidden initially

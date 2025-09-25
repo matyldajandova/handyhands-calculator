@@ -31,6 +31,23 @@ const commercialSpacesSchema = z.object({
   spaceAreaDaily: z.string().optional(),
   floorType: z.string().min(1, "Vyberte převládající typ podlahové krytiny"),
   generalCleaning: z.string().min(1, "Vyberte, zda požadujete generální úklid"),
+  generalCleaningWindows: z.string().optional(),
+  windowAreaBoth: z.preprocess((val) => {
+    if (val === undefined || val === null || val === "") return undefined;
+    if (typeof val === 'string') {
+      const num = parseFloat(val);
+      return isNaN(num) ? undefined : num;
+    }
+    return val;
+  }, z.union([z.number().min(0.1), z.undefined()])).optional(),
+  windowAreaInside: z.preprocess((val) => {
+    if (val === undefined || val === null || val === "") return undefined;
+    if (typeof val === 'string') {
+      const num = parseFloat(val);
+      return isNaN(num) ? undefined : num;
+    }
+    return val;
+  }, z.union([z.number().min(0.1), z.undefined()])).optional(),
   dishwashing: z.string().min(1, "Vyberte požadavek na pravidelné mytí nádobí"),
   afterHours: z.string().min(1, "Vyberte, zda úklid probíhá mimo pracovní dobu"),
   preferredTimeType: z.string().optional(),
@@ -130,12 +147,40 @@ const commercialSpacesSchema = z.object({
       });
     }
   }
+
+  // Validate window area fields when general cleaning windows is selected
+  if (data.generalCleaning === "yes") {
+    if (!data.generalCleaningWindows || data.generalCleaningWindows === "") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Vyberte typ generálního úklidu oken",
+        path: ["generalCleaningWindows"]
+      });
+    }
+    if (data.generalCleaningWindows === "both-sides") {
+      if (!data.windowAreaBoth || data.windowAreaBoth <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Zadejte plochu oken v m² (oboustranně)",
+          path: ["windowAreaBoth"]
+        });
+      }
+    } else if (data.generalCleaningWindows === "inside-only") {
+      if (!data.windowAreaInside || data.windowAreaInside <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Zadejte plochu oken v m² (jednostranně)",
+          path: ["windowAreaInside"]
+        });
+      }
+    }
+  }
 });
 
 export const commercialSpacesFormConfig: FormConfig = {
   id: "commercial-spaces",
   title: "Pravidelný úklid komerčních nebytových prostorů",
-  description: `Vyplňte údaje pro výpočet ceny úklidových služeb pro komerční nebytové prostory (prodejny, sklady, fitness, kadeřnictví, ordinace, školky, restaurace, bary, kavárny…). Všechny údaje označené jsou povinné.`,
+  description: `Vyplňte údaje pro výpočet ceny úklidových služeb pro komerční nebytové prostory (prodejny, sklady, fitness, kadeřnictví, ordinace, školky, restaurace, bary, kavárny…). Všechny údaje jsou povinné.`,
   validationSchema: commercialSpacesSchema,
   basePrice: CURRENT_PRICES.regularCleaning,
   conditions: [],
@@ -158,8 +203,8 @@ export const commercialSpacesFormConfig: FormConfig = {
             { value: "2x-weekly", label: "2x týdně", coefficient: 1.67 },
             { value: "weekly", label: "1x týdně", coefficient: 1.0 },
             { value: "biweekly", label: "1x za 14 dní", coefficient: 0.75 },
-            { value: "daily-basic-weekly", label: "Každý pracovní den pouze vynášení košů + úklid WC a úklid podlah a povrchů 1x týdně", coefficient: 2.4, hidden: true },
-            { value: "daily-basic-weekly-wc", label: "Každý pracovní den pouze vynášení košů a úklid podlah a povrchů včetně WC 1x týdně", coefficient: 1.9, hidden: true },
+            { value: "daily-basic-weekly", label: "Každý pracovní den pouze vynášení košů + úklid WC a úklid podlah a povrchů 1x týdně", tooltip: "Každý pracovní den se provádní pouze vynášení košů a uklízí se WC. Úklid podlah a porvrchů se provádí jen 1x týdne.", coefficient: 2.4, hidden: true },
+            { value: "daily-basic-weekly-wc", label: "Každý pracovní den pouze vynášení košů a úklid podlah a povrchů včetně WC 1x týdně", tooltip: "Každý pracovní den se provádní pouze vynášení košů. Úklid WC, podlah a porvrchů se provádí jen 1x týdne.", coefficient: 1.9, hidden: true },
             { value: "daily-weekends-basic-weekly", label: "Každý den (včetně víkendů) pouze vynášení košů + úklid WC a úklid podlah a povrchů 1x týdně", coefficient: 2.5, hidden: true },
             { value: "daily-weekends-basic-weekly-wc", label: "Každý den (včetně víkendů) pouze vynášení košů a úklid podlah a povrchů včetně WC 1x týdně", coefficient: 2, hidden: true }
           ]
@@ -203,8 +248,8 @@ export const commercialSpacesFormConfig: FormConfig = {
           required: true,
           layout: "horizontal",
           options: [
-            { value: "hourly", label: "Hodinová" },
-            { value: "area", label: "Plošná" }
+            { value: "hourly", label: "Varianta hodinová" },
+            { value: "area", label: "Varianta plošná" }
           ]
         },
         {
@@ -217,7 +262,7 @@ export const commercialSpacesFormConfig: FormConfig = {
             {
               id: "hoursPerCleaning",
               type: "radio",
-              label: "Požadujeme, aby každý úklid trval:",
+              label: "Požadujeme, aby každý úklid trval",
               required: true,
               layout: "vertical",
               options: [
@@ -314,8 +359,8 @@ export const commercialSpacesFormConfig: FormConfig = {
           required: true,
           layout: "vertical",
           options: [
-            { value: "smooth", label: "Hladké (povrchy udržované mokrým způsobem, např. PVC, linoleum, keramika, plovoucí podlaha, kámen)", coefficient: 0.96 },
-            { value: "carpet", label: "Koberce (povrchy čístěné vysavačem)", tooltip: "Vysavač je v režii objednatele a jeho pořízení a správa není zahrnuta v cenové nabídce.", coefficient: 1.06 },
+            { value: "smooth", label: "Hladké (prach a nečistoty odstraňované mokrým způsobem, např. PVC, linoleum, keramika, plovoucí podlaha, kámen)", coefficient: 0.96 },
+            { value: "carpet", label: "Koberce (prach a nečistoty odstraňované vysavačem)", tooltip: "Vysavač je v režii objednatele a jeho pořízení a správa není zahrnuta v cenové nabídce.", coefficient: 1.06 },
             { value: "combination", label: "Kombinace těchto povrchů (k údržbě je potřeba jak mop, tak vysavač)", tooltip: "Vysavač je v režii objednatele a jeho pořízení a správa není zahrnuta v cenové nabídce.", coefficient: 1.02 }
           ]
         }
@@ -329,12 +374,86 @@ export const commercialSpacesFormConfig: FormConfig = {
         {
           id: "generalCleaning",
           type: "radio",
-          label: "Generální úklid se provádí 2x ročně (mytí osvětlení, odstranění pavučin)",
+          label: "Generální úklid se provádí 2x ročně (mytí oken, osvětlení, dezinfekce kuchyňských spotřebičů)",
           required: true,
           layout: "horizontal",
           options: [
             { value: "yes", label: "Ano", coefficient: 1.03 },
             { value: "no", label: "Ne", coefficient: 0.96 }
+          ]
+        },
+        {
+          id: "general-cleaning-windows",
+          type: "conditional",
+          label: "Generální úklid včetně mytí oken v kancelářích",
+          required: false,
+          condition: { field: "generalCleaning", value: "yes" },
+          fields: [
+            {
+              id: "generalCleaningWindows",
+              type: "radio",
+              label: "Typ mytí oken",
+              required: false,
+              layout: "vertical",
+              options: [
+                { value: "both-sides", label: "Oboustranně" },
+                { value: "inside-only", label: "Jednostranně (jen zevnitř)" }
+              ]
+            }
+          ]
+        },
+        {
+          id: "window-area-both",
+          type: "conditional",
+          label: "Orientační plocha oken (oboustranně)",
+          required: false,
+          condition: { 
+            operator: "and",
+            conditions: [
+              { field: "generalCleaning", value: "yes", operator: "equals" },
+              { field: "generalCleaningWindows", value: "both-sides", operator: "equals" }
+            ]
+          },
+          fields: [
+            {
+              id: "windowAreaBoth",
+              type: "input",
+              label: "Orientační plocha oken v m²:",
+              required: false,
+              inputType: "number",
+              min: 0.1,
+              max: 1000,
+              step: 0.1,
+              placeholder: "např. 25.5",
+              description: "Zadejte plochu oken v m² (max. 1000 m²)"
+            }
+          ]
+        },
+        {
+          id: "window-area-inside",
+          type: "conditional",
+          label: "Orientační plocha oken (jednostranně)",
+          required: false,
+          condition: { 
+            operator: "and",
+            conditions: [
+              { field: "generalCleaning", value: "yes", operator: "equals" },
+              { field: "generalCleaningWindows", value: "inside-only", operator: "equals" }
+            ]
+          },
+          fields: [
+            {
+              id: "windowAreaInside",
+              type: "input",
+              label: "Orientační plocha oken v m²:",
+              required: false,
+              inputType: "number",
+              min: 0.1,
+              max: 1000,
+              step: 0.1,
+              placeholder: "např. 25.5",
+              description: "Zadejte plochu oken v m² (max. 1000 m²)"
+            }
           ]
         }
       ]
@@ -389,8 +508,8 @@ export const commercialSpacesFormConfig: FormConfig = {
               required: true,
               layout: "vertical",
               options: [
-                { value: "morning", label: "Nejpozději ráno v" },
-                { value: "evening", label: "Nejdříve večer začít v" }
+                { value: "morning", label: "Nejpozději ráno má být uklizeno v" },
+                { value: "evening", label: "Nejdříve se může večer začít v" }
               ]
             },
             {

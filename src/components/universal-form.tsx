@@ -78,13 +78,23 @@ function AnimatedErrorMessage({ error }: { error: string | undefined }) {
 }
 
 // Custom field label component with info icon and tooltip
-function FieldLabel({ field, isRequired }: { field: FormFieldType; isRequired?: boolean }) {
+function FieldLabel({ field, isRequired, isInConditionalContext }: { field: FormFieldType; isRequired?: boolean; isInConditionalContext?: boolean }) {
   // AlertField doesn't have label or required properties
   if (field.type === 'alert') {
     return null;
   }
   
-  const shouldShowOptional = isRequired !== undefined ? !isRequired : !('required' in field ? field.required : false);
+  // Show "(volitelné)" whenever the field is not required in the current context.
+  // Remove it only when validation makes the field required while visible.
+  let shouldShowOptional = isRequired !== undefined
+    ? !isRequired
+    : !('required' in field ? field.required : false);
+
+  // Universal rule: If field is conditional (visible due to another choice), suppress "(volitelné)"
+  // This covers all cases where validation makes a field required when visible
+  if (('condition' in field && field.condition) || isInConditionalContext) {
+    shouldShowOptional = false;
+  }
   
   return (
     <div className="flex items-center gap-2">
@@ -287,24 +297,13 @@ function renderConditionalFields(field: FormFieldType, form: UseFormReturn<FormS
             duration: 0.3, 
             ease: "easeInOut"
           }}
-          className="mt-6 flex flex-col pl-6 border-l-2 border-border/50"
+          className="flex flex-col pl-6 border-l-2 border-border/50"
         >
           {conditionalField.fields.map((subField: FormFieldType, index: number) => {
             // Check if sub-field should be shown based on its condition
             const shouldShowSubField = evaluateCondition(subField.condition, form.getValues());
             
-            // Check if there's a next visible field
-            const hasNextVisibleField = index < conditionalField.fields.length - 1 && 
-              conditionalField.fields.slice(index + 1).some(nextField => 
-                evaluateCondition(nextField.condition, form.getValues())
-              );
-            
-            // Check if the next visible field has a label (to determine if separator should show)
-            const nextVisibleField = conditionalField.fields.slice(index + 1).find(nextField => 
-              evaluateCondition(nextField.condition, form.getValues())
-            );
-            const shouldShowSeparator = shouldShowSubField && hasNextVisibleField && 
-              nextVisibleField && nextVisibleField.label !== "";
+            if (!shouldShowSubField) return null;
             
             return (
               <motion.div
@@ -314,47 +313,28 @@ function renderConditionalFields(field: FormFieldType, form: UseFormReturn<FormS
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.2, delay: index * 0.1 }}
               >
-                <AnimatePresence mode="wait" initial={false}>
-                  {shouldShowSubField && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0, overflow: "hidden" }}
-                      animate={{ opacity: 1, height: "auto", overflow: "visible" }}
-                      exit={{ opacity: 0, height: 0, overflow: "hidden" }}
-                      transition={{ duration: 0.3, ease: "easeInOut" }}
-                    >
-                      <FormField
-                        control={form.control}
-                        name={subField.id as keyof FormSubmissionData}
-                        render={({ field: subFormField }) => (
-                          <FormItem className={subField.label || subField.description ? "" : ""}>
-                            {subField.label && (
-                              <FieldLabel field={subField} isRequired={shouldShowSubField && subField.required} />
-                            )}
-                            <FormControl>
-                              {renderField(subField, subFormField, form.formState, form, onZipCodeValidationChange)}
-                            </FormControl>
-                            {subField.description && (
-                              <p className="text-xs text-muted-foreground">
-                                {subField.description}
-                              </p>
-                            )}
-                            <AnimatedErrorMessage error={
-                              form.formState.errors[subField.id]?.message as string | undefined
-                            } />
-                          </FormItem>
-                        )}
-                      />
-                    </motion.div>
+                <FormField
+                  control={form.control}
+                  name={subField.id as keyof FormSubmissionData}
+                  render={({ field: subFormField }) => (
+                    <FormItem className={subField.label || subField.description ? "" : ""}>
+                      {subField.label && (
+                        <FieldLabel field={subField} isRequired={shouldShowSubField && subField.required} isInConditionalContext={true} />
+                      )}
+                      <FormControl>
+                        {renderField(subField, subFormField, form.formState, form, onZipCodeValidationChange)}
+                      </FormControl>
+                      {subField.description && (
+                        <p className="text-xs text-muted-foreground">
+                          {subField.description}
+                        </p>
+                      )}
+                      <AnimatedErrorMessage error={
+                        form.formState.errors[subField.id]?.message as string | undefined
+                      } />
+                    </FormItem>
                   )}
-                </AnimatePresence>
-                
-                {/* Add separator between conditional sub-fields */}
-                {/* Only show separator if current field is visible, there's a next visible field, and the next field has a label */}
-                {shouldShowSeparator ? (
-                  <Separator className="my-6" />
-                ) : shouldShowSubField && hasNextVisibleField ? (
-                  <div className="my-4" />
-                ) : null}
+                />
               </motion.div>
             );
           })}
@@ -492,6 +472,11 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
       const isCleaningDaysField = field.id === "cleaningDays";
       const hasNoPreferenceSelected = currentValues.includes("no-preference");
       
+      // Special logic for cleaning supplies field to handle exclusive selection
+      const isCleaningSuppliesField = field.id === "cleaningSupplies";
+      const hasOwnSuppliesSelected = currentValues.includes("own-supplies");
+      const hasOtherSuppliesSelected = currentValues.some(val => val !== "own-supplies");
+      
       // Get cleaning frequency from form values
       const formValues = form.watch();
       const cleaningFrequency = formValues.cleaningFrequency;
@@ -555,6 +540,19 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
           }
         }
         
+        if (isCleaningSuppliesField) {
+          // If "own-supplies" is selected, disable all other options
+          if (hasOwnSuppliesSelected && option.value !== "own-supplies") {
+            isDisabled = true;
+            disabledReason = "";
+          }
+          // If other options are selected, disable "own-supplies"
+          else if (option.value === "own-supplies" && hasOtherSuppliesSelected) {
+            isDisabled = true;
+            disabledReason = "";
+          }
+        }
+        
         return (
           <FormItem key={option.value} className="flex items-center gap-2">
             <FormControl>
@@ -575,7 +573,31 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
               htmlFor={`${field.id}_${option.value}`} 
               className={`font-normal cursor-pointer ${isDisabled ? 'text-muted-foreground' : ''}`}
             >
-              {option.label}
+              <span>{option.label}</span>
+              <div className="flex items-center gap-2">
+                {option.note && (
+                  <Badge 
+                    variant={option.note === 'frequent' ? 'secondary' : 'default'}
+                    className={`text-xs ${
+                      option.note === 'frequent' 
+                        ? 'bg-muted text-muted-foreground' 
+                        : 'bg-accent text-accent-foreground'
+                    }`}
+                  >
+                    {option.note === 'frequent' ? 'Nejvyužívanější' : 'Doporučeno'}
+                  </Badge>
+                )}
+                {option.tooltip && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Icons.Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-accent transition-colors" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs">
+                      <p className="text-sm">{option.tooltip}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
               {isDisabled && disabledReason && (
                 <span className="text-xs text-muted-foreground">({disabledReason})</span>
               )}
@@ -840,7 +862,7 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
                         render={({ field: formField }) => (
                           <FormItem className="">
                             {field.type !== "conditional" && 'label' in field && field.label && field.id !== "cleaningDays" && (
-                              <FieldLabel field={field} isRequired={isRequiredWhenVisible} />
+                              <FieldLabel field={field} isRequired={isRequiredWhenVisible} isInConditionalContext={false} />
                             )}
                             <FormControl>
                               {renderField(field, formField, form.formState, form, handleZipCodeValidationChange)}

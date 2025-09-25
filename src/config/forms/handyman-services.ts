@@ -100,8 +100,8 @@ export const handymanServicesFormConfig: FormConfig = {
           required: false,
           layout: "vertical",
           options: [
-            { value: "cleaning-supplies", label: "Úklidové náčiní včetně spotřebního zboží (hadry, utěrky atd.) (+400 Kč)", fixedAddon: 400 },
-            { value: "ladders", label: "K mytí oken jsou potřeba také štafle nebo schůdky (+250 Kč)", fixedAddon: 250 }
+            { value: "cleaning-supplies", label: "Úklidové náčiní včetně spotřebního zboží (hadry, utěrky atd.)", note: "recommended", fixedAddon: 400 },
+            { value: "ladders", label: "K mytí oken jsou potřeba také štafle nebo schůdky", fixedAddon: 250 }
           ]
         }
       ]

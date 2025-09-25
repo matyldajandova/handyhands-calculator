@@ -39,7 +39,7 @@ const oneTimeCleaningSchema = z.object({
   spaceArea: z.string().min(1, "Vyberte orientační plochu prostor určených k úklidu"),
   windowCleaning: z.string().min(1, "Vyberte, zda chcete umýt okna"),
   windowCleaningArea: z.string().optional(),
-  cleaningSupplies: z.string().min(1, "Vyberte úklidové náčiní a úklidovou chemii"),
+  cleaningSupplies: z.array(z.string()).min(1, "Vyberte úklidové náčiní a úklidovou chemii"),
   domesticAnimals: z.string().min(1, "Vyberte, zda máte domácí zvířata"),
   optionalServices: z.array(z.string()).optional(),
   zipCode: z.string().min(1, "Zadejte PSČ").regex(/^\d{5}$/, "PSČ musí mít přesně 5 čísel"),
@@ -53,6 +53,19 @@ const oneTimeCleaningSchema = z.object({
 }, {
   message: "Vyberte orientační plochu pro umývání oken",
   path: ["windowCleaningArea"],
+}).refine((data) => {
+  // Validate cleaning supplies exclusive selection
+  const hasOwnSupplies = data.cleaningSupplies.includes("own-supplies");
+  const hasOtherOptions = data.cleaningSupplies.some(supply => supply !== "own-supplies");
+  
+  // If "own-supplies" is selected, no other options should be selected
+  if (hasOwnSupplies && hasOtherOptions) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Pokud máte vlastní odpovídající náčiní, nelze vybrat další možnosti",
+  path: ["cleaningSupplies"],
 });
 
 export const oneTimeCleaningFormConfig: FormConfig = {
@@ -94,20 +107,20 @@ export const oneTimeCleaningFormConfig: FormConfig = {
           required: true,
           layout: "vertical",
           options: [
-            { value: "up-to-30", label: "Do 30 m² (min 3 hod. práce)", coefficient: 3.0 },
-            { value: "up-to-50", label: "Do 50 m² (min 3,5 hod. práce)", coefficient: 3.5 },
-            { value: "50-75", label: "Od 50 do 75 m² (min 4 hod. práce)", coefficient: 4.0 },
-            { value: "75-100", label: "Od 75 do 100 m² (min 4 hod. práce)", coefficient: 4.0 },
-            { value: "100-125", label: "Od 100 do 125 m² (min 4 hod. práce)", coefficient: 4.0 },
-            { value: "125-200", label: "Od 125 do 200 m² (min 4 hod. práce)", coefficient: 4.0 },
-            { value: "200-plus", label: "Od 200 a více m² (min 4 hod. práce)", coefficient: 4.0 }
+            { value: "up-to-30", label: "Do 30 m² (min. 3 hod. práce)", coefficient: 3.0 },
+            { value: "up-to-50", label: "Do 50 m² (min. 3,5 hod. práce)", coefficient: 3.5 },
+            { value: "50-75", label: "Od 50 do 75 m² (min. 4 hod. práce)", coefficient: 4.0 },
+            { value: "75-100", label: "Od 75 do 100 m² (min. 4 hod. práce)", coefficient: 4.0 },
+            { value: "100-125", label: "Od 100 do 125 m² (min. 4 hod. práce)", coefficient: 4.0 },
+            { value: "125-200", label: "Od 125 do 200 m² (min. 4 hod. práce)", coefficient: 4.0 },
+            { value: "200-plus", label: "Od 200 a více m² (min. 4 hod. práce)", coefficient: 4.0 }
           ]
         }
       ]
     },
     {
       id: "window-cleaning",
-      title: "Umývání oken",
+      title: "Umytí oken",
       icon: "Sun",
       fields: [
         {
@@ -135,13 +148,13 @@ export const oneTimeCleaningFormConfig: FormConfig = {
               required: true,
               layout: "vertical",
               options: [
-                { value: "up-to-30", label: "Do 30 m² (min 4 hod. práce)", coefficient: 4.0},
-                { value: "up-to-50", label: "Do 50 m² (min 4 hod. práce)", coefficient: 4.0},
-                { value: "50-75", label: "Od 50 do 75 m² (min 5 hod. práce)", coefficient: 5.0},
-                { value: "75-100", label: "Od 75 do 100 m² (min 5 hod. práce)", coefficient: 5.0},
-                { value: "100-125", label: "Od 100 do 125 m² (min 6 hod. práce)", coefficient: 6.0},
-                { value: "125-200", label: "Od 125 do 200 m² (min 6 hod. práce)", coefficient: 6.0},
-                { value: "200-plus", label: "Od 200 a více m² (min 6 hod. práce)", coefficient: 6.0}
+                { value: "up-to-30", label: "Do 30 m² (celkový čas úklidu min. 4 hod. práce)", coefficient: 4.0},
+                { value: "up-to-50", label: "Do 50 m² (celkový čas úklidu min. 4 hod. práce)", coefficient: 4.0},
+                { value: "50-75", label: "Od 50 do 75 m² (celkový čas úklidu min. 5 hod. práce)", coefficient: 5.0},
+                { value: "75-100", label: "Od 75 do 100 m² (celkový čas úklidu min. 5 hod. práce)", coefficient: 5.0},
+                { value: "100-125", label: "Od 100 do 125 m² (celkový čas úklidu min. 6 hod. práce)", coefficient: 6.0},
+                { value: "125-200", label: "Od 125 do 200 m² (celkový čas úklidu min. 6 hod. práce)", coefficient: 6.0},
+                { value: "200-plus", label: "Od 200 a více m² (celkový čas úklidu min. 6 hod. práce)", coefficient: 6.0}
               ]
             }
           ]
@@ -156,15 +169,19 @@ export const oneTimeCleaningFormConfig: FormConfig = {
       fields: [
         {
           id: "cleaningSupplies",
-          type: "radio",
+          type: "checkbox",
           label: "",
           required: true,
           layout: "vertical",
           options: [
-            { value: "worker-brings", label: "Přiveze pracovník úklidu (+400 Kč)", fixedAddon: 400, note: "recommended" },
-            { value: "own-vacuum", label: "K úklidu je potřeba vlastní vysavač (+250 Kč)", fixedAddon: 250 },
-            { value: "own-ladders", label: "K úklidu jsou potřeba štafle nebo schůdky (+250 Kč)", fixedAddon: 250 },
-            { value: "own-supplies", label: "Mám vlastní odpovídající úklidové náčiní a úklidovou chemii", fixedAddon: 0 }
+            { value: "worker-brings", label: "Přiveze pracovník úklidu", fixedAddon: 400, note: "recommended" },
+            { value: "own-vacuum", label: "K úklidu je potřeba vlastní vysavač", fixedAddon: 250 },
+            { value: "own-ladders", label: "K úklidu jsou potřeba štafle nebo schůdky", fixedAddon: 250 },
+            { 
+              value: "own-supplies", 
+              label: "Mám vlastní odpovídající úklidové náčiní a úklidovou chemii", 
+              fixedAddon: 0
+            }
           ]
         }
       ]
