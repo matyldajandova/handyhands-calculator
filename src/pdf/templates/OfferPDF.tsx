@@ -24,6 +24,8 @@ export type OfferData = {
   };
   // Hash for linking to poptavka form
   poptavkaHash?: string;
+  // Flag to indicate if this is a poptavka submission (affects Google Drive folder)
+  isPoptavka?: boolean;
 };
 /**
  * Returns the HTML body markup for the Offer PDF using Tailwind classes.

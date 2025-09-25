@@ -127,6 +127,26 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
 
+      // Get Google Drive URL from response headers
+      const googleDriveUrl = response.headers.get('X-PDF-URL') || '';
+
+      // Store customer data in Ecomail with PDF label
+      try {
+        await fetch('/api/ecomail/subscribe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...enhancedCustomerData,
+            pdfUrl: googleDriveUrl // Store the Google Drive URL for reference
+          }),
+        });
+      } catch (error) {
+        console.error('Failed to store customer data in Ecomail:', error);
+        // Don't show error to user as PDF download was successful
+      }
+
       // Note: We don't update the URL here anymore to avoid interfering with "Závazná poptávka" navigation
       // The customer data is stored in the component state and will be used when "Závazná poptávka" is clicked
     } catch {

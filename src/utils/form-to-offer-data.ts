@@ -9,7 +9,22 @@ export function convertFormDataToOfferData(
   formData: FormSubmissionData,
   calculationResult: CalculationResult,
   formConfig: FormConfig,
-  customerData?: { firstName: string; lastName: string; email: string }
+  customerData?: { 
+    firstName: string; 
+    lastName: string; 
+    email: string;
+    phone?: string;
+    address?: string;
+    company?: {
+      name: string;
+      ico: string;
+      dic: string;
+      address: string;
+    };
+    startDate?: string;
+    notes?: string;
+    invoiceEmail?: string;
+  }
 ): OfferData {
   // Round prices to nearest 10 Kč (desetikoruny)
   const roundedPrice = Math.round(calculationResult.totalMonthlyPrice / 10) * 10;
@@ -17,8 +32,10 @@ export function convertFormDataToOfferData(
   // Generate Q&A pairs directly from form structure
   const summaryItems = generateSummaryItems(formData, formConfig);
   
-  // Calculate start date (10 days from now)
-  const startDate = new Date(Date.now() + 10 * 86400000).toLocaleDateString("cs-CZ");
+  // Use customer-specified start date if available, otherwise default to 10 days from now
+  const startDate = customerData?.startDate 
+    ? new Date(customerData.startDate).toLocaleDateString("cs-CZ")
+    : new Date(Date.now() + 10 * 86400000).toLocaleDateString("cs-CZ");
   
   return {
     quoteDate: new Date().toLocaleDateString("cs-CZ"),
@@ -28,10 +45,8 @@ export function convertFormDataToOfferData(
     customer: customerData ? {
       name: `${customerData.firstName} ${customerData.lastName}`,
       email: customerData.email,
-      phone: (customerData as Record<string, unknown>).phone as string || '',
-      address: (customerData as Record<string, unknown>).propertyStreet && (customerData as Record<string, unknown>).propertyCity && (customerData as Record<string, unknown>).propertyZipCode 
-        ? `${(customerData as Record<string, unknown>).propertyStreet}, ${(customerData as Record<string, unknown>).propertyCity}, ${(customerData as Record<string, unknown>).propertyZipCode}`
-        : '',
+      phone: customerData.phone || '',
+      address: customerData.address || '',
       // Include all additional form data (company info, notes, etc.)
       ...(customerData as Record<string, unknown>)
     } : { 
@@ -47,7 +62,7 @@ export function convertFormDataToOfferData(
     },
     tasks: [], // Don't create tasks to avoid duplication
     summaryItems,
-    notes: typeof formData.notes === 'string' ? formData.notes : undefined,
+    notes: customerData?.notes || (typeof formData.notes === 'string' ? formData.notes : undefined),
     conditions: formConfig.conditions || [],
     commonServices: formConfig.commonServices
   };

@@ -129,17 +129,22 @@ export async function POST(req: NextRequest) {
   try {
     const tokensCookie = req.cookies.get("gg_tokens")?.value;
     const parentFolderId = process.env.GDRIVE_PARENT_FOLDER_ID;
-    if (tokensCookie && parentFolderId) {
+    const poptavkyFolderId = process.env.GDRIVE_FINAL_OFFER_FOLDER_ID;
+    const isPoptavka = data.isPoptavka; // Check if this is a poptavka submission
+    
+    if (tokensCookie && (parentFolderId || (isPoptavka && poptavkyFolderId))) {
       const tokens = JSON.parse(tokensCookie);
       const customer = data.customer?.name || "zakaznik";
       const email = data.customer?.email || "bez-emailu";
       const serviceTitle = data.serviceTitle || "Ostatní";
       const date = new Date().toLocaleDateString("cs-CZ").replace(/\//g, "-");
-      const filename = `${serviceTitle.replace(/\s+/g, "_")}_${customer.replace(/\s+/g, "_")}_${email}_${date}`;
+      const suffix = isPoptavka ? "_poptavka" : "";
+      const filename = `${serviceTitle.replace(/\s+/g, "_")}_${customer.replace(/\s+/g, "_")}_${email}_${date}${suffix}`;
       const subfolder = serviceTitle;
+      
       await uploadPdfToDrive({
         tokens,
-        parentFolderId,
+        parentFolderId: isPoptavka ? poptavkyFolderId! : parentFolderId!,
         subfolderName: subfolder,
         filename,
         pdfBuffer: pdf,
@@ -149,12 +154,60 @@ export async function POST(req: NextRequest) {
     // Swallow upload errors to not block PDF delivery
   }
 
-  return new NextResponse(pdf as BodyInit, {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": "inline; filename=handyhands-nabidka.pdf",
-    },
-  });
+  // Store the PDF URL for potential return
+  let uploadedPdfUrl = '';
+  
+  // Upload to Google Drive if tokens are available
+  const isPoptavka = data.isPoptavka;
+  const tokensCookie = req.cookies.get("gg_tokens")?.value;
+  const parentFolderId = process.env.GDRIVE_PARENT_FOLDER_ID;
+  const poptavkyFolderId = process.env.GDRIVE_FINAL_OFFER_FOLDER_ID;
+  if (tokensCookie && (parentFolderId || (isPoptavka && poptavkyFolderId))) {
+    try {
+      const tokens = JSON.parse(tokensCookie);
+      const customer = data.customer?.name || "zakaznik";
+      const email = data.customer?.email || "bez-emailu";
+      const serviceTitle = data.serviceTitle || "Ostatní";
+      const date = new Date().toLocaleDateString("cs-CZ").replace(/\//g, "-");
+      const suffix = isPoptavka ? "_poptavka" : "";
+      const filename = `${serviceTitle.replace(/\s+/g, "_")}_${customer.replace(/\s+/g, "_")}_${email}_${date}${suffix}`;
+      const subfolder = serviceTitle;
+      
+      const result = await uploadPdfToDrive({
+        tokens,
+        parentFolderId: isPoptavka ? poptavkyFolderId! : parentFolderId!,
+        subfolderName: subfolder,
+        filename,
+        pdfBuffer: pdf,
+      });
+      
+      uploadedPdfUrl = `https://drive.google.com/file/d/${result.fileId}/view`;
+    } catch (uploadError) {
+      console.error('Failed to upload to Google Drive:', uploadError);
+    }
+  }
+
+  // If this is a poptavka submission, return JSON with PDF URL
+  if (isPoptavka) {
+    return NextResponse.json({
+      success: true,
+      pdfUrl: uploadedPdfUrl,
+      message: 'PDF generated and uploaded successfully'
+    });
+  }
+
+  // For regular PDF downloads, return the PDF blob with Google Drive URL in headers
+  const headers: Record<string, string> = {
+    "Content-Type": "application/pdf",
+    "Content-Disposition": "inline; filename=handyhands-nabidka.pdf",
+  };
+  
+  // Add Google Drive URL to headers if available
+  if (uploadedPdfUrl) {
+    headers["X-PDF-URL"] = uploadedPdfUrl;
+  }
+
+  return new NextResponse(pdf as BodyInit, { headers });
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to generate PDF", details: error instanceof Error ? error.message : String(error) },

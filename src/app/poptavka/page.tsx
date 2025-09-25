@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { User, Building, Check, ShieldCheck } from "lucide-react";
+import { CalculationResult, FormConfig } from "@/types/form-types";
 
 interface FormData {
   // Personal information
@@ -253,10 +254,73 @@ function PoptavkaContent() {
 
     setIsSubmitting(true);
     try {
-      // TODO: Implement form submission to your backend/email service
+      // Get calculation data from hash to regenerate PDF with final data
+      if (!hashData?.calculationData) {
+        throw new Error('Calculation data not found. Please complete the calculation first.');
+      }
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const calculationData = hashData.calculationData;
+      const serviceType = hashData.serviceTitle || 'Ostatní služby';
+
+      // Get the actual form configuration
+      const { getFormConfig } = await import("@/config/services");
+      const formConfig = getFormConfig(hashData.serviceType || serviceType);
+
+      // Convert form data to OfferData format and generate PDF with final poptavka data
+      const { convertFormDataToOfferData } = await import("@/utils/form-to-offer-data");
+      const offerData = convertFormDataToOfferData(formData as unknown as Record<string, string | number | boolean | string[] | undefined>, calculationData as unknown as CalculationResult, formConfig as unknown as FormConfig, {
+        firstName: formData.firstName || '',
+        lastName: formData.lastName || '',
+        email: formData.email || '',
+        // Add poptavka-specific data
+        phone: formData.phone || '',
+        address: `${formData.propertyStreet}, ${formData.propertyCity}, ${formData.propertyZipCode}`,
+        company: formData.isCompany ? {
+          name: formData.companyName || '',
+          ico: formData.companyIco || '',
+          dic: formData.companyDic || '',
+          address: `${formData.companyStreet}, ${formData.companyCity}, ${formData.companyZipCode}`
+        } : undefined,
+        startDate: formData.serviceStartDate || '',
+        notes: formData.notes || '',
+        invoiceEmail: formData.invoiceEmail || ''
+      });
+      
+      // Mark as poptavka submission for Google Drive folder
+      offerData.isPoptavka = true;
+
+      const pdfResponse = await fetch('/api/pdf/offer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(offerData),
+      });
+
+      if (!pdfResponse.ok) {
+        throw new Error('Failed to regenerate PDF with final data');
+      }
+
+      // Get the PDF URL from the response
+      const pdfResult = await pdfResponse.json();
+      const pdfUrl = pdfResult.pdfUrl || '';
+
+      // Store customer data in Ecomail with Poptávka label
+      const ecomailResponse = await fetch('/api/ecomail/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          pdfUrl
+        }),
+      });
+
+      if (!ecomailResponse.ok) {
+        console.error('Failed to store customer data in Ecomail');
+        // Continue anyway as the main submission was successful
+      }
       
       // Show success message
       alert("Vaše poptávka byla úspěšně odeslána. Brzy vás budeme kontaktovat.");
