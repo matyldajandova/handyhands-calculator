@@ -30,10 +30,30 @@ export async function POST(request: NextRequest) {
   try {
     const customerData: CustomerData = await request.json();
 
+    // Debug logging for Vercel
+    console.log('Ecomail API Key exists:', !!ECOMail_API_KEY);
+    console.log('Ecomail API URL:', ECOMail_API_URL);
+    console.log('Customer data received:', {
+      email: customerData.email,
+      firstName: customerData.firstName,
+      lastName: customerData.lastName,
+      hasServiceStartDate: !!customerData.serviceStartDate
+    });
+
     // Validate API key
     if (!ECOMail_API_KEY) {
+      console.error('Ecomail API key not configured');
       return NextResponse.json(
         { error: 'Ecomail API key not configured' },
+        { status: 500 }
+      );
+    }
+
+    // Validate API URL
+    if (!ECOMail_API_URL) {
+      console.error('Ecomail API URL not configured');
+      return NextResponse.json(
+        { error: 'Ecomail API URL not configured' },
         { status: 500 }
       );
     }
@@ -105,8 +125,12 @@ export async function POST(request: NextRequest) {
 
     // Use a single list for all customers, differentiate with tags/labels
     const listId = '1'; // Ecomail list ID
+    const apiUrl = `${ECOMail_API_URL}/lists/${listId}/subscribe`;
     
-    const response = await fetch(`${ECOMail_API_URL}/lists/${listId}/subscribe`, {
+    console.log('Making request to Ecomail API:', apiUrl);
+    console.log('Subscriber data:', JSON.stringify(subscriberData, null, 2));
+    
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -114,6 +138,9 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify(subscriberData)
     });
+
+    console.log('Ecomail API response status:', response.status);
+    console.log('Ecomail API response headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -134,8 +161,16 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error storing customer data:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined
+    });
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }

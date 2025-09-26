@@ -189,7 +189,9 @@ function PoptavkaContent() {
               ...(hashData.calculationData || {}),
               formData: {
                 ...(hashData.calculationData?.formData || {}),
-                ...formData
+                // Preserve original notes, don't overwrite with poptavka notes
+                ...formData,
+                notes: (hashData.calculationData?.formData as Record<string, unknown>)?.notes || formData.notes
               }
             }
           };

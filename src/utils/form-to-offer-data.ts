@@ -62,8 +62,8 @@ export function convertFormDataToOfferData(
     },
     tasks: [], // Don't create tasks to avoid duplication
     summaryItems,
-    notes: typeof formData.notes === 'string' ? formData.notes : undefined,
-    poptavkaNotes: customerData?.notes || undefined,
+    notes: typeof formData.notes === 'string' ? formData.notes : undefined, // Original note from calculation form
+    poptavkaNotes: customerData?.notes || undefined, // Poptávka-specific note
     conditions: formConfig.conditions || [],
     commonServices: formConfig.commonServices
   };
