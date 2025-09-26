@@ -62,7 +62,8 @@ export function convertFormDataToOfferData(
     },
     tasks: [], // Don't create tasks to avoid duplication
     summaryItems,
-    notes: customerData?.notes || (typeof formData.notes === 'string' ? formData.notes : undefined),
+    notes: typeof formData.notes === 'string' ? formData.notes : undefined,
+    poptavkaNotes: customerData?.notes || undefined,
     conditions: formConfig.conditions || [],
     commonServices: formConfig.commonServices
   };

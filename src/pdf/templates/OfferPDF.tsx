@@ -12,6 +12,8 @@ export type OfferData = {
   summaryItems?: { label: string; value: string }[];
   // Customer notes/comments
   notes?: string;
+  // Poptávka-specific notes
+  poptavkaNotes?: string;
   // Form conditions/requirements
   conditions?: string[];
   // Common services performed
@@ -34,8 +36,7 @@ export type OfferData = {
 export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
   const tasksHtml = (data.tasks?.length ?? 0) || (data.summaryItems?.length ?? 0)
     ? `
-      <div class="page-break"></div>
-      <section class="mt-2">
+      <section class="mt-8">
         <div class="text-xl font-bold">3. Shrnutí - rozsah a specifikace pracovních úkonů</div>
         <div class="hh-divider mt-2"></div>      
         ${renderCompleteQATable(data.tasks, data.summaryItems)}
@@ -44,8 +45,7 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
         ${renderCommonServicesSection(data.commonServices)}
       </section>
 
-      <div class="page-break"></div>
-      <section class="hh-section">
+      <section class="hh-section mt-8">
         <div class="text-xl font-bold">4. Proč si vybrat právě nás?</div>
         <div class="hh-divider mt-2"></div>
         
@@ -61,35 +61,34 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
         </div>
 
         <div class="hh-benefits">
-          <div class="hh-benefit-item">
+          <div class="hh-benefit-item" style="page-break-inside: avoid;">
             <div class="hh-benefit-title">Zkušenosti s úklidovými službami již 20 let</div>
             <div class="hh-benefit-text">Naše dlouholeté působení na trhu je zárukou profesionálního přístupu, osvědčených postupů a stabilního týmu. Víme, jak zajistit maximální kvalitu a spokojenost našich klientů.</div>
           </div>
-          <div class="hh-benefit-item">
+          <div class="hh-benefit-item" style="page-break-inside: avoid;">
             <div class="hh-benefit-title">Prověření a kvalifikovaní pracovníci</div>
             <div class="hh-benefit-text">Naši pracovníci jsou pečlivě prověřeni, jsou spolehliví, dochvilní a prošli důkladným školením. Můžete se na ně plně spolehnout, že odvedou svoji práci na 100 %.</div>
           </div>
-          <div class="hh-benefit-item">
+          <div class="hh-benefit-item" style="page-break-inside: avoid;">
             <div class="hh-benefit-title">Garance kvality a spolehlivosti</div>
             <div class="hh-benefit-text">Dbáme na nejvyšší standardy úklidu, používáme kvalitní čisticí prostředky a moderní vybavení. Váš prostor bude vždy čistý, upravený a voňavý. Také Vaše zpětná vazba je pro nás velmi důležitá.</div>
           </div>
-          <div class="hh-benefit-item">
+          <div class="hh-benefit-item" style="page-break-inside: avoid;">
             <div class="hh-benefit-title">Flexibilita a individuální přístup</div>
             <div class="hh-benefit-text">Chápeme, že každý klient má jiné požadavky. Nabízíme pravidelné či nepravidelné úklidy, přizpůsobíme se Vám podle rozvrhu a potřeb. Můžete si vybrat termíny i rozsah služeb, jak Vám to nejvíce vyhovuje.</div>
           </div>
-          <div class="hh-benefit-item">
+          <div class="hh-benefit-item" style="page-break-inside: avoid;">
             <div class="hh-benefit-title">Pojištění do výše 5 mil. Kč a jistota</div>
             <div class="hh-benefit-text">Veškeré naše práce jsou kryty pojištěním, což zajišťuje ochranu Vašeho majetku a absolutní klid na duši. Při jakékoliv nečekané události za nás ručíme.</div>
           </div>
-          <div class="hh-benefit-item">
+          <div class="hh-benefit-item" style="page-break-inside: avoid;">
             <div class="hh-benefit-title">Zákaznická spokojenost na prvním místě</div>
             <div class="hh-benefit-text">Naším cílem je vybudovat dlouhodobé vztahy založené na důvěře, profesionalitě a individuálním přístupu. Vaše spokojenost je pro nás vždy na prvním místě.</div>
           </div>
         </div>
       </section>
 
-      <div class="page-break"></div>
-      <section class="hh-section">
+      <section class="hh-section mt-8">
         <div class="text-xl font-bold">Destatero HandyHands</div>
         <div class="hh-divider mt-2"></div>
         <ol class="list-decimal pl-6 mt-4 space-y-2">
@@ -125,13 +124,30 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
           ${data.customer.address ? `<div>${escapeHtml(data.customer.address)}</div>` : ""}
           ${data.customer.email ? `<div>${escapeHtml(data.customer.email)}</div>` : ""}
           ${data.customer.phone ? `<div>${escapeHtml(data.customer.phone)}</div>` : ""}
+          ${(data.customer as Record<string, unknown>).company ? (() => {
+            const company = (data.customer as Record<string, unknown>).company as Record<string, unknown>;
+            return `
+            <div class="mt-2">
+              <div class="font-semibold">Firma:</div>
+              <div>${escapeHtml(company.name as string || '')}</div>
+              <div>IČO: ${escapeHtml(company.ico as string || '')}${company.dic ? `, DIČ: ${escapeHtml(company.dic as string || '')}` : ""}</div>
+              <div>${escapeHtml(company.address as string || '')}</div>
+            </div>
+          `;
+          })() : ""}
         </div>
         <div>
           <div class="font-semibold">Údaje o nás:</div>
-          <div>HandyHands, s.r.o.</div>
-          <div>info@handyhands.cz</div>
+          <div>HandyHands s.r.o.</div>
+          <div>Jičínská 226/17, Žižkov, 130 00 Praha</div>
+          <div>IČO: 08405867</div>
         </div>
       </div>
+      ${data.poptavkaNotes ? `
+        <div class="mt-2">
+          <div><span class="font-semibold">Poznámka k poptávce:</span> ${escapeHtml(data.poptavkaNotes)}</div>
+        </div>
+      ` : ""}
     </section>
 
     <section class="mt-8">
@@ -164,20 +180,22 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
       <p class="hh-muted hh-small">Ostatní práce nad rámec smlouvy (např. úklid po řemeslnících, výjezd na vyžádání apod.): 345 Kč / hod. za pracovníka.</p>
       <p class="hh-muted hh-small">Nejsme plátci DPH. Úklidové práce provádějí vždy naši stálí pracovníci.</p>
 
-      <p class="mt-4">V Praze, dne ${escapeHtml(data.quoteDate)}</p>
-
-      <div class="grid grid-cols-2 gap-12 hh-signature-block">
-        <div>
-          <img src="signature-lenka.svg" alt="Podpis Lenka Krátká" style="width: 120px; height: 40px; margin-bottom: 8px;" />
-          <div class="hh-signature-line"></div>
-          <div class="hh-sign-name">Lenka Krátká</div>
-          <div class="hh-small hh-muted">Regionální manažer pravidelných úklidů</div>
-        </div>
-        <div>
-          <img src="signature-jana.svg" alt="Podpis Jana Dvořáková" style="width: 120px; height: 40px; margin-bottom: 8px;" />
-          <div class="hh-signature-line"></div>
-          <div class="hh-sign-name">Jana Dvořáková</div>
-          <div class="hh-small hh-muted">Jednatel HandyHands, s.r.o.</div>
+      
+      <div style="page-break-inside: avoid;">
+        <p class="mt-4">V Praze, dne ${escapeHtml(data.quoteDate)}</p>
+        <div class="grid grid-cols-2 gap-12 hh-signature-block">
+          <div>
+            <img src="signature-lenka.svg" alt="Podpis Lenka Krátká" style="width: 120px; height: 40px; margin-bottom: 8px;" />
+            <div class="hh-signature-line"></div>
+            <div class="hh-sign-name">Lenka Krátká</div>
+            <div class="hh-small hh-muted">Regionální manažer pravidelných úklidů</div>
+          </div>
+          <div>
+            <img src="signature-jana.svg" alt="Podpis Jana Dvořáková" style="width: 120px; height: 40px; margin-bottom: 8px;" />
+            <div class="hh-signature-line"></div>
+            <div class="hh-sign-name">Jana Dvořáková</div>
+            <div class="hh-small hh-muted">Jednatel HandyHands, s.r.o.</div>
+          </div>
         </div>
       </div>
 
@@ -256,7 +274,7 @@ function renderNotesSection(notes?: string): string {
   if (!notes || notes.trim() === "" || notes.trim() === "-") return "";
   
   return `
-    <div class="mt-6">
+    <div class="mt-6" style="page-break-inside: avoid;">
       <div class="font-semibold mb-2">Poznámka zákazníka:</div>
       <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
         <p class="text-sm leading-relaxed">${escapeHtml(notes.trim())}</p>

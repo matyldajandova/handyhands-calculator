@@ -125,34 +125,6 @@ export async function POST(req: NextRequest) {
   });
   await browser.close();
 
-  // Optional: upload to Google Drive if cookie with tokens is set and env has folder id
-  try {
-    const tokensCookie = req.cookies.get("gg_tokens")?.value;
-    const parentFolderId = process.env.GDRIVE_PARENT_FOLDER_ID;
-    const poptavkyFolderId = process.env.GDRIVE_FINAL_OFFER_FOLDER_ID;
-    const isPoptavka = data.isPoptavka; // Check if this is a poptavka submission
-    
-    if (tokensCookie && (parentFolderId || (isPoptavka && poptavkyFolderId))) {
-      const tokens = JSON.parse(tokensCookie);
-      const customer = data.customer?.name || "zakaznik";
-      const email = data.customer?.email || "bez-emailu";
-      const serviceTitle = data.serviceTitle || "Ostatní";
-      const date = new Date().toLocaleDateString("cs-CZ").replace(/\//g, "-");
-      const suffix = isPoptavka ? "_poptavka" : "";
-      const filename = `${serviceTitle.replace(/\s+/g, "_")}_${customer.replace(/\s+/g, "_")}_${email}_${date}${suffix}`;
-      const subfolder = serviceTitle;
-      
-      await uploadPdfToDrive({
-        tokens,
-        parentFolderId: isPoptavka ? poptavkyFolderId! : parentFolderId!,
-        subfolderName: subfolder,
-        filename,
-        pdfBuffer: pdf,
-      });
-    }
-  } catch {
-    // Swallow upload errors to not block PDF delivery
-  }
 
   // Store the PDF URL for potential return
   let uploadedPdfUrl = '';

@@ -51,6 +51,26 @@ interface FormData {
   notes: string;
 }
 
+interface FormErrors {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  propertyStreet?: string;
+  propertyCity?: string;
+  propertyZipCode?: string;
+  serviceStartDate?: string;
+  isCompany?: string;
+  companyName?: string;
+  companyIco?: string;
+  companyDic?: string;
+  companyStreet?: string;
+  companyCity?: string;
+  companyZipCode?: string;
+  invoiceEmail?: string;
+  notes?: string;
+}
+
 function PoptavkaContent() {
   const searchParams = useSearchParams();
   const [formData, setFormData] = useState<FormData>({
@@ -73,7 +93,7 @@ function PoptavkaContent() {
     notes: "",
   });
 
-  const [errors, setErrors] = useState<Partial<FormData>>({});
+  const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -185,7 +205,7 @@ function PoptavkaContent() {
   }, [formData, hashData]);
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<FormData> = {};
+    const newErrors: FormErrors = {};
 
     if (!formData.firstName.trim()) newErrors.firstName = "Jméno je povinné";
     if (!formData.lastName.trim()) newErrors.lastName = "Příjmení je povinné";
@@ -238,9 +258,12 @@ function PoptavkaContent() {
       const { getFormConfig } = await import("@/config/services");
       const formConfig = getFormConfig(hashData.serviceType || serviceType);
 
+      // Get the original calculation form data from hash
+      const originalFormData = calculationData.formData as Record<string, string | number | boolean | string[] | undefined>;
+
       // Convert form data to OfferData format and generate PDF with final poptavka data
       const { convertFormDataToOfferData } = await import("@/utils/form-to-offer-data");
-      const offerData = convertFormDataToOfferData(formData as unknown as Record<string, string | number | boolean | string[] | undefined>, calculationData as unknown as CalculationResult, formConfig as unknown as FormConfig, {
+      const offerData = convertFormDataToOfferData(originalFormData, calculationData as unknown as CalculationResult, formConfig as unknown as FormConfig, {
         firstName: formData.firstName || '',
         lastName: formData.lastName || '',
         email: formData.email || '',
