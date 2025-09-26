@@ -22,6 +22,7 @@ interface SuccessScreenProps {
 
 export function SuccessScreen({ onBackToServices, calculationResult, formConfig, formData }: SuccessScreenProps) {
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isDownloaded, setIsDownloaded] = useState(false);
   const [customerData, setCustomerData] = useState<{ firstName: string; lastName: string; email: string } | null>(null);
   const router = useRouter();
 
@@ -146,6 +147,9 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
         console.error('Failed to store customer data in Ecomail:', error);
         // Don't show error to user as PDF download was successful
       }
+
+      // Mark as downloaded successfully
+      setIsDownloaded(true);
 
       // Note: We don't update the URL here anymore to avoid interfering with "Závazná poptávka" navigation
       // The customer data is stored in the component state and will be used when "Závazná poptávka" is clicked
@@ -343,6 +347,7 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
           <IdentificationStep 
             onDownloadPDF={handleDownloadPDF}
             isDownloading={isDownloading}
+            isDownloaded={isDownloaded}
             initialData={customerData || undefined}
             onDataChange={handleFormDataChange}
           />

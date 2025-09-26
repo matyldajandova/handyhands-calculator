@@ -297,7 +297,7 @@ function renderConditionalFields(field: FormFieldType, form: UseFormReturn<FormS
             duration: 0.3, 
             ease: "easeInOut"
           }}
-          className="flex flex-col pl-6 border-l-2 border-border/50"
+          className="flex flex-col pl-6 border-l-2 border-border/50 space-y-6"
         >
           {conditionalField.fields.map((subField: FormFieldType, index: number) => {
             // Check if sub-field should be shown based on its condition

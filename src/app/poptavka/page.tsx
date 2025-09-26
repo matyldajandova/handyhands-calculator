@@ -12,8 +12,11 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { User, Building, Check, ShieldCheck } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { User, Building, Check, ShieldCheck, CalendarIcon, ArrowLeftIcon } from "lucide-react";
 import { CalculationResult, FormConfig } from "@/types/form-types";
+import { cn } from "@/lib/utils";
 
 interface FormData {
   // Personal information
@@ -39,7 +42,7 @@ interface FormData {
   companyZipCode: string;
   
   // Service start date
-  serviceStartDate: string;
+  serviceStartDate: Date | null;
   
   // Invoice email (optional if different from contact email)
   invoiceEmail: string;
@@ -65,13 +68,16 @@ function PoptavkaContent() {
     companyStreet: "",
     companyCity: "",
     companyZipCode: "",
-    serviceStartDate: "",
+    serviceStartDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
     invoiceEmail: "",
     notes: "",
   });
 
   const [errors, setErrors] = useState<Partial<FormData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [hashData, setHashData] = useState<{
     serviceType: string;
     serviceTitle: string;
@@ -90,6 +96,7 @@ function PoptavkaContent() {
       
       if (decodedData) {
         setHashData(decodedData);
+        setIsLoading(false);
         
         // Prefill form data if available in hash
         if (decodedData.calculationData?.formData) {
@@ -123,58 +130,23 @@ function PoptavkaContent() {
             companyStreet: String(mergedData.companyStreet || ''),
             companyCity: String(mergedData.companyCity || ''),
             companyZipCode: String(mergedData.companyZipCode || ''),
-            serviceStartDate: String(mergedData.serviceStartDate || ''),
+            serviceStartDate: mergedData.serviceStartDate ? new Date(mergedData.serviceStartDate as string) : new Date(Date.now() + 24 * 60 * 60 * 1000),
             invoiceEmail: String(mergedData.invoiceEmail || ''),
             notes: String(mergedData.notes || ''),
           };
           
           setFormData(safeFormData);
         }
+      } else {
+        // Invalid hash, redirect to home
+        window.location.href = '/';
       }
+    } else {
+      // No hash provided, redirect to home
+      window.location.href = '/';
     }
   }, [searchParams]);
 
-  // Load from order storage on component mount (separate from hash loading)
-  useEffect(() => {
-    // Only load order storage if there's no hash in URL
-    const hash = searchParams.get('hash');
-    if (!hash) {
-      const orderData = orderStorage.get();
-      const poptavkaData = orderData?.poptavka;
-      
-      if (poptavkaData || orderData?.customer) {
-        // Merge customer data with poptavka data
-        const customerData = orderData?.customer;
-          const mergedData = {
-            ...(customerData || {}), // Customer data (firstName, lastName, email)
-            ...poptavkaData  // Poptavka data (phone, address, company, notes)
-          } as Record<string, unknown>;
-        
-        // Ensure all string fields are never undefined
-        const safeFormData: FormData = {
-          firstName: String(customerData?.firstName || ''),
-          lastName: String(customerData?.lastName || ''),
-          email: String(customerData?.email || ''),
-          phone: String(mergedData.phone || ''),
-          propertyStreet: String(mergedData.propertyStreet || ''),
-          propertyCity: String(mergedData.propertyCity || ''),
-          propertyZipCode: String(mergedData.propertyZipCode || ''),
-          isCompany: Boolean(mergedData.isCompany || false),
-          companyName: String(mergedData.companyName || ''),
-          companyIco: String(mergedData.companyIco || ''),
-          companyDic: String(mergedData.companyDic || ''),
-          companyStreet: String(mergedData.companyStreet || ''),
-          companyCity: String(mergedData.companyCity || ''),
-          companyZipCode: String(mergedData.companyZipCode || ''),
-          serviceStartDate: String(mergedData.serviceStartDate || ''),
-          invoiceEmail: String(mergedData.invoiceEmail || ''),
-          notes: String(mergedData.notes || ''),
-        };
-        
-        setFormData(safeFormData);
-      }
-    }
-  }, [searchParams]); // Run when searchParams change
 
   // Simple persistence: Save form data to order storage and update hash
   useEffect(() => {
@@ -226,7 +198,7 @@ function PoptavkaContent() {
     if (!formData.propertyStreet.trim()) newErrors.propertyStreet = "Ulice je povinná";
     if (!formData.propertyCity.trim()) newErrors.propertyCity = "Město je povinné";
     if (!formData.propertyZipCode.trim()) newErrors.propertyZipCode = "PSČ je povinné";
-    if (!formData.serviceStartDate.trim()) {
+    if (!formData.serviceStartDate) {
       newErrors.serviceStartDate = "Datum zahájení plnění je povinné";
     }
 
@@ -281,7 +253,7 @@ function PoptavkaContent() {
           dic: formData.companyDic || '',
           address: `${formData.companyStreet}, ${formData.companyCity}, ${formData.companyZipCode}`
         } : undefined,
-        startDate: formData.serviceStartDate || '',
+        startDate: formData.serviceStartDate ? formData.serviceStartDate.toISOString().split('T')[0] : '',
         notes: formData.notes || '',
         invoiceEmail: formData.invoiceEmail || ''
       });
@@ -322,29 +294,8 @@ function PoptavkaContent() {
         // Continue anyway as the main submission was successful
       }
       
-      // Show success message
-      alert("Vaše poptávka byla úspěšně odeslána. Brzy vás budeme kontaktovat.");
-      
-      // Reset form
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        propertyStreet: "",
-        propertyCity: "",
-        propertyZipCode: "",
-        isCompany: false,
-        companyName: "",
-        companyIco: "",
-        companyDic: "",
-        companyStreet: "",
-        companyCity: "",
-        companyZipCode: "",
-        serviceStartDate: "",
-        invoiceEmail: "",
-        notes: "",
-      });
+          // Show success state
+          setIsSubmitted(true);
     } catch {
       alert("Nepodařilo se odeslat poptávku. Zkuste to prosím znovu.");
     } finally {
@@ -352,12 +303,134 @@ function PoptavkaContent() {
     }
   };
 
-  const handleInputChange = (field: keyof FormData, value: string | boolean) => {
+  const handleInputChange = (field: keyof FormData, value: string | boolean | Date | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
   };
+
+  // Format date for display in Czech format (dd.mm.rrrr)
+  const formatDate = (date: Date | null) => {
+    if (!date) return "";
+    return date.toLocaleDateString("cs-CZ", {
+      day: "2-digit",
+      month: "2-digit", 
+      year: "numeric"
+    });
+  };
+
+  // Parse date from Czech format input
+  const parseDate = (value: string) => {
+    if (!value) return null;
+    const parts = value.split(".");
+    if (parts.length === 3) {
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+      const year = parseInt(parts[2], 10);
+      const date = new Date(year, month, day);
+      return isNaN(date.getTime()) ? null : date;
+    }
+    return null;
+  };
+
+  // Check if date is valid and not in the past
+  const isValidDate = (date: Date | null) => {
+    if (!date) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return date >= today;
+  };
+
+  // Show loading state while checking hash
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background py-12 px-4">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Načítání...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show success state
+  if (isSubmitted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background py-12 px-4">
+        <div className="max-w-2xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center"
+          >
+            {/* Brand Logo */}
+            <div className="flex justify-center mb-8">
+              <Image 
+                src="/handyhands_horizontal.svg" 
+                alt="HandyHands Logo" 
+                width={240}
+                height={96}
+                className="h-16 md:h-20 lg:h-24 w-auto"
+                priority
+              />
+            </div>
+            
+            <div className="flex items-center justify-center min-h-[60vh]">
+              <div className="text-center">
+                <motion.div 
+                  className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                >
+                  <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </motion.div>
+                <motion.h1 
+                  className="text-3xl font-bold text-foreground mb-4"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  Poptávka byla úspěšně odeslána!
+                </motion.h1>
+                <motion.p 
+                  className="text-lg text-muted-foreground mb-8"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  Děkujeme za vaši poptávku. Brzy vás budeme kontaktovat s dalšími informacemi.
+                </motion.p>
+                <motion.div 
+                  className="flex flex-col gap-4 justify-center"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <Button
+                    onClick={() => window.location.href = '/'}
+                    type="button"
+                    variant="outline"
+                    size="lg"
+                    className="flex items-center gap-2 mx-auto"
+                  >
+                    <ArrowLeftIcon className="h-5 w-5" />
+                    Zpět na hlavní stránku
+                  </Button>
+                </motion.div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background py-12 px-4">
@@ -666,13 +739,56 @@ function PoptavkaContent() {
                   <Label htmlFor="serviceStartDate">
                     Zahájení plnění je dnem
                   </Label>
-                  <Input
-                    id="serviceStartDate"
-                    type="date"
-                    value={formData.serviceStartDate || ''}
-                    onChange={(e) => handleInputChange("serviceStartDate", e.target.value)}
-                    className={errors.serviceStartDate ? "border-destructive" : ""}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="serviceStartDate"
+                      value={formatDate(formData.serviceStartDate)}
+                      placeholder="dd.mm.rrrr"
+                      className={cn(
+                        "pr-10",
+                        errors.serviceStartDate ? "border-destructive" : ""
+                      )}
+                      onChange={(e) => {
+                        const date = parseDate(e.target.value);
+                        if (date && isValidDate(date)) {
+                          handleInputChange("serviceStartDate", date);
+                        } else if (e.target.value === "") {
+                          handleInputChange("serviceStartDate", null);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "ArrowDown") {
+                          e.preventDefault();
+                          setDatePickerOpen(true);
+                        }
+                      }}
+                    />
+                    <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className="absolute top-1/2 right-2 size-6 -translate-y-1/2 p-0"
+                        >
+                          <CalendarIcon className="size-3.5" />
+                          <span className="sr-only">Vybrat datum</span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="end">
+                        <Calendar
+                          mode="single"
+                          selected={formData.serviceStartDate || undefined}
+                          onSelect={(date) => {
+                            if (date && isValidDate(date)) {
+                              handleInputChange("serviceStartDate", date);
+                              setDatePickerOpen(false);
+                            }
+                          }}
+                          disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                   {errors.serviceStartDate && (
                     <p className="text-sm text-destructive">{errors.serviceStartDate}</p>
                   )}
