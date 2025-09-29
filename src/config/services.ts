@@ -12,7 +12,7 @@ export const serviceTypes: ServiceType[] = [
     id: "residential-building",
     title: "Pravidelný úklid činžovních domů, bytových novostaveb",
     description: "Zahrnuje vše od úklidu společných prostor činžovních (zděných) domů po zimní údržbu s pokročilými koeficienty.",
-    icon: "Building",
+    icon: "Home",
     formConfig: residentialBuildingFormConfig,
   },  
   {
@@ -47,14 +47,14 @@ export const serviceTypes: ServiceType[] = [
     id: "one-time-cleaning",
     title: "Jednorázový úklid",
     description: "Zahrnuje přesný výpočet ceny jednorázového úklidu podle délky jeho zhodnocení a zahrnutí dopravy a úklidové chemie + náčiní.",
-    icon: "Clock",
+    icon: "BrushCleaning",
     formConfig: oneTimeCleaningFormConfig,
   },
   {
     id: "handyman-services",
     title: "Mytí oken a ostatní služby",
     description: "Zahrnuje přesný výpočet ceny mytí oken, výloh, žaluzií. Dále základní zahradnické práce, jako např. sekání trávníků nebo zimní údržbu chodníků a komunikací.",
-    icon: "Wrench",
+    icon: "Bubbles",
     formConfig: handymanServicesFormConfig,
   },
 

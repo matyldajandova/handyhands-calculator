@@ -51,7 +51,9 @@ function getIconComponent(iconName: string) {
     Sparkles: <Icons.Sparkles className="h-5 w-5 text-accent" />,
     Snowflake: <Icons.Snowflake className="h-5 w-5 text-accent" />,
     MapPin: <Icons.MapPin className="h-5 w-5 text-accent" />,
-    Info: <Icons.Info className="h-5 w-5 text-accent" />
+    Info: <Icons.Info className="h-5 w-5 text-accent" />,
+    BrushCleaning: <Icons.BrushCleaning className="h-5 w-5 text-accent" />,
+    Bubbles: <Icons.Bubbles className="h-5 w-5 text-accent" />
   };
   
   return iconMap[iconName] || <Icons.Building className="h-5 w-5 text-accent" />;

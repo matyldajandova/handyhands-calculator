@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Building, Home, Warehouse, Store, Factory, School, FileText, Building2 } from "lucide-react";
+import { Building, Home, Warehouse, Store, Factory, School, FileText, Building2, BrushCleaning, Bubbles } from "lucide-react";
 import { serviceTypes } from "@/config/services";
 import { getSlugFromServiceId } from "@/utils/slug-mapping";
 import Image from "next/image";
@@ -55,7 +55,9 @@ export function ServiceTypeSelector({ onServiceTypeSelect }: ServiceTypeSelector
       Factory,
       School,
       FileText,
-      Building2
+      Building2,
+      BrushCleaning,
+      Bubbles
     };
     return iconMap[iconName] || Building;
   };
