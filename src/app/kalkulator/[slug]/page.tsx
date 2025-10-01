@@ -44,7 +44,8 @@ export default function CalculatorPage() {
       totalPrice: result.totalMonthlyPrice,
       calculationResult: result,
       formData: formData || {},
-      formConfig
+      formConfig,
+      orderId: result.orderId // Preserve the order ID from calculation
     });
     
     const hash = hashService.generateHash(hashData);

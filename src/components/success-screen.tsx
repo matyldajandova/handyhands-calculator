@@ -69,7 +69,8 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
           totalPrice: roundedResults.totalMonthlyPrice,
           calculationResult,
           formData: enhancedFormData,
-          formConfig
+          formConfig,
+          orderId: calculationResult.orderId
         });
         
         const hash = hashService.generateHash(hashData);

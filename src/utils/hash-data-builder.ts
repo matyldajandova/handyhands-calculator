@@ -4,6 +4,7 @@
 
 import { CalculationResult, FormConfig, FormSubmissionData } from "@/types/form-types";
 import { PoptavkaHashData } from "@/utils/hash-generator";
+import { getOrCreateOrderId } from "@/services/order-id-service";
 
 export interface HashDataBuilderOptions {
   serviceType?: string;
@@ -14,6 +15,7 @@ export interface HashDataBuilderOptions {
   formData: FormSubmissionData;
   formConfig?: FormConfig | null;
   timestamp?: number;
+  orderId?: string;
 }
 
 /**
@@ -28,8 +30,12 @@ export function buildPoptavkaHashData(options: HashDataBuilderOptions): Poptavka
     calculationResult,
     formData,
     formConfig,
-    timestamp = Date.now()
+    timestamp = Date.now(),
+    orderId
   } = options;
+
+  // Use existing order ID from calculation result if not provided
+  const finalOrderId = orderId || calculationResult?.orderId || getOrCreateOrderId();
 
   return {
     serviceType: formConfig?.id || serviceType,
@@ -41,7 +47,8 @@ export function buildPoptavkaHashData(options: HashDataBuilderOptions): Poptavka
       timestamp,
       price: totalPrice,
       serviceTitle: formConfig?.title || serviceTitle,
-      formData
+      formData,
+      orderId: finalOrderId
     }
   };
 }

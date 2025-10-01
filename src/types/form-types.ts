@@ -207,6 +207,7 @@ export interface CalculationResult {
   generalCleaningFrequency?: string;
   totalMonthlyPrice: number;
   winterServiceFee?: number;
+  orderId?: string;
   calculationDetails: {
     basePrice: number;
     appliedCoefficients: Array<{

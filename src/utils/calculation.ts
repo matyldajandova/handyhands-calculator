@@ -1,4 +1,5 @@
 import { FormSubmissionData, FormConfig, FormField, RadioField, SelectField, CheckboxField, CalculationResult } from "@/types/form-types";
+import { generateOrderId } from "@/services/order-id-service";
 import { calculateOfficeCleaningPrice } from "./office-cleaning-calculation";
 import { FIXED_PRICES } from "@/config/forms/residential-building";
 import { isWinterMaintenancePeriod } from "./date-utils";
@@ -97,6 +98,8 @@ function getFixedAddonFromConfig(config: FormConfig, fieldId: string, value: str
 
 // Main calculation function - now generic for any form configuration
 export async function calculatePrice(formData: FormSubmissionData, formConfig: FormConfig): Promise<CalculationResult> {
+  // Generate order ID for this calculation
+  const orderId = generateOrderId();
   // Filter out boolean values for calculation functions that don't expect them
   const calculationData = Object.fromEntries(
     Object.entries(formData).filter(([, value]) => typeof value !== 'boolean')
@@ -111,6 +114,7 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
       generalCleaningPrice: undefined, // Office cleaning includes general cleaning in the base price
       generalCleaningFrequency: "2x ročně", // Office cleaning includes 2x yearly general cleaning
       totalMonthlyPrice: officeResult.finalPrice,
+      orderId,
       calculationDetails: {
         basePrice: officeResult.calculationDetails.basePrice,
         appliedCoefficients: officeResult.appliedCoefficients,
@@ -328,6 +332,7 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
     generalCleaningFrequency,
     totalMonthlyPrice,
     winterServiceFee: winterServiceFee > 0 ? winterServiceFee : undefined,
+    orderId,
     calculationDetails: {
       basePrice,
       appliedCoefficients,

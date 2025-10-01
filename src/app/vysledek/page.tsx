@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { hashService } from "@/services/hash-service";
+import { hashSubmissionService } from "@/services/hash-submission-service";
 import { SuccessScreen } from "@/components/success-screen";
 import { Button } from "@/components/ui/button";
 import * as Icons from "lucide-react";
@@ -23,6 +24,7 @@ function VysledekContent() {
     calculationData?: Record<string, unknown>;
   } | null>(null);
 
+
   useEffect(() => {
     const loadResultData = async () => {
       try {
@@ -31,6 +33,12 @@ function VysledekContent() {
         if (!hash) {
           setError('Chybí hash parametr pro načtení výsledků');
           setIsLoading(false);
+          return;
+        }
+
+        // Check if this hash has already been submitted - redirect to poptávka success
+        if (hashSubmissionService.isHashSubmitted(hash)) {
+          router.replace(`/poptavka?hash=${hash}`);
           return;
         }
 
@@ -70,7 +78,7 @@ function VysledekContent() {
     };
 
     loadResultData();
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   const handleBackToServices = () => {
     router.push('/');

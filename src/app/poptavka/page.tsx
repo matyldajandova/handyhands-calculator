@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { hashService } from "@/services/hash-service";
 import { orderStorage } from "@/services/order-storage";
+import { hashSubmissionService } from "@/services/hash-submission-service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -97,6 +98,7 @@ function PoptavkaContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [hashData, setHashData] = useState<{
     serviceType: string;
@@ -115,6 +117,13 @@ function PoptavkaContent() {
       const decodedData = hashService.decodeHash(hash);
       
       if (decodedData) {
+        // Check if this hash has already been submitted
+        if (hashSubmissionService.isHashSubmitted(hash)) {
+          setIsSubmitted(true);
+          setIsLoading(false);
+          return;
+        }
+        
         setHashData(decodedData);
         setIsLoading(false);
         
@@ -170,6 +179,9 @@ function PoptavkaContent() {
 
   // Simple persistence: Save form data to order storage and update hash
   useEffect(() => {
+    // Don't save data if form is submitted
+    if (isSubmitted) return;
+    
     if (Object.keys(formData).length > 0) {
       // Split form data into customer and poptavka parts
       const { firstName, lastName, email, ...poptavkaData } = formData;
@@ -192,7 +204,9 @@ function PoptavkaContent() {
                 // Preserve original notes, don't overwrite with poptavka notes
                 ...formData,
                 notes: (hashData.calculationData?.formData as Record<string, unknown>)?.notes || formData.notes
-              }
+              },
+              // Preserve the original order ID
+              orderId: hashData.calculationData?.orderId
             }
           };
           
@@ -204,7 +218,7 @@ function PoptavkaContent() {
       
       return () => clearTimeout(timeoutId);
     }
-  }, [formData, hashData]);
+  }, [formData, hashData, isSubmitted]);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -319,8 +333,41 @@ function PoptavkaContent() {
         // Continue anyway as the main submission was successful
       }
       
-          // Show success state
-          setIsSubmitted(true);
+      // Clear localStorage data first
+      orderStorage.clear();
+      
+      // Reset form data to initial empty state
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        propertyStreet: '',
+        propertyCity: '',
+        propertyZipCode: '',
+        isCompany: false,
+        companyName: '',
+        companyIco: '',
+        companyDic: '',
+        companyStreet: '',
+        companyCity: '',
+        companyZipCode: '',
+        serviceStartDate: null,
+        notes: '',
+        invoiceEmail: ''
+      });
+      
+      // Clear form errors
+      setErrors({});
+      
+      // Mark this hash as submitted to prevent duplicate submissions
+      const currentHash = searchParams.get('hash');
+      if (currentHash) {
+        hashSubmissionService.addSubmittedHash(currentHash);
+      }
+      
+      // Show success state
+      setIsSubmitted(true);
     } catch {
       alert("Nepodařilo se odeslat poptávku. Zkuste to prosím znovu.");
     } finally {
