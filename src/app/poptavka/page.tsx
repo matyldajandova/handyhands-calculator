@@ -491,8 +491,8 @@ function PoptavkaContent() {
           >
             <Card className="border-primary/20 bg-primary/5">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg text-primary">
-                  <Building className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2 text-lg text-black">
+                  <Building className="h-5 w-5 text-primary" />
                   Poptáváte službu
                 </CardTitle>
               </CardHeader>

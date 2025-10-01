@@ -36,7 +36,7 @@ export type OfferData = {
 export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
   const tasksHtml = (data.tasks?.length ?? 0) || (data.summaryItems?.length ?? 0)
     ? `
-      <section class="mt-8">
+      <section class="mt-8" style="page-break-inside: avoid;">
         <div class="text-xl font-bold">3. Shrnutí - rozsah a specifikace pracovních úkonů</div>
         <div class="hh-divider mt-2"></div>      
         ${renderCompleteQATable(data.tasks, data.summaryItems)}
@@ -150,12 +150,12 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
       ` : ""}
     </section>
 
-    <section class="mt-8">
+    <section class="mt-8" style="page-break-inside: avoid;">
       <div class="font-bold">2. Celková cena pravidelného úklidu</div>
       <div class="hh-divider mt-2"></div>
       <div class="grid grid-cols-2 gap-6 mt-6">
         <div>
-          <div class="text-2xl font-bold text-primary">${Number(data.price).toLocaleString("cs-CZ")} Kč / měsíc</div>
+          <div class="text-2xl font-bold text-primary-pdf">${Number(data.price).toLocaleString("cs-CZ")} Kč / měsíc</div>
           <div class="text-muted-foreground">Celková částka pravidelného úklidu bytového domu</div>
           <div class="hh-small hh-muted">(tj. včetně níže popsaných náležitostí)</div>
         </div>
@@ -165,7 +165,7 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
           ${data.poptavkaHash ? `
             <div class="mt-4">
               <a href="${baseUrl}/poptavka?hash=${escapeHtml(data.poptavkaHash)}" 
-                 class="text-orange-600 font-bold hover:text-orange-800 inline-flex items-center gap-1">
+                 class="font-bold inline-flex items-center gap-1 text-primary-dark-pdf">
                 Závazná poptávka
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
@@ -244,12 +244,12 @@ function renderCompleteQATable(tasks?: string[], summaryItems?: { label: string;
   const rows = allItems
     .map((item, index) => {
       const isEven = index % 2 === 0;
-      const bgColor = isEven ? "bg-gray-50" : "bg-white";
+      const bgColor = isEven ? "bg-light-gray" : "bg-white";
       
       return `
         <tr class="${bgColor}">
-          <td class="px-3 py-1 text-sm border border-gray-200 font-medium text-left">${escapeHtml(item.label)}</td>
-          <td class="px-3 py-1 text-sm border border-gray-200 text-left">${escapeHtml(item.value)}</td>
+          <td class="px-3 py-1 text-sm border border-gray-pdf font-medium text-left">${escapeHtml(item.label)}</td>
+          <td class="px-3 py-1 text-sm border border-gray-pdf text-left">${escapeHtml(item.value)}</td>
         </tr>
       `;
     })
@@ -257,7 +257,7 @@ function renderCompleteQATable(tasks?: string[], summaryItems?: { label: string;
   
   return `
     <div class="mt-4">
-      <table class="w-full border-collapse border border-gray-200 text-sm">
+      <table class="w-full border-collapse border border-gray-pdf text-sm">
         <colgroup>
           <col style="width: 75%;">
           <col style="width: 25%;">
@@ -276,7 +276,7 @@ function renderNotesSection(notes?: string): string {
   return `
     <div class="mt-6" style="page-break-inside: avoid;">
       <div class="font-semibold mb-2">Poznámka zákazníka:</div>
-      <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+      <div class="bg-light-gray border border-gray-pdf rounded-lg p-4">
         <p class="text-sm leading-relaxed">${escapeHtml(notes.trim())}</p>
       </div>
     </div>
@@ -293,7 +293,7 @@ function renderConditionsSection(conditions?: string[]): string {
   return `
     <div class="mt-6">
       <div class="font-semibold mb-2">Podmínky poskytování služeb:</div>
-      <ul class="marker:text-primary list-outside list-disc ml-6 space-y-1">
+      <ul class="list-outside list-disc ml-6 space-y-1 marker:text-primary-pdf">
         ${conditionsList}
       </ul>
     </div>
@@ -341,7 +341,7 @@ function renderCommonServicesSection(commonServices?: {
     html += `
       <div class="mb-3">
         <div class="font-medium mb-2 font-semibold">${category.label}</div>
-        <ul class="marker:text-primary list-outside list-disc ml-6 space-y-1">
+        <ul class="list-outside list-disc ml-6 space-y-1 marker:text-primary-pdf">
           ${servicesList}
         </ul>
       </div>
