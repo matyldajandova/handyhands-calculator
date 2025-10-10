@@ -4,7 +4,7 @@ import { isWinterMaintenancePeriod } from "@/utils/date-utils";
 
 // Base prices and inflation
 const BASE_PRICES = {
-  regularCleaning: 1500, // Base price per month for regular cleaning
+  regularCleaning: 2400, // Base price per month for regular cleaning
   generalCleaning: {
     standard: 2300, // 2x ročně
     annual: 2900,   // 1x ročně
@@ -339,7 +339,7 @@ export const residentialBuildingFormConfig: FormConfig = {
           required: true,
           layout: "horizontal",
           options: [
-            { value: "yes", label: "Ano", coefficient: 0.97 },
+            { value: "yes", label: "Ano", coefficient: 1.0 },
             { value: "no", label: "Ne", coefficient: 1.05 }
           ]
         },
