@@ -203,7 +203,7 @@ export const panelBuildingFormConfig: FormConfig = {
         {
           id: "aboveGroundFloors",
           type: "radio",
-          label: "Počet nadzemních pater v panelovém domě",
+          label: "Počet nadzemních pater v panelovém domě včetně přízemí",
           required: true,
           layout: "vertical",
           options: [

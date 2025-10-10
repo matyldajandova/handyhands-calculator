@@ -360,7 +360,7 @@ export const residentialBuildingFormConfig: FormConfig = {
       id: "general-cleaning",
       title: "Požadavek generálního úklidu domu",
       icon: "Sparkles",
-      note: "Generálním úklidem se myslí zejména oboustranné mytí oken včetně jejich rámů a parapetů ve všech společných prostorech domu, mytí celé konstrukce zábradlí, odstranění samolepek z vchodových dvěří, mytí osvětlovacích zařízení z vnější části, mytí vypínačů, poštovních schránek, hasících přístrojů, odstranění pavučin.",
+      note: "Generálním úklidem se myslí zejména oboustranné mytí oken včetně jejich rámů a parapetů ve všech společných prostorech domu, mytí celé konstrukce zábradlí, odstranění samolepek z vchodových dveří, mytí osvětlovacích zařízení z vnější části, mytí vypínačů, poštovních schránek, hasících přístrojů, odstranění pavučin.",
       fields: [
         {
           id: "generalCleaning",

@@ -179,7 +179,7 @@ const commercialSpacesSchema = z.object({
 
 export const commercialSpacesFormConfig: FormConfig = {
   id: "commercial-spaces",
-  title: "Pravidelný úklid komerčních nebytových prostorů",
+  title: "Pravidelný úklid komerčních nebytových (retailových) prostorů",
   description: `Vyplňte údaje pro výpočet ceny úklidových služeb pro komerční nebytové prostory (prodejny, sklady, fitness, kadeřnictví, ordinace, školky, restaurace, bary, kavárny…). Všechny údaje jsou povinné.`,
   validationSchema: commercialSpacesSchema,
   basePrice: CURRENT_PRICES.regularCleaning,
@@ -203,8 +203,8 @@ export const commercialSpacesFormConfig: FormConfig = {
             { value: "2x-weekly", label: "2x týdně", coefficient: 1.67 },
             { value: "weekly", label: "1x týdně", coefficient: 1.0 },
             { value: "biweekly", label: "1x za 14 dní", coefficient: 0.75 },
-            { value: "daily-basic-weekly", label: "Každý pracovní den pouze vynášení košů + úklid WC a úklid podlah a povrchů 1x týdně", tooltip: "Každý pracovní den se provádní pouze vynášení košů a uklízí se WC. Úklid podlah a porvrchů se provádí jen 1x týdne.", coefficient: 2.4, hidden: true },
-            { value: "daily-basic-weekly-wc", label: "Každý pracovní den pouze vynášení košů a úklid podlah a povrchů včetně WC 1x týdně", tooltip: "Každý pracovní den se provádní pouze vynášení košů. Úklid WC, podlah a porvrchů se provádí jen 1x týdne.", coefficient: 1.9, hidden: true },
+            { value: "daily-basic-weekly", label: "Každý pracovní den pouze vynášení košů + úklid WC a úklid podlah a povrchů 1x týdně", tooltip: "Každý pracovní den se provádní pouze vynášení košů a uklízí se WC. Úklid podlah a porvrchů se provádí jen 1x týdně.", coefficient: 2.4, hidden: true },
+            { value: "daily-basic-weekly-wc", label: "Každý pracovní den pouze vynášení košů a úklid podlah a povrchů včetně WC 1x týdně", tooltip: "Každý pracovní den se provádní pouze vynášení košů. Úklid WC, podlah a porvrchů se provádí jen 1x týdně.", coefficient: 1.9, hidden: true },
             { value: "daily-weekends-basic-weekly", label: "Každý den (včetně víkendů) pouze vynášení košů + úklid WC a úklid podlah a povrchů 1x týdně", coefficient: 2.5, hidden: true },
             { value: "daily-weekends-basic-weekly-wc", label: "Každý den (včetně víkendů) pouze vynášení košů a úklid podlah a povrchů včetně WC 1x týdně", coefficient: 2, hidden: true }
           ]
@@ -359,7 +359,7 @@ export const commercialSpacesFormConfig: FormConfig = {
           required: true,
           layout: "vertical",
           options: [
-            { value: "smooth", label: "Hladké (prach a nečistoty odstraňované mokrým způsobem, např. PVC, linoleum, keramika, plovoucí podlaha, kámen)", coefficient: 0.96 },
+            { value: "smooth", label: "Hladké (prach a nečistoty odstraňované mokrým způsobem - mopem, např. PVC, linoleum, keramika, plovoucí podlaha, kámen)", coefficient: 0.96 },
             { value: "carpet", label: "Koberce (prach a nečistoty odstraňované vysavačem)", tooltip: "Vysavač je v režii objednatele a jeho pořízení a správa není zahrnuta v cenové nabídce.", coefficient: 1.06 },
             { value: "combination", label: "Kombinace těchto povrchů (k údržbě je potřeba jak mop, tak vysavač)", tooltip: "Vysavač je v režii objednatele a jeho pořízení a správa není zahrnuta v cenové nabídce.", coefficient: 1.02 }
           ]
@@ -569,7 +569,7 @@ export const commercialSpacesFormConfig: FormConfig = {
             },
             { 
               value: "contractor", 
-              label: "Zajišťuje zhotovitel a je započítán v cenové nabídce", 
+              label: "Zajišťuje zhotovitel a je započítáno v cenové nabídce", 
               coefficient: 1.02 
             }
           ],
@@ -589,7 +589,7 @@ export const commercialSpacesFormConfig: FormConfig = {
             },
             { 
               value: "contractor", 
-              label: "Zajišťuje zhotovitel a je započítán v cenové nabídce", 
+              label: "Zajišťuje zhotovitel a je započítáno v cenové nabídce", 
               coefficient: 1.02 
             }
           ]

@@ -229,8 +229,8 @@ export const officeCleaningFormConfig: FormConfig = {
             { value: "2x-weekly", label: "2x týdně", coefficient: 1.67 },
             { value: "weekly", label: "1x týdně", coefficient: 1.0 },
             { value: "biweekly", label: "1x za 14 dní", coefficient: 0.75 },
-            { value: "daily-basic-weekly", label: "Každý pracovní den pouze vynášení košů + úklid WC a úklid podlah a povrchů 1x týdně", tooltip: "Každý pracovní den se provádní pouze vynášení košů a uklízí se WC. Úklid podlah a porvrchů se provádí jen 1x týdne.", coefficient: 2.5, hidden: true },
-            { value: "daily-basic-weekly-wc", label: "Každý pracovní den pouze vynášení košů a úklid podlah a povrchů včetně WC 1x týdně", tooltip: "Každý pracovní den se provádní pouze vynášení košů. Úklid WC, podlah a porvrchů se provádí jen 1x týdne.", coefficient: 2.0, hidden: true }
+            { value: "daily-basic-weekly", label: "Každý pracovní den pouze vynášení košů + úklid WC a úklid podlah a povrchů 1x týdně", tooltip: "Každý pracovní den se provádní pouze vynášení košů a uklízí se WC. Úklid podlah a porvrchů se provádí jen 1x týdně.", coefficient: 2.5, hidden: true },
+            { value: "daily-basic-weekly-wc", label: "Každý pracovní den pouze vynášení košů a úklid podlah a povrchů včetně WC 1x týdně", tooltip: "Každý pracovní den se provádní pouze vynášení košů. Úklid WC, podlah a porvrchů se provádí jen 1x týdně.", coefficient: 2.0, hidden: true }
           ]
         },
         {
@@ -522,7 +522,7 @@ export const officeCleaningFormConfig: FormConfig = {
         {
           id: "afterHours",
           type: "radio",
-          label: "Úklidové práce budou probíhat mimo pracovní dobu v kancelářích (tedy např. brzo ráno před 8:00 hod. nebo večer po 17:00 hod.)",
+          label: "Úklidové práce budou probíhat mimo pracovní dobu kanceláří (tedy např. brzo ráno před 8:00 hod. nebo večer po 17:00 hod.)",
           required: true,
           layout: "vertical",
           options: [
@@ -613,7 +613,7 @@ export const officeCleaningFormConfig: FormConfig = {
             },
             { 
               value: "contractor", 
-              label: "Zajišťuje zhotovitel a je započítán v cenové nabídce", 
+              label: "Zajišťuje zhotovitel a je započítáno v cenové nabídce", 
               coefficient: 1.02 
             }
           ],
@@ -633,7 +633,7 @@ export const officeCleaningFormConfig: FormConfig = {
             },
             { 
               value: "contractor", 
-              label: "Zajišťuje zhotovitel a je započítán v cenové nabídce", 
+              label: "Zajišťuje zhotovitel a je započítáno v cenové nabídce", 
               coefficient: 1.02 
             }
           ]
