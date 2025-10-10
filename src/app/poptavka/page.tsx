@@ -444,9 +444,9 @@ function PoptavkaContent() {
               <Image 
                 src="/handyhands_horizontal.svg" 
                 alt="HandyHands Logo" 
-                width={240}
-                height={96}
-                className="h-16 md:h-20 lg:h-24 w-auto"
+                width={160}
+                height={64}
+                className="h-8 md:h-12 w-auto"
                 priority
               />
             </div>
@@ -507,24 +507,29 @@ function PoptavkaContent() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background py-12 px-4">
       <div className="max-w-2xl mx-auto">
+        {/* Logo and Back Button Row */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-8"
+          className="flex justify-between items-center mb-8"
         >
-          {/* Brand Logo */}
-          <div className="flex justify-center mb-8">
-            <Image 
-              src="/handyhands_horizontal.svg" 
-              alt="HandyHands Logo" 
-              width={240}
-              height={96}
-              className="h-16 md:h-20 lg:h-24 w-auto"
-              priority
-            />
-          </div>
-          
+          <Image 
+            src="/handyhands_horizontal.svg" 
+            alt="HandyHands Logo" 
+            width={160}
+            height={64}
+            className="h-8 md:h-12 w-auto"
+            priority
+          />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.6 }}
+          className="mb-8"
+        >
           <h1 className="text-3xl font-bold text-foreground mb-4">Poptávka úklidových služeb</h1>
         </motion.div>
 

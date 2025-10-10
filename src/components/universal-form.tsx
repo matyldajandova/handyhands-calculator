@@ -795,11 +795,11 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
         </div>
       )}
 
-      <div className="text-center mb-12">
-        <h1 className="scroll-m-20 text-4xl font-bold tracking-tight text-balance text-foreground font-heading mb-6">
+      <div className="mb-12">
+        <h1 className="scroll-m-20 text-4xl font-bold tracking-tight text-foreground font-heading mb-6">
           {config.title}
         </h1>
-        <p className="text-muted-foreground text-xl leading-7 font-sans max-w-2xl mx-auto">
+        <p className="text-muted-foreground text-xl leading-7 font-sans max-w-2xl">
           {config.description}
         </p>
       </div>

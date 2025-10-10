@@ -7,6 +7,7 @@ import { Calculator, Clock } from "lucide-react";
 import { CalculationResult } from "@/types/form-types";
 import { calculatePrice } from "@/utils/calculation";
 import { FormSubmissionData, FormConfig } from "@/types/form-types";
+import Image from "next/image";
 
 interface CalculatingScreenProps {
   onComplete: (result: CalculationResult) => void;
@@ -71,6 +72,23 @@ export function CalculatingScreen({ onComplete, formData, formConfig }: Calculat
       className="min-h-screen bg-gradient-to-br from-background via-secondary to-background flex items-center justify-center p-4"
     >
       <div className="w-full max-w-2xl mx-auto text-center">
+        {/* Brand Logo */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="flex justify-center mb-8"
+        >
+          <Image 
+            src="/handyhands_horizontal.svg" 
+            alt="HandyHands Logo" 
+            width={200}
+            height={80}
+            className="h-12 md:h-16 w-auto"
+            priority
+          />
+        </motion.div>
+
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}

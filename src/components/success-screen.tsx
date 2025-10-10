@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { hashService } from "@/services/hash-service";
 import { orderStorage } from "@/services/order-storage";
 import { buildPoptavkaHashData } from "@/utils/hash-data-builder";
+import Image from "next/image";
 
 interface SuccessScreenProps {
   onBackToServices: () => void;
@@ -182,35 +183,57 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="min-h-screen bg-gradient-to-br from-background via-secondary to-background p-4 flex items-center justify-center"
-    >
-      <div className="w-full max-w-2xl mx-auto text-center">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-          className="flex justify-center mb-6"
-        >
-          <CheckCircle className="h-20 w-20 text-green-success" />
-        </motion.div>
-
+    <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background py-12 px-4">
+      <div className="w-full max-w-2xl mx-auto">
+        {/* Logo and Back Button Row */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
-          className="mb-8"
+          transition={{ duration: 0.6 }}
+          className="flex justify-between items-center mb-8"
         >
-          <h1 className="text-3xl font-bold text-foreground font-heading mb-4">
-            Kalkulace dokončena!
-          </h1>
-          <p className="text-muted-foreground text-lg font-sans">
-            Vaše cena úklidových služeb byla úspěšně vypočítána
-          </p>
+          <Image 
+            src="/handyhands_horizontal.svg" 
+            alt="HandyHands Logo" 
+            width={160}
+            height={64}
+            className="h-8 md:h-10 w-auto"
+            priority
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onBackToServices}
+            className="shadow-none bg-grey-100 hover:bg-grey-200"
+          >
+            <Icons.ArrowLeft className="h-4 w-4" />
+            Zpět na výběr služby
+          </Button>
         </motion.div>
+
+        <div className="text-center">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+            className="flex justify-center mb-6"
+          >
+            <CheckCircle className="h-20 w-20 text-green-success" />
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="mb-8"
+          >
+            <h1 className="text-3xl font-bold text-foreground font-heading mb-4">
+              Kalkulace dokončena!
+            </h1>
+            <p className="text-muted-foreground text-lg font-sans">
+              Vaše cena úklidových služeb byla úspěšně vypočítána
+            </p>
+          </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -353,23 +376,8 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
             onDataChange={handleFormDataChange}
           />
         </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6, duration: 0.5 }}
-          className="mt-8"
-        >
-          <Button
-            onClick={onBackToServices}
-            variant="ghost"
-            
-          >
-            <Icons.ArrowLeft className="h-5 w-5" />
-            Zpět na výběr služby
-          </Button>
-        </motion.div>
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

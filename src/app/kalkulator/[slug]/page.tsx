@@ -8,6 +8,9 @@ import { getServiceType } from "@/config/services";
 import { FormSubmissionData, CalculationResult } from "@/types/form-types";
 import { hashService } from "@/services/hash-service";
 import { buildPoptavkaHashData } from "@/utils/hash-data-builder";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 type CalculatorState = "form" | "calculating";
 
@@ -81,6 +84,16 @@ export default function CalculatorPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background p-4 flex items-center justify-center">
         <div className="text-center">
+          <div className="flex justify-center mb-8">
+            <Image 
+              src="/handyhands_horizontal.svg" 
+              alt="HandyHands Logo" 
+              width={200}
+              height={80}
+              className="h-12 md:h-16 w-auto"
+              priority
+            />
+          </div>
           <h1 className="text-2xl font-bold text-foreground mb-4">Načítání...</h1>
         </div>
       </div>
@@ -102,13 +115,36 @@ export default function CalculatorPage() {
   return (
     <>
       <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background py-12 px-4">
-        <UniversalForm
-          config={formConfig}
-          onBack={handleBackToHome}
-          onSubmit={handleFormSubmit}
-          onFormChange={handleFormChange}
-          shouldResetForm={false}
-        />
+        <div className="max-w-4xl mx-auto">
+          {/* Logo and Back Button Row */}
+          <div className="flex justify-between items-center mb-8">
+            <Image 
+              src="/handyhands_horizontal.svg" 
+              alt="HandyHands Logo" 
+              width={240}
+              height={96}
+              className="h-8 md:h-12 w-auto"
+              priority
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleBackToHome}
+              className="shadow-none bg-grey-100 hover:bg-grey-200"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Zpět na výběr služby
+            </Button>
+          </div>
+          
+          <UniversalForm
+            config={formConfig}
+            onBack={undefined}
+            onSubmit={handleFormSubmit}
+            onFormChange={handleFormChange}
+            shouldResetForm={false}
+          />
+        </div>
       </div>
 
       {/* Warning Dialog */}
