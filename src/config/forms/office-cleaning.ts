@@ -182,7 +182,7 @@ const officeCleaningSchema = z.object({
 export const officeCleaningFormConfig: FormConfig = {
   id: "office-cleaning",
   title: "Pravidelný úklid kanceláří",
-  description: `Vyplňte údaje pro výpočet ceny úklidových služeb pro kanceláře. Všechny údaje jsou povinné.`,
+  description: `Vyplňte údaje pro výpočet ceny úklidových služeb pro kanceláře.`,
   validationSchema: officeCleaningSchema,
   basePrice: CURRENT_PRICES.regularCleaning,
   conditions: [],
@@ -644,6 +644,7 @@ export const officeCleaningFormConfig: FormConfig = {
       id: "optional-services",
       title: "Příplatkové služby",
       icon: "Plus",
+      optional: true,
       fields: [
         {
           id: "optionalServicesPerCleaning",

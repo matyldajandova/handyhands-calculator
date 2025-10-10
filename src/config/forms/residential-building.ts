@@ -223,7 +223,7 @@ const residentialBuildingSchema = z.object({
 export const residentialBuildingFormConfig: FormConfig = {
   id: "residential-building",
   title: "Pravidelný úklid činžovních domů a novostaveb",
-  description: `Vyplňte údaje pro výpočet ceny úklidových služeb. Všechny údaje jsou povinné.`,
+  description: `Vyplňte údaje pro výpočet ceny úklidových služeb.`,
   validationSchema: residentialBuildingSchema,
   basePrice: CURRENT_PRICES.regularCleaning,
   conditions: [
@@ -579,6 +579,7 @@ export const residentialBuildingFormConfig: FormConfig = {
       id: "optional-services",
       title: "Příplatkové služby",
       icon: "Plus",
+      optional: true,
       fields: [
         {
           id: "optionalServicesWeekly",

@@ -144,7 +144,7 @@ const panelBuildingSchema = z.object({
 export const panelBuildingFormConfig: FormConfig = {
   id: "panel-building",
   title: "Pravidelný úklid panelových domů",
-  description: `Vyplňte údaje pro výpočet ceny úklidových služeb pro panelové domy. Všechny údaje jsou povinné.`,
+  description: `Vyplňte údaje pro výpočet ceny úklidových služeb pro panelové domy.`,
   validationSchema: panelBuildingSchema,
   basePrice: CURRENT_PRICES.regularCleaning,
   conditions: [
@@ -414,6 +414,7 @@ export const panelBuildingFormConfig: FormConfig = {
       id: "optional-services",
       title: "Příplatkové služby",
       icon: "Plus",
+      optional: true,
       fields: [
         {
           id: "optionalServicesWeekly",

@@ -180,7 +180,7 @@ const commercialSpacesSchema = z.object({
 export const commercialSpacesFormConfig: FormConfig = {
   id: "commercial-spaces",
   title: "Pravidelný úklid komerčních nebytových (retailových) prostorů",
-  description: `Vyplňte údaje pro výpočet ceny úklidových služeb pro komerční nebytové prostory (prodejny, sklady, fitness, kadeřnictví, ordinace, školky, restaurace, bary, kavárny…). Všechny údaje jsou povinné.`,
+  description: `Vyplňte údaje pro výpočet ceny úklidových služeb pro komerční nebytové prostory (prodejny, sklady, fitness, kadeřnictví, ordinace, školky, restaurace, bary, kavárny…).`,
   validationSchema: commercialSpacesSchema,
   basePrice: CURRENT_PRICES.regularCleaning,
   conditions: [],

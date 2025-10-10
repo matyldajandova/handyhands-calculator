@@ -71,7 +71,7 @@ const oneTimeCleaningSchema = z.object({
 export const oneTimeCleaningFormConfig: FormConfig = {
   id: "one-time-cleaning",
   title: "Jednorázový úklid",
-  description: `Vyplňte údaje pro výpočet ceny jednorázového úklidu. Všechny údaje jsou povinné.`,
+  description: `Vyplňte údaje pro výpočet ceny jednorázového úklidu.`,
   validationSchema: oneTimeCleaningSchema,
   basePrice: CURRENT_PRICES.hourlyRate,
   conditions: [],
@@ -208,6 +208,7 @@ export const oneTimeCleaningFormConfig: FormConfig = {
       id: "optional-services",
       title: "Příplatkové služby",
       icon: "Plus",
+      optional: true,
       fields: [
         {
           id: "optionalServices",

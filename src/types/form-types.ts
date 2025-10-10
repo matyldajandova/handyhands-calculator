@@ -155,6 +155,7 @@ export interface FormSection {
   fields: FormField[];
   description?: string;
   note?: string;
+  optional?: boolean;
   condition?: {
     field: string;
     value: string | number | boolean;

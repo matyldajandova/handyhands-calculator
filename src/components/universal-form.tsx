@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { FormConfig, FormField as FormFieldType, FormSubmissionData, ConditionalField, RadioField, SelectField, InputField, TextareaField, CheckboxField, AlertField } from "@/types/form-types";
+import { FormConfig, FormField as FormFieldType, FormSection, FormSubmissionData, ConditionalField, RadioField, SelectField, InputField, TextareaField, CheckboxField, AlertField } from "@/types/form-types";
 import * as Icons from "lucide-react";
 import React from "react";
 import { ZipCodeInput } from "@/components/zip-code-input";

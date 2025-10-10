@@ -66,7 +66,7 @@ const homeCleaningSchema = z.object({
 export const homeCleaningFormConfig: FormConfig = {
   id: "home-cleaning",
   title: "Pravidelný úklid domácností",
-  description: `Vyplňte údaje pro výpočet ceny úklidových služeb pro domácnosti. Všechny údaje jsou povinné.`,
+  description: `Vyplňte údaje pro výpočet ceny úklidových služeb pro domácnosti.`,
   validationSchema: homeCleaningSchema,
   basePrice: CURRENT_PRICES.monthlyTariff, // Default to monthly tariff, will be overridden based on pricingType
   hidden: true,
@@ -182,6 +182,7 @@ export const homeCleaningFormConfig: FormConfig = {
       id: "optional-services",
       title: "Příplatkové služby",
       icon: "Plus",
+      optional: true,
       fields: [
         {
           id: "optionalServices",
