@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export interface FormData {
   cleaningFrequency: string;
-  aboveGroundFloors: number;
+  aboveGroundFloors: number | string;
   undergroundFloors: number;
   apartmentsPerFloor: string;
   hasElevator: string;

@@ -287,7 +287,7 @@ export const commercialSpacesFormConfig: FormConfig = {
             {
               id: "spaceAreaNonDaily",
               type: "radio",
-              label: "Orientáční plocha nebytových prostor",
+              label: "Orientační plocha nebytových prostor",
               required: true,
               layout: "vertical",
               condition: { 
@@ -314,7 +314,7 @@ export const commercialSpacesFormConfig: FormConfig = {
             {
               id: "spaceAreaDaily",
               type: "radio",
-              label: "Orientáční plocha nebytových prostor",
+              label: "Orientační plocha nebytových prostor",
               required: true,
               layout: "vertical",
               condition: { 

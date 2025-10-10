@@ -311,7 +311,7 @@ export const officeCleaningFormConfig: FormConfig = {
             {
               id: "officeAreaNonDaily",
               type: "radio",
-              label: "Orientáční plocha kanceláře",
+              label: "Orientační plocha kanceláře",
               required: false,
               layout: "vertical",
               condition: { 
@@ -338,7 +338,7 @@ export const officeCleaningFormConfig: FormConfig = {
             {
               id: "officeAreaDaily",
               type: "radio",
-              label: "Orientáční plocha kanceláře",
+              label: "Orientační plocha kanceláře",
               required: false,
               layout: "vertical",
               condition: { 

@@ -310,7 +310,7 @@ export const panelBuildingFormConfig: FormConfig = {
             {
               id: "windowsPerFloor",
               type: "radio",
-              label: "Orientáční počet oken na patře",
+              label: "Orientační počet oken na patře",
               required: true,
               layout: "vertical",
               options: [
@@ -428,7 +428,7 @@ export const panelBuildingFormConfig: FormConfig = {
             { value: "sweep-containers", label: "Zametení okolo kontejnerového stání včetně odstranění hrubých nečistot u kontejnerového stání (+200 Kč/měsíc)", fixedAddon: 200, hidden: true },
             { value: "clean-doormats", label: "Čistění vstupních rohoží v přízemí domu (+150 Kč/měsíc)", fixedAddon: 150, hidden: true },
             { value: "dispose-flyers", label: "Likvidace tiskovin / reklamních letáků (+50 Kč/měsíc)", fixedAddon: 50, hidden: true },
-            { value: "elevator-maintenance", label: "Olejování nerezových stěn interiéru výtahu a jejich údržba", fixedAddon: 250, hidden: true },
+            { value: "elevator-maintenance", label: "Olejování nerezových stěn interiéru výtahu a jejich údržba (+250 Kč/měsíc)", fixedAddon: 250, hidden: true },
           ]
         },
         {
