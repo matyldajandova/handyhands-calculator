@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Building } from "lucide-react";
 import { CalculationResult, FormConfig, FormSubmissionData } from "@/types/form-types";
 import { isWinterMaintenancePeriod } from "@/utils/date-utils";
-import * as Icons from "lucide-react";
 import { IdentificationStep } from "@/components/identification-step";
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -185,30 +184,26 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background py-12 px-4">
       <div className="w-full max-w-2xl mx-auto">
-        {/* Logo and Back Button Row */}
+        {/* Clickable Logo */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="flex justify-between items-center mb-8"
+          className="flex justify-start items-center mb-8"
         >
-          <Image 
-            src="/handyhands_horizontal.svg" 
-            alt="HandyHands Logo" 
-            width={160}
-            height={64}
-            className="h-8 md:h-10 w-auto"
-            priority
-          />
-          <Button
-            type="button"
-            variant="secondary"
+          <button 
             onClick={onBackToServices}
-            className="shadow-none bg-grey-100 hover:bg-grey-200"
+            className="cursor-pointer transition-opacity hover:opacity-80"
           >
-            <Icons.ArrowLeft className="h-4 w-4" />
-            Zpět na výběr služby
-          </Button>
+            <Image 
+              src="/handyhands_horizontal.svg" 
+              alt="HandyHands Logo" 
+              width={160}
+              height={64}
+              className="h-8 md:h-10 w-auto"
+              priority
+            />
+          </button>
         </motion.div>
 
         <div className="text-center">
