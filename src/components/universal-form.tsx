@@ -79,6 +79,22 @@ function AnimatedErrorMessage({ error }: { error: string | undefined }) {
   );
 }
 
+// Mobile-friendly tooltip wrapper - exported for reuse
+export function MobileTooltip({ children, content }: { children: React.ReactNode; content: string }) {
+  const [open, setOpen] = React.useState(false);
+  
+  return (
+    <Tooltip open={open} onOpenChange={setOpen}>
+      <TooltipTrigger asChild onClick={() => setOpen(!open)}>
+        {children}
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-xs">
+        <p className="text-sm">{content}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 // Custom field label component with info icon and tooltip
 function FieldLabel({ field, isRequired, isInConditionalContext }: { field: FormFieldType; isRequired?: boolean; isInConditionalContext?: boolean }) {
   // AlertField doesn't have label or required properties
@@ -99,20 +115,17 @@ function FieldLabel({ field, isRequired, isInConditionalContext }: { field: Form
   }
   
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-start gap-2">
       <FormLabel>
         {'label' in field ? field.label : ''}
         {shouldShowOptional && <span className="text-muted-foreground">(volitelné)</span>}
       </FormLabel>
       {'note' in field && field.note && (
-        <Tooltip>
-          <TooltipTrigger asChild>
+        <MobileTooltip content={field.note}>
+          <button type="button" className="mt-0.5">
             <Icons.Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-accent transition-colors" />
-          </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-xs">
-            <p className="text-sm">{field.note}</p>
-          </TooltipContent>
-        </Tooltip>
+          </button>
+        </MobileTooltip>
       )}
     </div>
   );
@@ -180,17 +193,17 @@ function RadioFieldWithHiddenOptions({
   formField: ControllerRenderProps<FormSubmissionData>; 
 }) {
   const renderOption = (option: any) => (
-    <FormItem key={option.value} className="flex items-center gap-2">
+    <FormItem key={option.value} className="flex items-start gap-2">
       <FormControl>
-        <RadioGroupItem value={option.value.toString()} id={`${field.id}_${option.value}`} />
+        <RadioGroupItem value={option.value.toString()} id={`${field.id}_${option.value}`} className="mt-1" />
       </FormControl>
-      <FormLabel htmlFor={`${field.id}_${option.value}`} className="font-normal cursor-pointer">
-        <span>{option.label}</span>
-        <div className="flex items-center gap-2">
+      <div className="flex items-start gap-2 flex-1">
+        <FormLabel htmlFor={`${field.id}_${option.value}`} className="font-normal cursor-pointer flex-1">
+          <span>{option.label}</span>
           {option.note && (
             <Badge 
               variant={option.note === 'frequent' ? 'secondary' : 'default'}
-              className={`text-xs ${
+              className={`text-xs ml-2 ${
                 option.note === 'frequent' 
                   ? 'bg-muted text-muted-foreground' 
                   : 'bg-accent text-accent-foreground'
@@ -199,18 +212,15 @@ function RadioFieldWithHiddenOptions({
               {option.note === 'frequent' ? 'Nejvyužívanější' : 'Doporučeno'}
             </Badge>
           )}
-          {option.tooltip && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Icons.Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-accent transition-colors" />
-              </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-xs">
-                <p className="text-sm">{option.tooltip}</p>
-              </TooltipContent>
-            </Tooltip>
-          )}
-        </div>
-      </FormLabel>
+        </FormLabel>
+        {option.tooltip && (
+          <MobileTooltip content={option.tooltip}>
+            <button type="button" className="mt-0.5">
+              <Icons.Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-accent transition-colors" />
+            </button>
+          </MobileTooltip>
+        )}
+      </div>
     </FormItem>
   );
 
@@ -556,12 +566,13 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
         }
         
         return (
-          <FormItem key={option.value} className="flex items-center gap-2">
+          <FormItem key={option.value} className="flex items-start gap-2">
             <FormControl>
               <Checkbox
                 id={`${field.id}_${option.value}`}
                 checked={currentValues.includes(option.value)}
                 disabled={isDisabled}
+                className="mt-1"
                 onCheckedChange={(checked: boolean | "indeterminate") => {
                   if (checked) {
                     formField.onChange([...currentValues, option.value]);
@@ -571,16 +582,16 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
                 }}
               />
             </FormControl>
-            <FormLabel 
-              htmlFor={`${field.id}_${option.value}`} 
-              className={`font-normal cursor-pointer ${isDisabled ? 'text-muted-foreground' : ''}`}
-            >
-              <span>{option.label}</span>
-              <div className="flex items-center gap-2">
+            <div className="flex items-start gap-2 flex-1">
+              <FormLabel 
+                htmlFor={`${field.id}_${option.value}`} 
+                className={`font-normal cursor-pointer flex-1 ${isDisabled ? 'text-muted-foreground' : ''}`}
+              >
+                <span>{option.label}</span>
                 {option.note && (
                   <Badge 
                     variant={option.note === 'frequent' ? 'secondary' : 'default'}
-                    className={`text-xs ${
+                    className={`text-xs ml-2 ${
                       option.note === 'frequent' 
                         ? 'bg-muted text-muted-foreground' 
                         : 'bg-accent text-accent-foreground'
@@ -589,21 +600,18 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
                     {option.note === 'frequent' ? 'Nejvyužívanější' : 'Doporučeno'}
                   </Badge>
                 )}
-                {option.tooltip && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Icons.Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-accent transition-colors" />
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-xs">
-                      <p className="text-sm">{option.tooltip}</p>
-                    </TooltipContent>
-                  </Tooltip>
+                {isDisabled && disabledReason && (
+                  <span className="text-xs text-muted-foreground">({disabledReason})</span>
                 )}
-              </div>
-              {isDisabled && disabledReason && (
-                <span className="text-xs text-muted-foreground">({disabledReason})</span>
+              </FormLabel>
+              {option.tooltip && (
+                <MobileTooltip content={option.tooltip}>
+                  <button type="button" className="mt-0.5">
+                    <Icons.Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-accent transition-colors" />
+                  </button>
+                </MobileTooltip>
               )}
-            </FormLabel>
+            </div>
           </FormItem>
         );
       };
