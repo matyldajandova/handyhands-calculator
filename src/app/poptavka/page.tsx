@@ -143,6 +143,12 @@ function PoptavkaContent() {
             ...hashFormData   // Hash data (takes precedence)
           } as Record<string, unknown>;
           
+          // Always use 10 days from now for serviceStartDate unless it's explicitly in the hash data
+          // (don't use old dates from localStorage)
+          const serviceStartDate = hashFormData.serviceStartDate 
+            ? new Date(hashFormData.serviceStartDate as string)
+            : new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
+          
           // Ensure all string fields are never undefined
           const safeFormData: FormData = {
             firstName: String(mergedData.firstName || ''),
@@ -159,7 +165,7 @@ function PoptavkaContent() {
             companyStreet: String(mergedData.companyStreet || ''),
             companyCity: String(mergedData.companyCity || ''),
             companyZipCode: String(mergedData.companyZipCode || ''),
-            serviceStartDate: mergedData.serviceStartDate ? new Date(mergedData.serviceStartDate as string) : new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+            serviceStartDate: serviceStartDate,
             invoiceEmail: String(mergedData.invoiceEmail || ''),
             notes: String(mergedData.notes || ''),
           };
