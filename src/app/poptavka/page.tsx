@@ -89,7 +89,7 @@ function PoptavkaContent() {
     companyStreet: "",
     companyCity: "",
     companyZipCode: "",
-    serviceStartDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+    serviceStartDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days from now
     invoiceEmail: "",
     notes: "",
   });
@@ -159,7 +159,7 @@ function PoptavkaContent() {
             companyStreet: String(mergedData.companyStreet || ''),
             companyCity: String(mergedData.companyCity || ''),
             companyZipCode: String(mergedData.companyZipCode || ''),
-            serviceStartDate: mergedData.serviceStartDate ? new Date(mergedData.serviceStartDate as string) : new Date(Date.now() + 24 * 60 * 60 * 1000),
+            serviceStartDate: mergedData.serviceStartDate ? new Date(mergedData.serviceStartDate as string) : new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
             invoiceEmail: String(mergedData.invoiceEmail || ''),
             notes: String(mergedData.notes || ''),
           };
@@ -239,7 +239,7 @@ function PoptavkaContent() {
     }
 
     if (formData.isCompany) {
-      if (!formData.companyName.trim()) newErrors.companyName = "Název firmy je povinný";
+      if (!formData.companyName.trim()) newErrors.companyName = "Název společnosti je povinný";
       if (!formData.companyIco.trim()) newErrors.companyIco = "IČO je povinné";
       if (!formData.companyStreet.trim()) newErrors.companyStreet = "Ulice je povinná";
       if (!formData.companyCity.trim()) newErrors.companyCity = "Město je povinné";
@@ -369,7 +369,7 @@ function PoptavkaContent() {
       // Show success state
       setIsSubmitted(true);
     } catch {
-      alert("Nepodařilo se odeslat poptávku. Zkuste to prosím znovu.");
+      alert("Nepodařilo se odeslat návrh smlouvy. Zkuste to prosím znovu.");
     } finally {
       setIsSubmitting(false);
     }
@@ -650,7 +650,7 @@ function PoptavkaContent() {
                       onCheckedChange={(checked) => handleInputChange("isCompany", checked === true)}
                     />
                     <Label htmlFor="isCompany" className="flex items-center gap-2">
-                      Objednávám služby jako firma
+                      Objednávám služby jako společnost
                     </Label>
                   </div>
 
@@ -665,12 +665,12 @@ function PoptavkaContent() {
                       {/* Company Details */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="md:col-span-2 space-y-2">
-                          <Label htmlFor="companyName">Název firmy</Label>
+                          <Label htmlFor="companyName">Název společnosti</Label>
                           <Input
                             id="companyName"
                             value={formData.companyName || ''}
                             onChange={(e) => handleInputChange("companyName", e.target.value)}
-                            placeholder="Název vaší firmy"
+                            placeholder="Název vaší společnosti"
                             className={errors.companyName ? "border-destructive" : ""}
                           />
                           {errors.companyName && (
@@ -693,7 +693,7 @@ function PoptavkaContent() {
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="companyDic">DIČ</Label>
+                          <Label htmlFor="companyDic">DIČ <span className="text-muted-foreground font-normal">(volitelné)</span></Label>
                           <Input
                             id="companyDic"
                             value={formData.companyDic || ''}
@@ -706,7 +706,7 @@ function PoptavkaContent() {
                       {/* Company Address */}
                       <div className="space-y-4">
                         <div className="flex items-center gap-2">
-                          <h3 className="font-semibold">Adresa firmy</h3>
+                          <h3 className="font-semibold">Adresa společnosti</h3>
                         </div>
                         <div className="space-y-4">
                           <div className="space-y-2">
@@ -761,7 +761,7 @@ function PoptavkaContent() {
                 {/* Property Address */}
                 <div className="space-y-4 pt-6 border-t pb-6 border-b">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold">Adresa nemovitosti k úklidu</h3>
+                    <h3 className="font-semibold">Adresa nemovitosti, kde bude probíhat úklid</h3>
                   </div>
                     <div className="space-y-4">
                       <div className="space-y-2">
@@ -860,7 +860,11 @@ function PoptavkaContent() {
                               setDatePickerOpen(false);
                             }
                           }}
-                          disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                          disabled={(date) => {
+                            const tenDaysFromNow = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
+                            tenDaysFromNow.setHours(0, 0, 0, 0);
+                            return date < tenDaysFromNow;
+                          }}
                           initialFocus
                         />
                       </PopoverContent>
@@ -919,7 +923,7 @@ function PoptavkaContent() {
                     ) : (
                       <>
                         <Check className="h-4 w-4" />
-                        Odeslat závaznou poptávku
+                        Odeslat návrh smlouvy
                       </>
                     )}
                   </Button>

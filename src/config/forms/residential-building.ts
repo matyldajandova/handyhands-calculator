@@ -270,7 +270,7 @@ export const residentialBuildingFormConfig: FormConfig = {
             { value: "biweekly", label: "1x za 14 dní", coefficient: 0.75 },
             { value: "daily", label: "Každý den", coefficient: 3.67 },
             { value: "mixed-weekly", label: "1x týdně nadzemní patra a 2x týdně přízemí", tooltip: "Kromě přízemí domu se myslí také úklid podlahy výtahové kabiny, pokud je v domě výtah.", coefficient: 1.45, hidden: true },
-            { value: "seasonal", label: "1x týdně v letním období a 2x týdně v zimním období", coefficient: 1.35, tooltip: "Letní období se rozumí období od 1. dubna do 30. září a zimním obdobím se myslí období od 1. října do 31. března.", hidden: true },
+            { value: "seasonal", label: "1x týdně v letním období a 2x týdně v zimním období", coefficient: 1.35, tooltip: "Letním obdobím se rozumí období od 1. dubna do 30. září a zimním obdobím se myslí období od 1. října do 31. března.", hidden: true },
             { value: "monthly", label: "1x za měsíc", coefficient: 0.69, hidden: true }
           ]
         }

@@ -128,7 +128,7 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
             const company = (data.customer as Record<string, unknown>).company as Record<string, unknown>;
             return `
             <div class="mt-2">
-              <div class="font-semibold">Firma:</div>
+              <div class="font-semibold">společnost:</div>
               <div>${escapeHtml(company.name as string || '')}</div>
               <div>IČO: ${escapeHtml(company.ico as string || '')}${company.dic ? `, DIČ: ${escapeHtml(company.dic as string || '')}` : ""}</div>
               <div>${escapeHtml(company.address as string || '')}</div>
