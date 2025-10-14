@@ -5,9 +5,6 @@
     }
   },
   "regions": ["fra1"],
-  "comments": {
-    "regions": "fra1 (Frankfurt, Germany) is the closest Vercel region to Czech Republic"
-  },
   "headers": [
     {
       "source": "/(.*)",
