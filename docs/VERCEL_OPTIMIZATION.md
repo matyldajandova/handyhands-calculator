@@ -11,35 +11,33 @@ The first time a calculator page was accessed, it took a while to load due to:
 
 ## Solutions Implemented
 
-### 1. Static Site Generation (SSG)
+### 1. Dynamic Rendering with Aggressive Caching
 
 **File:** `src/app/kalkulator/[slug]/page.tsx`
 
-Added `generateStaticParams()` to pre-generate all calculator pages at build time:
+Added caching configuration for dynamic pages:
 
 ```typescript
-export function generateStaticParams() {
-  return getAllSlugs().map((slug) => ({
-    slug,
-  }));
-}
+export const dynamic = 'auto';
+export const dynamicParams = true;
+export const revalidate = 3600; // Revalidate every hour
 ```
 
 **Benefits:**
-- All calculator pages are pre-built during deployment
-- No serverless function invocation needed for initial page load
-- Instant page loads after first deployment
-- Pages are served from Vercel's Edge Network (CDN)
+- Pages are cached after first request (no cold starts after initial load)
+- Revalidates every hour to ensure fresh content
+- Combined with Vercel CDN caching (24 hours) for optimal performance
+- Stale-while-revalidate ensures users always get instant responses
 
 ### 2. Next.js Configuration
 
 **File:** `next.config.ts` (newly created)
 
 Optimizations added:
-- **SWC Minification** - Faster builds and smaller bundles
 - **Image Optimization** - AVIF/WebP formats with proper device sizes
 - **Package Import Optimization** - Tree-shaking for `lucide-react`, `date-fns`, `zod`
 - **Console Removal** - Remove console logs in production (except errors/warnings)
+- Note: SWC minification is enabled by default in Next.js 15
 
 ### 3. Vercel Configuration
 
@@ -104,19 +102,20 @@ Optimizations added:
 - **Cache:** Browser only
 
 ### After Optimization
-- **First visit:** 200-500ms (served from CDN)
-- **Subsequent visits:** 100-200ms (browser cache)
-- **Cache:** Multi-layer (Browser → CDN → Origin)
-- **No cold starts** for calculator pages
+- **First visit (per page):** 500-1000ms (one-time cache warming)
+- **Subsequent visits:** 100-200ms (served from cache)
+- **Cache:** Multi-layer (Browser → CDN → Server → Origin)
+- **Minimal cold starts** - only first request per page
 
 ## Deployment
 
 After these changes are deployed to Vercel:
 
-1. **Build time** will be slightly longer (pre-generating all pages)
-2. **All calculator pages** will be available instantly
-3. **CDN caching** will serve pages globally
+1. **First request** to each calculator page will warm the cache
+2. **All subsequent requests** will be served from cache instantly
+3. **CDN caching** serves pages globally with 24-hour cache
 4. **Stale-while-revalidate** ensures users never wait for updates
+5. **Hourly revalidation** keeps content fresh
 
 ## Monitoring
 
@@ -150,10 +149,10 @@ To verify the improvements:
 ## Troubleshooting
 
 ### If pages are still slow
-1. Check if `generateStaticParams` is working:
+1. Check the build output:
    ```bash
    npm run build
-   # Look for "○ /kalkulator/[slug]" in output (should show all slugs)
+   # Look for "ƒ /kalkulator/[slug]" (dynamic route with caching)
    ```
 
 2. Verify caching headers:

@@ -3,7 +3,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { UniversalForm } from "@/components/universal-form";
 import { CalculatingScreen } from "@/components/calculating-screen";
-import { getServiceIdFromSlug, getAllSlugs } from "@/utils/slug-mapping";
+import { getServiceIdFromSlug } from "@/utils/slug-mapping";
 import { getServiceType } from "@/config/services";
 import { FormSubmissionData, CalculationResult } from "@/types/form-types";
 import { hashService } from "@/services/hash-service";
@@ -12,12 +12,10 @@ import Image from "next/image";
 
 type CalculatorState = "form" | "calculating";
 
-// Generate static params for all calculator pages at build time
-export function generateStaticParams() {
-  return getAllSlugs().map((slug) => ({
-    slug,
-  }));
-}
+// Enable dynamic rendering with caching (handled by vercel.json)
+export const dynamic = 'auto';
+export const dynamicParams = true;
+export const revalidate = 3600; // Revalidate every hour
 
 export default function CalculatorPage() {
   const params = useParams();
