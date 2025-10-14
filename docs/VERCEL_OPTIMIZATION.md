@@ -11,23 +11,17 @@ The first time a calculator page was accessed, it took a while to load due to:
 
 ## Solutions Implemented
 
-### 1. Dynamic Rendering with Aggressive Caching
+### 1. Client-Side Rendering with CDN Caching
 
 **File:** `src/app/kalkulator/[slug]/page.tsx`
 
-Added caching configuration for dynamic pages:
-
-```typescript
-export const dynamic = 'auto';
-export const dynamicParams = true;
-export const revalidate = 3600; // Revalidate every hour
-```
+Calculator pages use client-side rendering for interactivity, with caching handled entirely by Vercel's CDN layer (configured in `vercel.json`).
 
 **Benefits:**
-- Pages are cached after first request (no cold starts after initial load)
-- Revalidates every hour to ensure fresh content
-- Combined with Vercel CDN caching (24 hours) for optimal performance
+- Full client-side interactivity for forms and calculations
+- CDN caching eliminates repeated cold starts
 - Stale-while-revalidate ensures users always get instant responses
+- No server-side rendering overhead for interactive pages
 
 ### 2. Next.js Configuration
 
@@ -111,11 +105,11 @@ Optimizations added:
 
 After these changes are deployed to Vercel:
 
-1. **First request** to each calculator page will warm the cache
-2. **All subsequent requests** will be served from cache instantly
-3. **CDN caching** serves pages globally with 24-hour cache
-4. **Stale-while-revalidate** ensures users never wait for updates
-5. **Hourly revalidation** keeps content fresh
+1. **CDN caching** serves pages globally with 24-hour cache
+2. **Stale-while-revalidate** ensures users never wait for updates (7 days)
+3. **Static assets** cached for 1 year with immutable flag
+4. **First visit** may have slight delay, subsequent visits are instant
+5. **Cache warming** happens automatically as users visit pages
 
 ## Monitoring
 

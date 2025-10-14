@@ -12,11 +12,6 @@ import Image from "next/image";
 
 type CalculatorState = "form" | "calculating";
 
-// Enable dynamic rendering with caching (handled by vercel.json)
-export const dynamic = 'auto';
-export const dynamicParams = true;
-export const revalidate = 3600; // Revalidate every hour
-
 export default function CalculatorPage() {
   const params = useParams();
   const router = useRouter();
