@@ -77,7 +77,7 @@ export function ServiceTypeSelector({ onServiceTypeSelect }: ServiceTypeSelector
             alt="HandyHands Logo" 
             width={240}
             height={96}
-            className="h-8 md:h-12 lg:h-16 w-auto"
+            className="h-10 md:h-12 lg:h-16 w-auto"
             priority
           />
         </div>

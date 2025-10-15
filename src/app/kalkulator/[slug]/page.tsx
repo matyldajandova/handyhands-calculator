@@ -112,7 +112,7 @@ export default function CalculatorPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background py-12 px-4">
+      <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background py-6 md:py-12 px-4">
         <div className="max-w-4xl mx-auto">
           {/* Clickable Logo */}
           <div className="flex justify-start items-center mb-8">
@@ -125,7 +125,7 @@ export default function CalculatorPage() {
                 alt="HandyHands Logo" 
                 width={240}
                 height={96}
-                className="h-8 md:h-12 w-auto"
+                className="h-10 md:h-12 w-auto"
                 priority
               />
             </button>

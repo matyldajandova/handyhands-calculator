@@ -302,7 +302,7 @@ export const residentialBuildingFormConfig: FormConfig = {
         {
           id: "undergroundFloors",
           type: "radio",
-          label: "Počet podzemních pater v domě určený k úklidu",
+          label: "Počet podzemních pater v domě určených k úklidu",
           required: true,
           layout: "vertical",
           options: [
@@ -387,7 +387,7 @@ export const residentialBuildingFormConfig: FormConfig = {
               required: true,
               layout: "vertical",
               options: [
-                { value: "standard", label: `Generální úklid domu 2x ročně`, coefficient: 1.0, note: "recommended" },
+                { value: "standard", label: `Generální úklid domu 2x ročně`, coefficient: 1.0, note: "frequent" },
                 { value: "quarterly", label: `Generální úklid domu 4x ročně`, coefficient: 1.0 },
                 { value: "annual", label: `Generální úklid domu 1x ročně`, coefficient: 1.0 }
               ]
@@ -525,10 +525,10 @@ export const residentialBuildingFormConfig: FormConfig = {
               required: true,
               inputType: "number",
               min: 0.1,
-              max: 10000,
+              max: 1000,
               step: 0.1,
               placeholder: "např. 150 m²",
-              description: "Zadejte hodnotu větší než 0 (max. 10 000 m²)",
+              description: "Zadejte hodnotu větší než 0 (max. 1 000 m²)",
               condition: { field: "communicationType", value: "area" }
             },
             {
@@ -538,10 +538,10 @@ export const residentialBuildingFormConfig: FormConfig = {
               required: true,
               inputType: "number",
               min: 0.1,
-              max: 10000,
+              max: 1000,
               step: 0.1,
               placeholder: "např. 50 m",
-              description: "Zadejte hodnotu větší než 0 (max. 10 000 m)",
+              description: "Zadejte hodnotu větší než 0 (max. 1 000 m)",
               condition: { field: "communicationType", value: "length" }
             },
             {

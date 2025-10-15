@@ -452,7 +452,7 @@ function PoptavkaContent() {
                 alt="HandyHands Logo" 
                 width={160}
                 height={64}
-                className="h-8 md:h-12 w-auto"
+                className="h-10 md:h-12 w-auto"
                 priority
               />
             </div>
@@ -525,7 +525,7 @@ function PoptavkaContent() {
             alt="HandyHands Logo" 
             width={160}
             height={64}
-            className="h-8 md:h-12 w-auto"
+            className="h-10 md:h-12 w-auto"
             priority
           />
         </motion.div>
@@ -536,7 +536,10 @@ function PoptavkaContent() {
           transition={{ delay: 0.1, duration: 0.6 }}
           className="mb-8"
         >
-          <h1 className="text-3xl font-bold text-foreground mb-4">Poptávka úklidových služeb</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Poptávka úklidových služeb</h1>
+          <p className="text-muted-foreground text-lg max-w-lg">
+            Abychom Vám mohli zaslat návrh smlouvy, budeme potřebovat od Vás několik údajů.
+          </p>
         </motion.div>
 
         {/* Service Information Card (when loaded from hash) */}

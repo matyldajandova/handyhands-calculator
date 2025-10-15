@@ -375,10 +375,10 @@ export const panelBuildingFormConfig: FormConfig = {
               required: true,
               inputType: "number",
               min: 0.1,
-              max: 10000,
+              max: 1000,
               step: 0.1,
               placeholder: "např. 150 m²",
-              description: "Zadejte hodnotu větší než 0 (max. 10 000 m²)",
+              description: "Zadejte hodnotu větší než 0 (max. 1 000 m²)",
               condition: { field: "communicationType", value: "area" }
             },
             {
@@ -388,10 +388,10 @@ export const panelBuildingFormConfig: FormConfig = {
               required: true,
               inputType: "number",
               min: 0.1,
-              max: 10000,
+              max: 1000,
               step: 0.1,
               placeholder: "např. 50 m",
-              description: "Zadejte hodnotu větší než 0 (max. 10 000 m)",
+              description: "Zadejte hodnotu větší než 0 (max. 1 000 m)",
               condition: { field: "communicationType", value: "length" }
             },
             {

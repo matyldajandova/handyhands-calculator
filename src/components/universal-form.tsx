@@ -88,7 +88,7 @@ export function MobileTooltip({ children, content }: { children: React.ReactNode
       <TooltipTrigger asChild onClick={() => setOpen(!open)}>
         {children}
       </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-xs">
+      <TooltipContent side="top">
         <p className="text-sm">{content}</p>
       </TooltipContent>
     </Tooltip>
@@ -203,7 +203,7 @@ function RadioFieldWithHiddenOptions({
           {option.note && (
             <Badge 
               variant="default"
-              className="text-xs bg-accent text-accent-foreground"
+              className="text-xs bg-orange-100 text-orange-800 border-orange-200"
             >
               {option.note === 'frequent' ? 'Nejvyužívanější' : 'Doporučeno'}
             </Badge>
@@ -796,7 +796,7 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
       )}
 
       <div className="mb-12">
-        <h1 className="scroll-m-20 text-4xl font-bold tracking-tight text-foreground font-heading mb-6">
+        <h1 className="scroll-m-20 text-4xl font-bold tracking-tight text-foreground font-heading mb-4">
           {config.title}
         </h1>
         <p className="text-muted-foreground text-xl leading-7 font-sans max-w-2xl">

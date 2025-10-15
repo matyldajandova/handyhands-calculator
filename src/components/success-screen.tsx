@@ -182,7 +182,7 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background py-4 md:py-12 px-2 md:px-4">
       <div className="w-full max-w-2xl mx-auto">
         {/* Clickable Logo */}
         <motion.div
@@ -200,7 +200,7 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
               alt="HandyHands Logo" 
               width={160}
               height={64}
-              className="h-8 md:h-10 w-auto"
+              className="h-10 md:h-12 w-auto"
               priority
             />
           </button>
@@ -213,7 +213,7 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
             transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
             className="flex justify-center mb-6"
           >
-            <CheckCircle className="h-20 w-20 text-green-success" />
+            <CheckCircle className="h-14 w-14 md:h-20 md:w-20 text-green-success" />
           </motion.div>
 
           <motion.div
@@ -237,13 +237,13 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
           className="mb-8"
         >
           <Card className="bg-card border shadow-lg">
-            <CardHeader>
+            <CardHeader className="px-3 md:px-6">
               <CardTitle className="flex items-center gap-2 justify-center">
                 <Building className="h-5 w-5 text-accent" />
                 Výsledek kalkulace
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 px-3 md:px-6">
               {/* Main Price Display */}
               <div className="text-center">
                 <div className="text-4xl font-bold text-accent mb-2">
@@ -315,6 +315,17 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
                 </div>
               )}
 
+              {/* PDF Download Section */}
+              <div className="pt-2">
+                <IdentificationStep 
+                  onDownloadPDF={handleDownloadPDF}
+                  isDownloading={isDownloading}
+                  isDownloaded={isDownloaded}
+                  initialData={customerData || undefined}
+                  onDataChange={handleFormDataChange}
+                />
+              </div>
+
               <Button 
                 onClick={() => {
                   // Get customer data from state or unified storage
@@ -355,21 +366,6 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
               </Button>
             </CardContent>
           </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.5 }}
-          className="space-y-4"
-        >
-          <IdentificationStep 
-            onDownloadPDF={handleDownloadPDF}
-            isDownloading={isDownloading}
-            isDownloaded={isDownloaded}
-            initialData={customerData || undefined}
-            onDataChange={handleFormDataChange}
-          />
         </motion.div>
         </div>
       </div>
