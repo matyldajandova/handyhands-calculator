@@ -148,13 +148,13 @@ const residentialBuildingSchema = z.object({
           path: ["basementCleaning"]
         });
       }
-    }
-    if (!data.basementCleaningDetails) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Vyberte rozsah úklidu suterénních prostor",
-        path: ["basementCleaningDetails"]
-      });
+      if (!data.basementCleaningDetails) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Vyberte rozsah úklidu suterénních prostor",
+          path: ["basementCleaningDetails"]
+        });
+      }
     }
   }
   
