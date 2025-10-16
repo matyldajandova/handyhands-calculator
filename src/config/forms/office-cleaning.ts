@@ -229,8 +229,8 @@ export const officeCleaningFormConfig: FormConfig = {
             { value: "2x-weekly", label: "2x týdně", coefficient: 1.67 },
             { value: "weekly", label: "1x týdně", coefficient: 1.0 },
             { value: "biweekly", label: "1x za 14 dní", coefficient: 0.75 },
-            { value: "daily-basic-weekly", label: "Každý pracovní den pouze vynášení košů + úklid WC a úklid podlah a povrchů 1x týdně", tooltip: "Každý pracovní den se provádí pouze vynášení košů a uklízí se WC. Úklid podlah a porvrchů se provádí jen 1x týdně.", coefficient: 2.5, hidden: true },
-            { value: "daily-basic-weekly-wc", label: "Každý pracovní den pouze vynášení košů a úklid podlah a povrchů včetně WC 1x týdně", tooltip: "Každý pracovní den se provádí pouze vynášení košů. Úklid WC, podlah a porvrchů se provádí jen 1x týdně.", coefficient: 2.0, hidden: true }
+            { value: "daily-basic-weekly", label: "Každý pracovní den pouze vynášení košů + úklid WC a úklid podlah a povrchů 1x týdně", tooltip: "Každý pracovní den se provádí pouze vynášení košů a uklízí se WC. Úklid podlah a povrchů se provádí jen 1x týdně.", coefficient: 2.5, hidden: true },
+            { value: "daily-basic-weekly-wc", label: "Každý pracovní den pouze vynášení košů a úklid podlah a povrchů včetně WC 1x týdně", tooltip: "Každý pracovní den se provádí pouze vynášení košů. Úklid WC, podlah a povrchů se provádí jen 1x týdně.", coefficient: 2.0, hidden: true }
           ]
         },
         {
