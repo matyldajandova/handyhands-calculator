@@ -618,18 +618,18 @@ function PoptavkaContent() {
                       {hashData.totalPrice.toLocaleString('cs-CZ')} Kč <span className="font-normal text-muted-foreground">za měsíc</span>
                     </p>
                     {/* Additional services line items */}
-                    {hashData.calculationData?.generalCleaningPrice && (
+                    {!!hashData.calculationData?.generalCleaningPrice && (
                       <p className="text-sm text-muted-foreground mt-1">
                         + {Math.round(hashData.calculationData.generalCleaningPrice / 10) * 10} Kč generální úklid ({hashData.calculationData.generalCleaningFrequency})
                       </p>
                     )}
-                    {hashData.calculationData?.winterServiceFee && (
+                    {!!hashData.calculationData?.winterServiceFee && (
                       <p className="text-sm text-muted-foreground mt-1">
                         + {hashData.calculationData.winterServiceFee} Kč zimní údržba (měsíčně{' '}
                         {hashData.calculationData?.winterPeriod && 
                           `od ${hashData.calculationData.winterPeriod.start.day}.${hashData.calculationData.winterPeriod.start.month}. do ${hashData.calculationData.winterPeriod.end.day}.${hashData.calculationData.winterPeriod.end.month}.`
                         })
-                        {hashData.calculationData?.winterCalloutFee && 
+                        {!!hashData.calculationData?.winterCalloutFee && 
                           ` / ${hashData.calculationData.winterCalloutFee} Kč za výjezd`
                         }
                       </p>
