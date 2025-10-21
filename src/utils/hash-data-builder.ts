@@ -48,7 +48,8 @@ export function buildPoptavkaHashData(options: HashDataBuilderOptions): Poptavka
       price: totalPrice,
       serviceTitle: formConfig?.title || serviceTitle,
       formData,
-      orderId: finalOrderId
+      orderId: finalOrderId,
+      winterPeriod: formConfig?.winterPeriod // Include winter period from config
     }
   };
 }

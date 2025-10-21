@@ -252,7 +252,7 @@ export const panelBuildingFormConfig: FormConfig = {
           id: "apartmentsPerFloor",
           type: "radio",
           label: "Orientační počet bytů na patře",
-          note: "Tento údaj můžete určit také tak, že celkový počet bytů v domě vydělíte počtem pater.",
+          note: "Tento údaj můžete určit také tak, že celkový počet bytů v domě vydělíte počtem pater. Nejčastěji bývají 3 byty na patře.",
           required: true,
           layout: "vertical",
           options: [

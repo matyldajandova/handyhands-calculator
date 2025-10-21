@@ -43,6 +43,8 @@ export async function POST(req: NextRequest) {
           propertyCity: customerAddress.split(',')[1] || '',
           propertyZipCode: customerAddress.split(',')[2] || ''
         } : {}),
+        // Include the start date from the PDF data to ensure consistency
+        serviceStartDate: data.startDate,
         // Include any additional form data that might be in the customer object
         // This will include company data, notes, etc. from the enhanced customer data
         ...(data.customer as Record<string, unknown>)

@@ -3,7 +3,8 @@
 import { useState, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { hashService } from "@/services/hash-service";
 import { orderStorage } from "@/services/order-storage";
 import { hashSubmissionService } from "@/services/hash-submission-service";
@@ -74,6 +75,7 @@ interface FormErrors {
 
 function PoptavkaContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
     lastName: "",
@@ -145,9 +147,45 @@ function PoptavkaContent() {
           
           // Always use 10 days from now for serviceStartDate unless it's explicitly in the hash data
           // (don't use old dates from localStorage)
+          // IMPORTANT: Ensure the date is always at least 10 days from now
+          const minDate = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
+          
           const serviceStartDate = hashFormData.serviceStartDate 
-            ? new Date(hashFormData.serviceStartDate as string)
-            : new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
+            ? (() => {
+                const dateStr = hashFormData.serviceStartDate as string;
+                let parsedDate: Date;
+                
+                // Handle Czech date format (DD. MM. YYYY)
+                if (dateStr.includes('. ')) {
+                  const parts = dateStr.split('. ');
+                  if (parts.length === 3) {
+                    const day = parseInt(parts[0], 10);
+                    const month = parseInt(parts[1], 10) - 1; // JavaScript months are 0-based
+                    const year = parseInt(parts[2], 10);
+                    parsedDate = new Date(year, month, day);
+                  } else {
+                    parsedDate = minDate;
+                  }
+                }
+                // Handle ISO date format (YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss.sssZ)
+                else if (dateStr.includes('-')) {
+                  const isoDate = dateStr.split('T')[0]; // Remove time part if present
+                  const [year, month, day] = isoDate.split('-').map(Number);
+                  parsedDate = new Date(Date.UTC(year, month - 1, day));
+                }
+                // Fallback to direct parsing
+                else {
+                  parsedDate = new Date(dateStr);
+                }
+                
+                // Ensure date is at least 10 days from now
+                if (parsedDate < minDate) {
+                  parsedDate = minDate;
+                }
+                
+                return parsedDate;
+              })()
+            : minDate;
           
           // Ensure all string fields are never undefined
           const safeFormData: FormData = {
@@ -447,14 +485,19 @@ function PoptavkaContent() {
           >
             {/* Brand Logo */}
             <div className="flex justify-center mb-8">
-              <Image 
-                src="/handyhands_horizontal.svg" 
-                alt="HandyHands Logo" 
-                width={160}
-                height={64}
-                className="h-10 md:h-12 w-auto"
-                priority
-              />
+              <button 
+                onClick={() => router.push('/')}
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+              >
+                <Image 
+                  src="/handyhands_horizontal.svg" 
+                  alt="HandyHands Logo" 
+                  width={160}
+                  height={64}
+                  className="h-10 md:h-12 w-auto"
+                  priority
+                />
+              </button>
             </div>
             
             <div className="flex items-center justify-center min-h-[60vh]">
@@ -483,7 +526,7 @@ function PoptavkaContent() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.4 }}
                 >
-                  Děkujeme za vaši poptávku. Brzy vás budeme kontaktovat s dalšími informacemi.
+                  Děkujeme za Vaši poptávku. Brzy vás budeme kontaktovat s dalšími informacemi.
                 </motion.p>
                 <motion.div 
                   className="flex flex-col gap-4 justify-center"
@@ -520,14 +563,19 @@ function PoptavkaContent() {
           transition={{ duration: 0.6 }}
           className="flex justify-between items-center mb-8"
         >
-          <Image 
-            src="/handyhands_horizontal.svg" 
-            alt="HandyHands Logo" 
-            width={160}
-            height={64}
-            className="h-10 md:h-12 w-auto"
-            priority
-          />
+          <button 
+            onClick={() => router.push('/')}
+            className="cursor-pointer hover:opacity-80 transition-opacity"
+          >
+            <Image 
+              src="/handyhands_horizontal.svg" 
+              alt="HandyHands Logo" 
+              width={160}
+              height={64}
+              className="h-10 md:h-12 w-auto"
+              priority
+            />
+          </button>
         </motion.div>
 
         <motion.div
@@ -568,6 +616,23 @@ function PoptavkaContent() {
                     <p className="text-2xl font-bold text-primary">
                       {hashData.totalPrice.toLocaleString('cs-CZ')} Kč <span className="font-normal text-muted-foreground">za měsíc</span>
                     </p>
+                    {/* Additional services line items */}
+                    {(hashData.calculationData as any)?.generalCleaningPrice && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        + {Math.round((hashData.calculationData as any).generalCleaningPrice / 10) * 10} Kč generální úklid ({(hashData.calculationData as any).generalCleaningFrequency})
+                      </p>
+                    )}
+                    {(hashData.calculationData as any)?.winterServiceFee && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        + {(hashData.calculationData as any).winterServiceFee} Kč zimní údržba (měsíčně{' '}
+                        {(hashData.calculationData as any)?.winterPeriod && 
+                          `od ${(hashData.calculationData as any).winterPeriod.start.day}.${(hashData.calculationData as any).winterPeriod.start.month}. do ${(hashData.calculationData as any).winterPeriod.end.day}.${(hashData.calculationData as any).winterPeriod.end.month}.`
+                        })
+                        {(hashData.calculationData as any)?.winterCalloutFee && 
+                          ` / ${(hashData.calculationData as any).winterCalloutFee} Kč za výjezd`
+                        }
+                      </p>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -965,15 +1030,17 @@ export default function PoptavkaPage() {
       <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background p-4 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto">
           <div className="mb-8">
-            <Image
-              src="/handyhands_horizontal.svg"
-              alt="HandyHands"
-              width={300}
-              height={90}
-              style={{ height: 'auto' }}
-              className="mx-auto"
-              priority
-            />
+            <Link href="/" className="cursor-pointer hover:opacity-80 transition-opacity inline-block">
+              <Image
+                src="/handyhands_horizontal.svg"
+                alt="HandyHands"
+                width={300}
+                height={90}
+                style={{ height: 'auto' }}
+                className="mx-auto"
+                priority
+              />
+            </Link>
           </div>
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <h1 className="text-xl font-semibold text-foreground mb-2">Načítání...</h1>

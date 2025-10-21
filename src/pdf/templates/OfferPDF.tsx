@@ -208,15 +208,35 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
                 <div style="font-size: 12px; font-weight: 600; color: #2e2e2e; margin-bottom: 4px;">
                   ❄️ Zimní údržba
                 </div>
-                <div style="font-size: 16px; font-weight: bold; color: #2e2e2e;">${data.winterServiceFee} Kč měsíčně</div>
-                <div style="font-size: 10px; color: #525252;">
-                  Pohotovost ${data.winterPeriod ? `od ${data.winterPeriod.start.day}.${data.winterPeriod.start.month}. do ${data.winterPeriod.end.day}.${data.winterPeriod.end.month}.` : '(Nov 15 - Mar 14)'}
-                </div>
-                ${data.winterCalloutFee ? `
-                  <div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid #D4D4D4;">
-                    <div style="font-size: 14px; font-weight: bold; color: #2e2e2e;">${data.winterCalloutFee} Kč za výjezd</div>
+                ${data.generalCleaningPrice ? `
+                  <!-- Side-by-side layout when general cleaning is present -->
+                  <div style="font-size: 16px; font-weight: bold; color: #2e2e2e;">${data.winterServiceFee} Kč měsíčně</div>
+                  <div style="font-size: 10px; color: #525252;">
+                    Pohotovost ${data.winterPeriod ? `od ${data.winterPeriod.start.day}.${data.winterPeriod.start.month}. do ${data.winterPeriod.end.day}.${data.winterPeriod.end.month}.` : '(Nov 15 - Mar 14)'}
                   </div>
-                ` : ''}
+                  ${data.winterCalloutFee ? `
+                    <div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid #D4D4D4;">
+                      <div style="font-size: 14px; font-weight: bold; color: #2e2e2e;">${data.winterCalloutFee} Kč za výjezd</div>
+                      <div style="font-size: 10px; color: #525252;">Cena je včetně posypového materiálu</div>
+                    </div>
+                  ` : ''}
+                ` : `
+                  <!-- Column layout when only winter cleaning is present -->
+                  <div style="display: flex; gap: 12px;">
+                    <div style="flex: 1;">
+                      <div style="font-size: 16px; font-weight: bold; color: #2e2e2e;">${data.winterServiceFee} Kč měsíčně</div>
+                      <div style="font-size: 10px; color: #525252;">
+                        Pohotovost ${data.winterPeriod ? `od ${data.winterPeriod.start.day}.${data.winterPeriod.start.month}. do ${data.winterPeriod.end.day}.${data.winterPeriod.end.month}.` : '(Nov 15 - Mar 14)'}
+                      </div>
+                    </div>
+                    ${data.winterCalloutFee ? `
+                      <div style="flex: 1; border-left: 1px solid #D4D4D4; padding-left: 12px;">
+                        <div style="font-size: 16px; font-weight: bold; color: #2e2e2e;">${data.winterCalloutFee} Kč za výjezd</div>
+                        <div style="font-size: 10px; color: #525252;">Cena je včetně posypového materiálu</div>
+                      </div>
+                    ` : ''}
+                  </div>
+                `}
               </div>
             </div>
           ` : ''}

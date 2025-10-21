@@ -319,7 +319,7 @@ export const residentialBuildingFormConfig: FormConfig = {
           label: "Orientační počet bytů na patře",
           required: true,
           layout: "vertical",
-          note: "Tento údaj můžete určitě také tak, že celkový počet bytů v domě vydělíte počtem pater.",
+          note: "Tento údaj můžete určit také tak, že celkový počet bytů v domě vydělíte počtem pater. Nejčastěji bývají 3 byty na patře.",
           options: [
             { value: "less-than-3", label: "Méně než 3 byty", coefficient: 0.95 },
             { value: "3", label: "3 byty", coefficient: 1.0 },

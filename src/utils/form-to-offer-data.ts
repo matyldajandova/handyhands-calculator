@@ -32,10 +32,61 @@ export function convertFormDataToOfferData(
   // Generate Q&A pairs directly from form structure
   const summaryItems = generateSummaryItems(formData, formConfig);
   
-  // Use customer-specified start date if available, otherwise default to 10 days from now
+  // Use customer-specified start date if available, otherwise check formData, otherwise default to 10 days from now
+  // IMPORTANT: Always ensure the date is at least 10 days from now
+  const minDate = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
+  
   const startDate = customerData?.startDate 
-    ? new Date(customerData.startDate).toLocaleDateString("cs-CZ")
-    : new Date(Date.now() + 10 * 86400000).toLocaleDateString("cs-CZ");
+    ? (() => {
+        // Handle both ISO date format (YYYY-MM-DD) and other formats
+        const dateStr = customerData.startDate;
+        let parsedDate: Date;
+        
+        if (dateStr.includes('-') && !dateStr.includes('T')) {
+          // ISO date format (YYYY-MM-DD)
+          const [year, month, day] = dateStr.split('-').map(Number);
+          parsedDate = new Date(Date.UTC(year, month - 1, day));
+        } else {
+          // Other formats, try to parse directly
+          parsedDate = new Date(dateStr);
+        }
+        
+        // Ensure date is at least 10 days from now
+        if (parsedDate < minDate) {
+          parsedDate = minDate;
+        }
+        
+        return parsedDate.toLocaleDateString("cs-CZ");
+      })()
+    : (formData as any)?.serviceStartDate
+    ? (() => {
+        // Handle serviceStartDate from formData (could be Date object or ISO string)
+        const dateValue = (formData as any).serviceStartDate;
+        let parsedDate: Date;
+        
+        if (dateValue instanceof Date) {
+          parsedDate = dateValue;
+        } else if (typeof dateValue === 'string') {
+          if (dateValue.includes('-') && !dateValue.includes('T')) {
+            // ISO date format (YYYY-MM-DD)
+            const [year, month, day] = dateValue.split('-').map(Number);
+            parsedDate = new Date(Date.UTC(year, month - 1, day));
+          } else {
+            // Other formats, try to parse directly
+            parsedDate = new Date(dateValue);
+          }
+        } else {
+          parsedDate = minDate;
+        }
+        
+        // Ensure date is at least 10 days from now
+        if (parsedDate < minDate) {
+          parsedDate = minDate;
+        }
+        
+        return parsedDate.toLocaleDateString("cs-CZ");
+      })()
+    : minDate.toLocaleDateString("cs-CZ");
   
   return {
     quoteDate: new Date().toLocaleDateString("cs-CZ"),
