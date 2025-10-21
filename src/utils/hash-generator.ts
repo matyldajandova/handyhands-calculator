@@ -1,9 +1,24 @@
+import { CalculationResult } from "@/types/form-types";
+
+export interface CalculationData extends CalculationResult {
+  formData?: Record<string, unknown>;
+  orderId?: string;
+  winterPeriod?: {
+    start: { day: number; month: number };
+    end: { day: number; month: number };
+  };
+  // Additional metadata fields
+  timestamp?: number;
+  price?: number;
+  serviceTitle?: string;
+}
+
 export interface PoptavkaHashData {
   serviceType: string;
   serviceTitle: string;
   totalPrice: number;
   currency: string;
-  calculationData?: Record<string, unknown>; // Detailed calculation data
+  calculationData?: CalculationData; // Detailed calculation data
 }
 
 /**

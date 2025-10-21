@@ -36,6 +36,9 @@ export function convertFormDataToOfferData(
   // IMPORTANT: Always ensure the date is at least 10 days from now
   const minDate = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
   
+  // Helper type to access serviceStartDate which may exist in formData
+  type FormDataWithStartDate = FormSubmissionData & { serviceStartDate?: string | Date };
+  
   const startDate = customerData?.startDate 
     ? (() => {
         // Handle both ISO date format (YYYY-MM-DD) and other formats
@@ -58,10 +61,10 @@ export function convertFormDataToOfferData(
         
         return parsedDate.toLocaleDateString("cs-CZ");
       })()
-    : (formData as any)?.serviceStartDate
+    : (formData as FormDataWithStartDate)?.serviceStartDate
     ? (() => {
         // Handle serviceStartDate from formData (could be Date object or ISO string)
-        const dateValue = (formData as any).serviceStartDate;
+        const dateValue = (formData as FormDataWithStartDate).serviceStartDate;
         let parsedDate: Date;
         
         if (dateValue instanceof Date) {

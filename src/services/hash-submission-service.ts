@@ -42,8 +42,10 @@ export const hashSubmissionService = {
       
       // For old hashes without order ID, generate one based on hash content
       // This ensures backward compatibility
-      if (decodedData?.calculationData) {
-        const { serviceType, totalPrice, timestamp } = decodedData.calculationData;
+      if (decodedData) {
+        const serviceType = decodedData.serviceType || 'unknown';
+        const totalPrice = decodedData.totalPrice || 0;
+        const timestamp = Date.now();
         const fallbackOrderId = `legacy_${serviceType}_${totalPrice}_${timestamp}`;
         return fallbackOrderId;
       }

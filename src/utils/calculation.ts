@@ -2,7 +2,6 @@ import { FormSubmissionData, FormConfig, FormField, RadioField, SelectField, Che
 import { generateOrderId } from "@/services/order-id-service";
 import { calculateOfficeCleaningPrice } from "./office-cleaning-calculation";
 import { FIXED_PRICES, getGeneralCleaningPrice } from "@/config/forms/residential-building";
-import { isWinterMaintenancePeriod } from "./date-utils";
 import { getRegionFromZipCode, getAvailableRegions } from "./zip-code-mapping";
 import { getFixedFeeForService } from "./regional-fixed-fees";
 
@@ -282,7 +281,6 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
   // Note: Fee is only charged during winter period (Nov 15 - Mar 14), but we always show it when selected
   let winterServiceFee = 0;
   let winterCalloutFee = 0;
-  const isWinterPeriod = isWinterMaintenancePeriod();
   
   if (formData.winterMaintenance === "yes") {
     // Winter service fee is a fixed price (not affected by inflation or coefficients)

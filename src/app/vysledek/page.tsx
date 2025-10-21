@@ -10,6 +10,7 @@ import * as Icons from "lucide-react";
 import Image from "next/image";
 import { getFormConfig } from "@/config/services";
 import { CalculationResult } from "@/types/form-types";
+import { CalculationData } from "@/utils/hash-generator";
 
 function VysledekContent() {
   const router = useRouter();
@@ -21,7 +22,7 @@ function VysledekContent() {
     serviceTitle: string;
     totalPrice: number;
     currency: string;
-    calculationData?: Record<string, unknown>;
+    calculationData?: CalculationData;
   } | null>(null);
 
 

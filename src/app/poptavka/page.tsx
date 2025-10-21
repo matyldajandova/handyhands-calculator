@@ -17,8 +17,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { User, Building, Check, ShieldCheck, CalendarIcon, ArrowLeftIcon } from "lucide-react";
-import { CalculationResult, FormConfig } from "@/types/form-types";
+import { FormConfig, CalculationResult } from "@/types/form-types";
 import { cn } from "@/lib/utils";
+import { CalculationData } from "@/utils/hash-generator";
 
 interface FormData {
   // Personal information
@@ -107,7 +108,7 @@ function PoptavkaContent() {
     serviceTitle: string;
     totalPrice: number;
     currency: string;
-    calculationData?: Record<string, unknown>;
+    calculationData?: CalculationData;
   } | null>(null);
 
   // Load hash data on component mount
@@ -243,15 +244,15 @@ function PoptavkaContent() {
             ...hashData,
             calculationData: {
               ...(hashData.calculationData || {}),
-              formData: {
-                ...(hashData.calculationData?.formData || {}),
-                // Preserve original notes, don't overwrite with poptavka notes
-                ...formData,
-                notes: (hashData.calculationData?.formData as Record<string, unknown>)?.notes || formData.notes
-              },
+                formData: {
+                  ...(hashData.calculationData?.formData || {}),
+                  // Preserve original notes, don't overwrite with poptavka notes
+                  ...formData,
+                  notes: hashData.calculationData?.formData?.notes || formData.notes
+                },
               // Preserve the original order ID
               orderId: hashData.calculationData?.orderId
-            }
+            } as CalculationData
           };
           
           const newHash = hashService.generateHash(enhancedHashData);
@@ -617,19 +618,19 @@ function PoptavkaContent() {
                       {hashData.totalPrice.toLocaleString('cs-CZ')} Kč <span className="font-normal text-muted-foreground">za měsíc</span>
                     </p>
                     {/* Additional services line items */}
-                    {(hashData.calculationData as any)?.generalCleaningPrice && (
+                    {hashData.calculationData?.generalCleaningPrice && (
                       <p className="text-sm text-muted-foreground mt-1">
-                        + {Math.round((hashData.calculationData as any).generalCleaningPrice / 10) * 10} Kč generální úklid ({(hashData.calculationData as any).generalCleaningFrequency})
+                        + {Math.round(hashData.calculationData.generalCleaningPrice / 10) * 10} Kč generální úklid ({hashData.calculationData.generalCleaningFrequency})
                       </p>
                     )}
-                    {(hashData.calculationData as any)?.winterServiceFee && (
+                    {hashData.calculationData?.winterServiceFee && (
                       <p className="text-sm text-muted-foreground mt-1">
-                        + {(hashData.calculationData as any).winterServiceFee} Kč zimní údržba (měsíčně{' '}
-                        {(hashData.calculationData as any)?.winterPeriod && 
-                          `od ${(hashData.calculationData as any).winterPeriod.start.day}.${(hashData.calculationData as any).winterPeriod.start.month}. do ${(hashData.calculationData as any).winterPeriod.end.day}.${(hashData.calculationData as any).winterPeriod.end.month}.`
+                        + {hashData.calculationData.winterServiceFee} Kč zimní údržba (měsíčně{' '}
+                        {hashData.calculationData?.winterPeriod && 
+                          `od ${hashData.calculationData.winterPeriod.start.day}.${hashData.calculationData.winterPeriod.start.month}. do ${hashData.calculationData.winterPeriod.end.day}.${hashData.calculationData.winterPeriod.end.month}.`
                         })
-                        {(hashData.calculationData as any)?.winterCalloutFee && 
-                          ` / ${(hashData.calculationData as any).winterCalloutFee} Kč za výjezd`
+                        {hashData.calculationData?.winterCalloutFee && 
+                          ` / ${hashData.calculationData.winterCalloutFee} Kč za výjezd`
                         }
                       </p>
                     )}
