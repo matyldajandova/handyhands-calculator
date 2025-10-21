@@ -112,7 +112,7 @@ export default function CalculatorPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background py-6 md:py-12 px-4">
+      <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background pt-6 pb-12 md:py-12 px-4">
         <div className="max-w-4xl mx-auto">
           {/* Clickable Logo */}
           <div className="flex justify-start items-center mb-8">

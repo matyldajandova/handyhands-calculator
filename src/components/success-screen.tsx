@@ -182,7 +182,7 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background py-4 md:py-12 px-2 md:px-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background pt-4 pb-12 md:py-12 px-4">
       <div className="w-full max-w-2xl mx-auto">
         {/* Clickable Logo */}
         <motion.div
@@ -234,7 +234,6 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 0.5 }}
-          className="mb-8"
         >
           <Card className="bg-card border shadow-lg">
             <CardHeader className="px-3 md:px-6">

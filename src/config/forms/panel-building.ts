@@ -236,6 +236,7 @@ export const panelBuildingFormConfig: FormConfig = {
           id: "entranceCount",
           type: "radio",
           label: "Počet jednotlivých vchodů (schodišť) v panelovém domě",
+          note: "Vchody se myslí jednotlivé vstupy do domu, zpravidla by měl mít každý vchod vlastní číslo orientační nebo číslo popisné.",
           required: true,
           layout: "vertical",
           options: [
@@ -337,7 +338,7 @@ export const panelBuildingFormConfig: FormConfig = {
           type: "alert" as const,
           variant: "default" as const,
           title: "Informace o zimní údržbě",
-          description: `Pro zimní údržbu platí pohotovost od 15. 11. do 14. 3. následujícího roku a v tomto období jsou prováděny výjezdy – úklidu sněhu nebo náledí. Úklid sněhu se provádí, pokud je minimální sněhová pokrývka výšky 2 cm. Měsíční poplatek za pohotovostní službu: 500 Kč/měsíc. Poplatek za výjezd: 50 Kč/běžný metr nebo 40 Kč/m² (min. 300 Kč, max. 2000 Kč za výjezd).`,
+          description: `Pro zimní údržbu platí pohotovost od 15. 11. do 14. 3. následujícího roku a v tomto období jsou prováděny výjezdy – úklidu sněhu nebo náledí. Úklid sněhu se provádí, pokud je minimální sněhová pokrývka výšky 1 až 2 cm. Měsíční poplatek za pohotovostní službu: 500 Kč/měsíc. Poplatek za výjezd: 50 Kč/běžný metr nebo 40 Kč/m² (min. 300 Kč, max. 2000 Kč za výjezd).`,
           icon: "Info"
         }] : []),
         {
@@ -347,7 +348,7 @@ export const panelBuildingFormConfig: FormConfig = {
           required: true,
           layout: "horizontal",
           options: [
-            { value: "yes", label: "Ano, mám zájem i o zimní údržbu kolem domu", tooltip: "Pro zimní údržbu platí pohotovost vždy v kalendářním roce od 15. 11. do 14. 3. následujícího roku a v tomto období jsou prováděny výjezdy – úklidu sněhu nebo náledí. Úklid sněhu se provádí, pokud je minimální sněhová pokrývka výšky 2 cm. V jednom dni je možné provést maximálně 2 výjezdy (většinou ráno a poté odpoledne nebo večer). V případě úklidu chodníků se vždy provádí schůdná cestička na šířku kočárku – cca 75 cm." },
+            { value: "yes", label: "Ano, mám zájem i o zimní údržbu kolem domu", tooltip: "Pro zimní údržbu platí pohotovost vždy v kalendářním roce od 15. 11. do 14. 3. následujícího roku a v tomto období jsou prováděny výjezdy – úklidu sněhu nebo náledí. Úklid sněhu se provádí, pokud je minimální sněhová pokrývka výšky 1 až 2 cm. V jednom dni je možné provést maximálně 2 výjezdy (většinou ráno a poté odpoledne nebo večer). V případě úklidu chodníků se vždy provádí schůdná cestička na šířku kočárku – cca 75 cm." },
             { value: "no", label: "Ne" }
           ]
         },
@@ -420,7 +421,7 @@ export const panelBuildingFormConfig: FormConfig = {
         {
           id: "optionalServicesWeekly",
           type: "checkbox",
-          label: "1x týdně",
+          label: "Při každém úklidu",
           required: false,
           options: [
             { value: "remove-debris", label: "Odstranění hrubých nečistot kolem domu (+200 Kč/měsíc)", fixedAddon: 200 },
