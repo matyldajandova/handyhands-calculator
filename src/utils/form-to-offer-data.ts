@@ -65,7 +65,14 @@ export function convertFormDataToOfferData(
     notes: typeof formData.notes === 'string' ? formData.notes : undefined, // Original note from calculation form
     poptavkaNotes: customerData?.notes || undefined, // Poptávka-specific note
     conditions: formConfig.conditions || [],
-    commonServices: formConfig.commonServices
+    commonServices: formConfig.commonServices,
+    // Add general cleaning pricing (displayed separately from monthly price)
+    generalCleaningPrice: calculationResult.generalCleaningPrice,
+    generalCleaningFrequency: calculationResult.generalCleaningFrequency,
+    // Add winter maintenance pricing (displayed separately from monthly price)
+    winterServiceFee: calculationResult.winterServiceFee,
+    winterCalloutFee: calculationResult.winterCalloutFee,
+    winterPeriod: formConfig.winterPeriod
   };
 }
 

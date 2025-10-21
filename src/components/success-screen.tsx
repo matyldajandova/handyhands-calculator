@@ -2,7 +2,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Building } from "lucide-react";
+import { CheckCircle, Building, Plus, Sparkles, Snowflake, Info } from "lucide-react";
 import { CalculationResult, FormConfig, FormSubmissionData } from "@/types/form-types";
 import { isWinterMaintenancePeriod } from "@/utils/date-utils";
 import { IdentificationStep } from "@/components/identification-step";
@@ -256,49 +256,83 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
 
               {/* General Cleaning Price (if applicable) */}
               {roundedResults.generalCleaningPrice && (
-                <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <div className="text-center">
-                    <div className="text-lg font-semibold text-blue-700 dark:text-blue-300 mb-2">
+                <div className="p-4 bg-card dark:bg-card rounded-lg border border-border relative">
+                  {/* Plus Icon */}
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-grey-800 dark:bg-slate-200 rounded-full p-1.5">
+                    <Plus className="h-3 w-3 text-white dark:text-slate-800" strokeWidth={3} />
+                  </div>
+                  
+                  <div className="text-center pt-2">
+                    <div className="text-lg font-semibold text-foreground dark:text-slate-300 mb-2 flex items-center justify-center gap-2">
+                      <Sparkles className="h-5 w-5 text-grey-500" />
                       Generální úklid domu
                     </div>
-                    <div className="text-2xl font-bold text-blue-800 dark:text-blue-200">
+                    <div className="text-2xl font-bold text-foreground dark:text-slate-200">
                       {formatCurrency(roundedResults.generalCleaningPrice)}
                     </div>
-                    <div className="text-sm text-blue-600 dark:text-blue-400">
-                      {calculationResult.generalCleaningFrequency} za provedený úklid
+                    <div className="text-sm text-muted-foreground dark:text-slate-400">
+                      {calculationResult.generalCleaningFrequency} za každý provedený úklid
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Winter Service Fee (if applicable and in winter period) */}
-              {calculationResult.winterServiceFee && isWinterMaintenancePeriod() && (
-                <div className="p-4 bg-slate-50 dark:bg-slate-950/20 rounded-lg border border-slate-200 dark:border-slate-800">
-                  <div className="text-center">
-                    <div className="text-lg font-semibold text-slate-700 dark:text-slate-300">
-                      + Zimní údržba
-                    </div>
-                    <div className="text-2xl font-bold text-slate-800 dark:text-slate-200">
-                      {formatCurrency(calculationResult.winterServiceFee)} měsíčně
-                    </div>
-                      <div className="text-sm text-slate-600 dark:text-slate-400">
-                        v období od {formConfig?.winterPeriod?.start.day}. {formConfig?.winterPeriod?.start.month}. do {formConfig?.winterPeriod?.end.day}. {formConfig?.winterPeriod?.end.month}. následujícího roku
-                      </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-500 mt-1">
-                      (tato položka platí pouze v zimních měsících)
+              {/* Winter Service Fees (if applicable) */}
+              {calculationResult.winterServiceFee && (
+                <div className="p-4 bg-card dark:bg-card rounded-lg border border-border relative">
+                  {/* Plus Icon */}
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-grey-800 dark:bg-slate-200 rounded-full p-1.5">
+                    <Plus className="h-3 w-3 text-white dark:text-slate-800" strokeWidth={3} />
+                  </div>
+                  
+                  <div className="text-center mb-3 pt-2">
+                    <div className="text-lg font-semibold text-foreground dark:text-slate-300 flex items-center justify-center gap-2">
+                      <Snowflake className="h-5 w-5 text-grey-500" />
+                      Zimní údržba
                     </div>
                   </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Standby Fee */}
+                    <div className="text-center">
+                      <div className="text-xl font-bold text-foreground dark:text-slate-200">
+                        {formatCurrency(calculationResult.winterServiceFee)} měsíčně
+                      </div>
+                      <div className="text-sm text-muted-foreground dark:text-slate-400">
+                        Pohotovost
+                      </div>
+                    </div>
+                    
+                    {/* Call-out Fee */}
+                    {calculationResult.winterCalloutFee && (
+                      <div className="text-center md:border-l border-border dark:border-slate-700">
+                        <div className="text-xl font-bold text-foreground dark:text-slate-200">
+                          {formatCurrency(calculationResult.winterCalloutFee)} za výjezd
+                        </div>
+                        <div className="text-sm text-muted-foreground dark:text-slate-400">
+                          Cena za každý výjezd
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {!isWinterMaintenancePeriod() && (
+                    <div className="text-sm text-muted-foreground dark:text-slate-500 mt-3 text-center italic">
+                      Pohotovost se účtuje pouze v měsících od {formConfig?.winterPeriod?.start.day}. {formConfig?.winterPeriod?.start.month}. do {formConfig?.winterPeriod?.end.day}. {formConfig?.winterPeriod?.end.month}.
+                    </div>
+                  )}
                 </div>
               )}
               
               {/* Conditions */}
               {formConfig?.conditions && formConfig.conditions.length > 0 && (
-                <div className="p-4 bg-muted rounded-lg border">
+                <div className="p-4 bg-primary-light dark:bg-orange-950/20 rounded-lg border border-primary/30 dark:border-orange-800">
                   <div className="text-left">
-                    <h4 className="font-semibold text-foreground mb-2">
+                    <h4 className="font-semibold text-grey-900 dark:text-orange-200 mb-2 flex items-center gap-2">
+                      <Info className="h-5 w-5 text-primary" />
                       Podmínky uvedené ceny:
                     </h4>
-                    <ul className="text-sm text-muted-foreground space-y-1">
+                    <ul className="text-sm text-grey-800 dark:text-orange-100 space-y-1">
                       {formConfig.conditions
                         .filter((condition) => {
                           // Hide general cleaning condition if not selected

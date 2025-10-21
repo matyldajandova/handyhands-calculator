@@ -1,7 +1,7 @@
 import { FormSubmissionData, FormConfig, FormField, RadioField, SelectField, CheckboxField, CalculationResult } from "@/types/form-types";
 import { generateOrderId } from "@/services/order-id-service";
 import { calculateOfficeCleaningPrice } from "./office-cleaning-calculation";
-import { FIXED_PRICES } from "@/config/forms/residential-building";
+import { FIXED_PRICES, getGeneralCleaningPrice } from "@/config/forms/residential-building";
 import { isWinterMaintenancePeriod } from "./date-utils";
 import { getRegionFromZipCode, getAvailableRegions } from "./zip-code-mapping";
 import { getFixedFeeForService } from "./regional-fixed-fees";
@@ -230,67 +230,60 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
   let generalCleaningFrequency: string | undefined;
 
   if (formData.generalCleaning === "yes" && formData.generalCleaningType) {
-    // Get base general cleaning price from config or use default
-    const generalCleaningField = findFieldInConfig(formConfig, 'generalCleaningType');
-    if (generalCleaningField && generalCleaningField.type === 'radio') {
-      const radioField = generalCleaningField as RadioField;
-      const selectedOption = radioField.options.find(opt => opt.value === formData.generalCleaningType);
-      
-      if (selectedOption) {
-        // Extract price from label if it contains price information
-        const priceMatch = selectedOption.label.match(/(\d+(?:\.\d+)?)\s*Kč/);
-        if (priceMatch) {
-          const baseGeneralPrice = parseFloat(priceMatch[1]);
-          let generalCoefficient = 1.0;
+    // For residential buildings with separate general cleaning prices
+    const baseGeneralPrice = getGeneralCleaningPrice(formData.generalCleaningType as string);
+    let generalCoefficient = 1.0;
 
-          // Apply additional coefficients for general cleaning
-          if (calculationData.windowsPerFloor) {
-            const windowsCoefficient = getCoefficientFromConfig(formConfig, 'windowsPerFloor', calculationData.windowsPerFloor);
-            generalCoefficient *= windowsCoefficient;
-          }
+    // Apply additional coefficients for general cleaning
+    if (calculationData.windowsPerFloor) {
+      const windowsCoefficient = getCoefficientFromConfig(formConfig, 'windowsPerFloor', calculationData.windowsPerFloor);
+      generalCoefficient *= windowsCoefficient;
+    }
 
-          if (calculationData.floorsWithWindows) {
-            const floorsCoefficient = getCoefficientFromConfig(formConfig, 'floorsWithWindows', calculationData.floorsWithWindows);
-            generalCoefficient *= floorsCoefficient;
-          }
+    if (calculationData.floorsWithWindows) {
+      const floorsCoefficient = getCoefficientFromConfig(formConfig, 'floorsWithWindows', calculationData.floorsWithWindows);
+      generalCoefficient *= floorsCoefficient;
+    }
 
-          if (calculationData.windowType) {
-            const windowTypeCoefficient = getCoefficientFromConfig(formConfig, 'windowType', calculationData.windowType);
-            generalCoefficient *= windowTypeCoefficient;
-          }
+    if (calculationData.windowType) {
+      const windowTypeCoefficient = getCoefficientFromConfig(formConfig, 'windowType', calculationData.windowType);
+      generalCoefficient *= windowTypeCoefficient;
+    }
 
-          if (calculationData.basementCleaning && calculationData.undergroundFloors && Number(calculationData.undergroundFloors) > 0) {
-            const basementCoefficient = getCoefficientFromConfig(formConfig, 'basementCleaning', calculationData.basementCleaning);
-            generalCoefficient *= basementCoefficient;
-          }
+    if (calculationData.basementCleaning && calculationData.undergroundFloors && Number(calculationData.undergroundFloors) > 0) {
+      const basementCoefficient = getCoefficientFromConfig(formConfig, 'basementCleaning', calculationData.basementCleaning);
+      generalCoefficient *= basementCoefficient;
+    }
 
-          generalCleaningPrice = Math.round(baseGeneralPrice * generalCoefficient * 10) / 10;
-          
-          // Extract frequency from label
-          if (selectedOption.label.includes('2x ročně')) {
-            generalCleaningFrequency = '2x ročně';
-          } else if (selectedOption.label.includes('1x ročně')) {
-            generalCleaningFrequency = '1x ročně';
-          } else if (selectedOption.label.includes('4x ročně')) {
-            generalCleaningFrequency = '4x ročně';
-          }
-        }
-      }
+    if (calculationData.basementCleaningDetails) {
+      const basementDetailsCoefficient = getCoefficientFromConfig(formConfig, 'basementCleaningDetails', calculationData.basementCleaningDetails);
+      generalCoefficient *= basementDetailsCoefficient;
+    }
+
+    generalCleaningPrice = Math.round(baseGeneralPrice * generalCoefficient * 10) / 10;
+    
+    // Set frequency based on type
+    if (formData.generalCleaningType === 'standard') {
+      generalCleaningFrequency = '2x ročně';
+    } else if (formData.generalCleaningType === 'annual') {
+      generalCleaningFrequency = '1x ročně';
+    } else if (formData.generalCleaningType === 'quarterly') {
+      generalCleaningFrequency = '4x ročně';
     }
   }
 
-  // Add winter service fee if winter maintenance is selected AND we're in winter period
+  // Add winter service fee if winter maintenance is selected
+  // Note: Fee is only charged during winter period (Nov 15 - Mar 14), but we always show it when selected
   let winterServiceFee = 0;
-  if (formData.winterMaintenance === "yes" && isWinterMaintenancePeriod()) {
+  let winterCalloutFee = 0;
+  const isWinterPeriod = isWinterMaintenancePeriod();
+  
+  if (formData.winterMaintenance === "yes") {
     // Winter service fee is a fixed price (not affected by inflation or coefficients)
     winterServiceFee = FIXED_PRICES.winterService;
+    winterCalloutFee = FIXED_PRICES.winterCallout;
     
-    appliedCoefficients.push({
-      field: 'winterMaintenance',
-      label: 'Zimní služby (pohotovostní služba)',
-      coefficient: 1,
-      impact: winterServiceFee
-    });
+    // Note: Winter fees are shown separately, not added to appliedCoefficients or totalMonthlyPrice
   }
 
   // Add fixed regional fees for one-time cleaning, home cleaning (hourly only) and handyman services
@@ -321,10 +314,11 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
     }
   }
 
-  // Calculate total monthly price (including winter service fee and regional fixed fee)
+  // Calculate total monthly price
   // Note: regularCleaningPrice already includes regional coefficients applied to base price
   // regionalFixedFee is added on top as a fixed amount (not affected by coefficients or inflation)
-  const totalMonthlyPrice = regularCleaningPrice + winterServiceFee + regionalFixedFee;
+  // winterServiceFee and generalCleaningPrice are shown separately and NOT included in monthly price
+  const totalMonthlyPrice = regularCleaningPrice + regionalFixedFee;
 
   return {
     regularCleaningPrice,
@@ -332,6 +326,7 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
     generalCleaningFrequency,
     totalMonthlyPrice,
     winterServiceFee: winterServiceFee > 0 ? winterServiceFee : undefined,
+    winterCalloutFee: winterCalloutFee > 0 ? winterCalloutFee : undefined,
     orderId,
     calculationDetails: {
       basePrice,

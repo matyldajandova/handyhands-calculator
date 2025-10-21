@@ -14,7 +14,8 @@ const BASE_PRICES = {
 
 // Fixed prices (not affected by inflation or coefficients)
 const FIXED_PRICES = {
-  winterService: 500 // Monthly fee for winter on-call service (Nov 15 - Mar 14) - FIXED PRICE
+  winterService: 500, // Monthly fee for winter on-call service (Nov 15 - Mar 14) - FIXED PRICE
+  winterCallout: 600  // Fee per call-out for winter maintenance - FIXED PRICE
 };
 
 const INFLATION_RATE = 0.04; // 4% annual inflation
@@ -626,8 +627,23 @@ export const residentialBuildingFormConfig: FormConfig = {
         }
       ]
     }
-  ]
+  ],
+  winterPeriod: {
+    start: { day: 15, month: 11 },
+    end: { day: 14, month: 3 }
+  }
 };
 
 // Export the calculation functions and prices for use in the calculation logic
 export { BASE_PRICES, CURRENT_PRICES, FIXED_PRICES, getInflationAdjustedPrice, INFLATION_RATE, INFLATION_START_YEAR };
+
+// Export general cleaning price getter for use in calculation
+export function getGeneralCleaningPrice(type: string): number {
+  const prices = CURRENT_PRICES.generalCleaning;
+  switch(type) {
+    case 'standard': return prices.standard;
+    case 'annual': return prices.annual;
+    case 'quarterly': return prices.quarterly;
+    default: return prices.standard;
+  }
+}

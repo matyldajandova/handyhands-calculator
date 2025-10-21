@@ -9,7 +9,8 @@ const BASE_PRICES = {
 
 // Fixed prices (not affected by inflation or coefficients)
 const FIXED_PRICES = {
-  winterService: 500 // Monthly fee for winter on-call service (Nov 15 - Mar 14) - FIXED PRICE
+  winterService: 500, // Monthly fee for winter on-call service (Nov 15 - Mar 14) - FIXED PRICE
+  winterCallout: 600  // Fee per call-out for winter maintenance - FIXED PRICE
 };
 
 const INFLATION_RATE = 0.04; // 4% annual inflation
@@ -476,7 +477,11 @@ export const panelBuildingFormConfig: FormConfig = {
         }
       ]
     }
-  ]
+  ],
+  winterPeriod: {
+    start: { day: 15, month: 11 },
+    end: { day: 14, month: 3 }
+  }
 };
 
 // Export the calculation functions and prices for use in the calculation logic

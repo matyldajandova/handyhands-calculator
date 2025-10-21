@@ -40,12 +40,17 @@
   --color-green-success: var(--green-success);
   --color-green-light: var(--green-light);
   --color-green-dark: var(--green-dark);
+  --color-primary-light: var(--primary-light);
+  --color-blue: var(--blue);
+  --color-blue-light: var(--blue-light);
   --color-pure-white: var(--pure-white);
   --color-grey-50: var(--grey-50);
   --color-grey-100: var(--grey-100);
   --color-grey-200: var(--grey-200);
   --color-grey-300: var(--grey-300);
+  --color-grey-500: var(--grey-500);
   --color-grey-600: var(--grey-600);
+  --color-grey-700: var(--grey-700);
   --color-grey-800: var(--grey-800);
   --color-grey-900: var(--grey-900);
   --radius-sm: calc(var(--radius) - 4px);
@@ -58,8 +63,11 @@
   --radius: 0.625rem;
   
   /* Custom Color Palette - Simplified */
-  --primary-color: #f6a85a;         /* Primary color */
+  --primary-color: #f6a85a;         /* Primary color (orange) */
   --primary-dark: #BF7D39;          /* Darker primary for contrast/checkboxes/radios */
+  --primary-light: #ffecd6;         /* Light orange for backgrounds */
+  --blue: #5A9FF6;                  /* Blue for winter maintenance */
+  --blue-light: #E3F2FD;            /* Light blue background */
   --green-success: #10B981;         /* Clean green for success states */
   --green-light: #34D399;           /* Lighter green for success accents */
   --green-dark: #059669;            /* Darker green for success hover */
@@ -68,7 +76,9 @@
   --grey-100: #F5F5F5;              /* Light grey for cards/sections */
   --grey-200: #E5E5E5;              /* Light grey for borders */
   --grey-300: #D4D4D4;              /* Medium light grey */
+  --grey-500: #A0A0A0;              /* Medium grey for icons/subtle elements */
   --grey-600: #525252;              /* Medium grey for text */
+  --grey-700: #404040;              /* Darker grey for text */
   --grey-800: #2e2e2e;              /* New black for primary text */
   --grey-900: #2e2e2e;              /* New black for headings */
   

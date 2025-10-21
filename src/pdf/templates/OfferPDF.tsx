@@ -28,6 +28,13 @@ export type OfferData = {
   poptavkaHash?: string;
   // Flag to indicate if this is a poptavka submission (affects Google Drive folder)
   isPoptavka?: boolean;
+  // General cleaning pricing (displayed separately)
+  generalCleaningPrice?: number;
+  generalCleaningFrequency?: string;
+  // Winter maintenance pricing (displayed separately)
+  winterServiceFee?: number;
+  winterCalloutFee?: number;
+  winterPeriod?: { start: { day: number; month: number }; end: { day: number; month: number } };
 };
 /**
  * Returns the HTML body markup for the Offer PDF using Tailwind classes.
@@ -150,33 +157,75 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
       ` : ""}
     </section>
 
-    <section class="mt-8" style="page-break-inside: avoid;">
+    <section class="mt-6">
       <div class="font-bold">2. Celková cena pravidelného úklidu</div>
-      <div class="hh-divider mt-2"></div>
-      <div class="grid grid-cols-2 gap-6 mt-6">
-        <div>
-          <div class="text-2xl font-bold text-primary-pdf">${Number(data.price).toLocaleString("cs-CZ")} Kč / měsíc</div>
-          <div class="text-muted-foreground">Celková částka pravidelného úklidu bytového domu</div>
-          <div class="hh-small hh-muted">(tj. včetně níže popsaných náležitostí)</div>
-        </div>
-        <div>
-          <div class="text-2xl font-bold">${escapeHtml(data.startDate)}</div>
-          <div class="text-muted-foreground">S úklidovými službami jsme schopni začít od tohoto dne</div>
+      <div class="hh-divider mt-1"></div>
+      
+      <!-- Main pricing section -->
+      <div class="mt-4">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+          <div>
+            <div class="text-2xl font-bold text-primary-pdf">${Number(data.price).toLocaleString("cs-CZ")} Kč <span style="color: #000000; font-weight: normal;">za měsíc</span></div>
+            <div class="text-muted-foreground">Celková částka pravidelného úklidu bytového domu</div>
+            <div class="hh-small hh-muted">(tj. včetně níže popsaných náležitostí)</div>
+            <div class="text-muted-foreground" style="font-size: 14px; margin-top: 8px;">S úklidovými službami jsme schopni začít od <span style="font-weight: bold;">${escapeHtml(data.startDate)}</span></div>
+          </div>
           ${data.poptavkaHash ? `
-            <div class="mt-4">
+            <div>
               <a href="${baseUrl}/poptavka?hash=${escapeHtml(data.poptavkaHash)}" 
-                 class="font-bold inline-flex items-center gap-1 text-primary-dark-pdf">
+                 style="display: inline-block; padding: 8px 16px; background-color: #f6a85a; border: 2px solid #f6a85a; border-radius: 4px; text-decoration: none; font-weight: bold; color: #000000; font-size: 14px;">
                 Závazná poptávka
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                </svg>
               </a>
             </div>
           ` : ''}
         </div>
       </div>
+
+      <!-- Additional services - compact horizontal layout -->
+      ${data.generalCleaningPrice || data.winterServiceFee ? `
+        <div class="mt-4" style="display: flex; gap: 12px; flex-wrap: wrap;">
+          ${data.generalCleaningPrice ? `
+            <div style="${data.winterServiceFee ? 'flex: 1; min-width: 200px;' : 'width: 100%;'} padding: 8px; background-color: #ffffff; border: 1px solid #D4D4D4; border-radius: 4px; position: relative;">
+              <div style="position: absolute; top: -8px; left: 50%; transform: translateX(-50%); background-color: #2e2e2e; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;">
+                <span style="color: #ffffff; font-size: 12px; font-weight: bold; line-height: 1;">+</span>
+              </div>
+              <div style="text-align: center; padding-top: 4px;">
+                <div style="font-size: 12px; font-weight: 600; color: #2e2e2e; margin-bottom: 4px;">
+                  ✨ Generální úklid domu
+                </div>
+                <div style="font-size: 16px; font-weight: bold; color: #2e2e2e;">${Math.round(data.generalCleaningPrice / 10) * 10} Kč</div>
+                <div style="font-size: 10px; color: #525252;">${data.generalCleaningFrequency || ''} za každý provedený úklid</div>
+              </div>
+            </div>
+          ` : ''}
+          
+          ${data.winterServiceFee ? `
+            <div style="${data.generalCleaningPrice ? 'flex: 1; min-width: 200px;' : 'width: 100%;'} padding: 8px; background-color: #ffffff; border: 1px solid #D4D4D4; border-radius: 4px; position: relative;">
+              <div style="position: absolute; top: -8px; left: 50%; transform: translateX(-50%); background-color: #2e2e2e; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;">
+                <span style="color: #ffffff; font-size: 12px; font-weight: bold; line-height: 1;">+</span>
+              </div>
+              <div style="text-align: center; padding-top: 4px;">
+                <div style="font-size: 12px; font-weight: 600; color: #2e2e2e; margin-bottom: 4px;">
+                  ❄️ Zimní údržba
+                </div>
+                <div style="font-size: 16px; font-weight: bold; color: #2e2e2e;">${data.winterServiceFee} Kč měsíčně</div>
+                <div style="font-size: 10px; color: #525252;">
+                  Pohotovost ${data.winterPeriod ? `od ${data.winterPeriod.start.day}.${data.winterPeriod.start.month}. do ${data.winterPeriod.end.day}.${data.winterPeriod.end.month}.` : '(Nov 15 - Mar 14)'}
+                </div>
+                ${data.winterCalloutFee ? `
+                  <div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid #D4D4D4;">
+                    <div style="font-size: 14px; font-weight: bold; color: #2e2e2e;">${data.winterCalloutFee} Kč za výjezd</div>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      ` : ''}
+
+      
       ${renderConditionsSection(data.conditions)}
-      <p class="mt-6 hh-muted hh-small">Cena obsahuje pravidelný týdenní, měsíční a generální úklid 2x ročně, dopravu pracovníků na místo úklidových prací, pojištění odpovědnosti do výše 5 mil. Kč, běžné úklidové prostředky a vlastní úklidové náčiní.</p>
+      <p class="mt-4 hh-muted hh-small">Cena obsahuje pravidelný týdenní, měsíční a generální úklid 2x ročně, dopravu pracovníků na místo úklidových prací, pojištění odpovědnosti do výše 5 mil. Kč, běžné úklidové prostředky a vlastní úklidové náčiní.</p>
       <p class="hh-muted hh-small">Ostatní práce nad rámec smlouvy (např. úklid po řemeslnících, výjezd na vyžádání apod.): 345 Kč / hod. za pracovníka.</p>
       <p class="hh-muted hh-small">Nejsme plátci DPH. Úklidové práce provádějí vždy naši stálí pracovníci.</p>
 
@@ -287,13 +336,16 @@ function renderConditionsSection(conditions?: string[]): string {
   if (!conditions || conditions.length === 0) return "";
   
   const conditionsList = conditions
-    .map(condition => `<li class="text-sm">${escapeHtml(condition)}</li>`)
+    .map(condition => `<li class="text-sm" style="color: #2e2e2e;">${escapeHtml(condition)}</li>`)
     .join("");
   
   return `
-    <div class="mt-6">
-      <div class="font-semibold mb-2">Podmínky poskytování služeb:</div>
-      <ul class="list-outside list-disc ml-6 space-y-1 marker:text-primary-pdf">
+    <div class="mt-4 p-2 rounded" style="background-color: #ffecd6; border: 1px solid rgba(246, 168, 90, 0.3);">
+      <div class="font-semibold mb-1" style="color: #2e2e2e; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+        <span style="color: #f6a85a; font-size: 14px;">ℹ️</span>
+        Podmínky uvedené ceny:
+      </div>
+      <ul class="list-outside list-disc ml-4 space-y-0.5" style="list-style-type: disc;">
         ${conditionsList}
       </ul>
     </div>
