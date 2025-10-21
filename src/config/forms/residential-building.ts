@@ -379,8 +379,8 @@ export const residentialBuildingFormConfig: FormConfig = {
             { 
               value: "post1945", 
               label: "Dům postavený po roce 1945", 
-              coefficient: 0.90,
-              tooltip: "Jedná se o činžovní bytové domy postavené po druhé světové válce (nebo těsně před ní), které se vyznačují menšími konstrukčními výškami jednotlivých pater (kolem 3 m) Jedná se o předchůdce dnešních panelových domů. Jsou vystavěny zejména v období funkcionalismu nebo sorely. Mají většinou ploché střechy a např. v Praze se vyskytují v částech sídliště Zelená liška, sídliště Solidarita atd."
+              coefficient: 0.935,
+              tooltip: "Jedná se o činžovní bytové domy postavené po druhé světové válce (nebo těsně před ní), které se vyznačují menšími konstrukčními výškami jednotlivých pater (kolem 3 m) Jedná se o předchůdce dnešních panelových domů. Jsou vystavěny zejména v období funkcionalismu nebo sorely. Mají většinou ploché střechy a např. v Praze se vyskytují v částech sídliště Zelená liška, sídliště Solidarita atd. Dále to jsou všechny novostavby, kde je konstrukční výška podlaží kolem 3 m standardem."
             }
           ]
         }

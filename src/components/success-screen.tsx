@@ -310,7 +310,7 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
                           {formatCurrency(calculationResult.winterCalloutFee)} za výjezd
                         </div>
                         <div className="text-sm text-muted-foreground dark:text-slate-400">
-                          Cena za každý výjezd
+                          Cena je včetně posypového materiálu
                         </div>
                       </div>
                     )}
