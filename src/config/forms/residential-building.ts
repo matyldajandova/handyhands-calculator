@@ -24,7 +24,7 @@ const INFLATION_START_YEAR = 2026;
 // Calculate inflation-adjusted prices
 function getInflationAdjustedPrice(basePrice: number, targetYear: number = new Date().getFullYear()): number {
   if (targetYear < INFLATION_START_YEAR) return basePrice;
-  const yearsDiff = targetYear - INFLATION_START_YEAR;
+  const yearsDiff = targetYear - INFLATION_START_YEAR + 1; // +1 to apply inflation starting from 2026
   return basePrice * Math.pow(1 + INFLATION_RATE, yearsDiff);
 }
 
