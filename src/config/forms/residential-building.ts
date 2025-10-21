@@ -61,6 +61,7 @@ const residentialBuildingSchema = z.object({
   apartmentsPerFloor: z.string().min(1, "Vyberte počet bytů na patře"),
   hasElevator: z.string().min(1, "Vyberte, zda má dům výtah"),
   hasHotWater: z.string().min(1, "Vyberte, zda má dům teplou vodu"),
+  buildingPeriod: z.string().min(1, "Vyberte období výstavby domu"),
   generalCleaning: z.string().min(1, "Vyberte, zda požadujete generální úklid"),
   generalCleaningType: z.string().optional(),
   windowsPerFloor: z.preprocess((val) => {
@@ -353,6 +354,34 @@ export const residentialBuildingFormConfig: FormConfig = {
           options: [
             { value: "yes", label: "Ano", coefficient: 0.99 },
             { value: "no", label: "Ne, pro potřeby úklidu je k dispozici pouze studená voda", coefficient: 1.03 }
+          ]
+        }
+      ]
+    },
+    {
+      id: "building-period",
+      title: "Z jakého období je činžovní dům?",
+      icon: "Building",
+      fields: [
+        {
+          id: "buildingPeriod",
+          type: "radio",
+          label: "",
+          required: true,
+          layout: "vertical",
+          options: [
+            { 
+              value: "pre1945", 
+              label: "Dům postavený před rokem 1945", 
+              coefficient: 1.0,
+              tooltip: "Jedná se o klasické činžovní bytové domy s vysokými konstrukčními výškami jednotlivých pater (kolem 4 m nebo i více), mohou být v secesním nebo klasicistním stylu, stavěné do období před druhou světovou válkou. V Praze to jsou například domy postavené v částech Starého i Nového Města, Nuslích, Žižkově, Karlíně atd."
+            },
+            { 
+              value: "post1945", 
+              label: "Dům postavený po roce 1945", 
+              coefficient: 0.90,
+              tooltip: "Jedná se o činžovní bytové domy postavené po druhé světové válce (nebo těsně před ní), které se vyznačují menšími konstrukčními výškami jednotlivých pater (kolem 3 m) Jedná se o předchůdce dnešních panelových domů. Jsou vystavěny zejména v období funkcionalismu nebo sorely. Mají většinou ploché střechy a např. v Praze se vyskytují v částech sídliště Zelená liška, sídliště Solidarita atd."
+            }
           ]
         }
       ]

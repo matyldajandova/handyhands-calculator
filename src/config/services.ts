@@ -17,8 +17,8 @@ export const serviceTypes: ServiceType[] = [
   },  
   {
     id: "panel-building",
-    title: "Pravidelný úklid panelových domů",
-    description: "Zahrnuje vše od úklidu společných prostor panelových domů po zimní údržbu s pokročilými koeficienty.",
+    title: "Pravidelný úklid panelových domů a vícevchodových bytových domů",
+    description: "Zahrnuje vše od úklidu společných prostor panelových domů a vícevchodových bytových domů po zimní údržbu s pokročilými koeficienty.",
     icon: "Building",
     formConfig: panelBuildingFormConfig,
   },

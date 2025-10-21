@@ -260,6 +260,12 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
       generalCoefficient *= basementDetailsCoefficient;
     }
 
+    // Apply building period coefficient to general cleaning
+    if (calculationData.buildingPeriod) {
+      const buildingPeriodCoefficient = getCoefficientFromConfig(formConfig, 'buildingPeriod', calculationData.buildingPeriod);
+      generalCoefficient *= buildingPeriodCoefficient;
+    }
+
     generalCleaningPrice = Math.round(baseGeneralPrice * generalCoefficient * 10) / 10;
     
     // Set frequency based on type

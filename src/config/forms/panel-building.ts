@@ -144,8 +144,8 @@ const panelBuildingSchema = z.object({
 
 export const panelBuildingFormConfig: FormConfig = {
   id: "panel-building",
-  title: "Pravidelný úklid panelových domů",
-  description: `Vyplňte údaje pro výpočet ceny úklidových služeb pro panelové domy.`,
+  title: "Pravidelný úklid panelových domů a vícevchodových bytových domů",
+  description: `Vyplňte údaje pro výpočet ceny úklidových služeb pro panelové domy a vícevchodové bytové domy. Jedná se o bytové domy, které mají víc vchodů – tedy víc jak jedno schodiště a každý vchod má své popisné nebo orientační číslo.`,
   validationSchema: panelBuildingSchema,
   basePrice: CURRENT_PRICES.regularCleaning,
   conditions: [
