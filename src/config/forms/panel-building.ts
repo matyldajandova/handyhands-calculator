@@ -4,7 +4,7 @@ import { isWinterMaintenancePeriod } from "@/utils/date-utils";
 
 // Base prices and inflation
 const BASE_PRICES = {
-  regularCleaning: 4500, // Base price per month for regular panel building cleaning
+  regularCleaning: 6950, // Base price per month for regular panel building cleaning
 };
 
 // Fixed prices (not affected by inflation or coefficients)
@@ -54,15 +54,7 @@ const panelBuildingSchema = z.object({
   apartmentsPerFloor: z.string().min(1, "Vyberte orientační počet bytů na patře"),
   hasElevator: z.string().min(1, "Vyberte, zda má dům výtah"),
   generalCleaning: z.string().min(1, "Vyberte, zda požadujete generální úklid domu"),
-  windowsPerFloor: z.preprocess((val) => {
-    if (val === undefined || val === null || val === "") return undefined;
-    if (typeof val === 'string') {
-      if (val === "5-10") return val; // Keep string value for special case
-      const num = parseInt(val, 10);
-      return isNaN(num) ? undefined : num;
-    }
-    return val;
-  }, z.union([z.number().min(1), z.literal("5-10"), z.undefined()])).optional(),
+  windowsOnLandings: z.string().optional(),
   winterMaintenance: z.string().min(1, "Vyberte, zda máte zájem o zimní údržbu"),
   communicationType: z.string().optional(),
   communicationArea: z.preprocess((val) => {
@@ -93,11 +85,11 @@ const panelBuildingSchema = z.object({
 }).superRefine((data, ctx) => {
   // Validate general cleaning details when general cleaning is "yes"
   if (data.generalCleaning === "yes") {
-    if (!data.windowsPerFloor || (typeof data.windowsPerFloor === 'number' && data.windowsPerFloor <= 0)) {
+    if (!data.windowsOnLandings) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Zadejte počet oken na patře",
-        path: ["windowsPerFloor"]
+        message: "Vyberte, zda jsou v domě okna na podestách",
+        path: ["windowsOnLandings"]
       });
     }
   }
@@ -208,16 +200,16 @@ export const panelBuildingFormConfig: FormConfig = {
           required: true,
           layout: "vertical",
           options: [
-            { value: 3, label: "3", coefficient: 0.76 },
-            { value: 4, label: "4", coefficient: 0.82 },
-            { value: 5, label: "5", coefficient: 0.9 },
-            { value: 6, label: "6", coefficient: 0.96 },
-            { value: 7, label: "7", coefficient: 1.0 },
-            { value: 8, label: "8", coefficient: 1.1 },
-            { value: 9, label: "9", coefficient: 1.31 },
-            { value: 10, label: "10", coefficient: 1.45 },
-            { value: 11, label: "11", coefficient: 1.63 },
-            { value: 12, label: "12", coefficient: 1.66 },
+            { value: 3, label: "3", coefficient: 0.68 },
+            { value: 4, label: "4", coefficient: 0.72 },
+            { value: 5, label: "5", coefficient: 0.77 },
+            { value: 6, label: "6", coefficient: 0.83 },
+            { value: 7, label: "7", coefficient: 0.94 },
+            { value: 8, label: "8", coefficient: 1.04 },
+            { value: 9, label: "9", coefficient: 1.15 },
+            { value: 10, label: "10", coefficient: 1.28 },
+            { value: 11, label: "11", coefficient: 1.45 },
+            { value: 12, label: "12", coefficient: 1.61 },
             { value: "13+", label: "13 a více pater", coefficient: 1.75 }
           ]
         },
@@ -228,8 +220,8 @@ export const panelBuildingFormConfig: FormConfig = {
           required: true,
           layout: "horizontal",
           options: [
-            { value: "yes", label: "Ano", coefficient: 1.1 },
-            { value: "no", label: "Ne", coefficient: 0.97 }
+            { value: "yes", label: "Ano", coefficient: 1.02 },
+            { value: "no", label: "Ne", coefficient: 0.96 }
           ]
         },
         {
@@ -240,13 +232,13 @@ export const panelBuildingFormConfig: FormConfig = {
           required: true,
           layout: "vertical",
           options: [
-            { value: 1, label: "1", coefficient: 0.4 },
-            { value: 2, label: "2", coefficient: 0.67 },
+            { value: 1, label: "1", coefficient: 0.5 },
+            { value: 2, label: "2", coefficient: 0.766 },
             { value: 3, label: "3", coefficient: 1.0 },
-            { value: 4, label: "4", coefficient: 1.235 },
-            { value: 5, label: "5", coefficient: 1.472 },
-            { value: 6, label: "6", coefficient: 1.59 },
-            { value: 7, label: "7", coefficient: 1.69 }
+            { value: 4, label: "4", coefficient: 1.3 },
+            { value: 5, label: "5", coefficient: 1.6 },
+            { value: 6, label: "6", coefficient: 1.88 },
+            { value: 7, label: "7", coefficient: 2.12 }
           ]
         },
         {
@@ -280,7 +272,7 @@ export const panelBuildingFormConfig: FormConfig = {
           layout: "horizontal",
           options: [
             { value: "yes", label: "Ano", coefficient: 1.0 },
-            { value: "no", label: "Ne", coefficient: 1.05 }
+            { value: "no", label: "Ne", coefficient: 1.07 }
           ]
         }
       ]
@@ -298,8 +290,8 @@ export const panelBuildingFormConfig: FormConfig = {
           required: true,
           layout: "horizontal",
           options: [
-            { value: "yes", label: "Ano", coefficient: 1.0 },
-            { value: "no", label: "Ne", coefficient: 0.97 }
+            { value: "yes", label: "Ano", coefficient: 1.065 },
+            { value: "no", label: "Ne", coefficient: 0.95 }
           ]
         },
         {
@@ -310,17 +302,14 @@ export const panelBuildingFormConfig: FormConfig = {
           condition: { field: "generalCleaning", value: "yes" },
           fields: [
             {
-              id: "windowsPerFloor",
+              id: "windowsOnLandings",
               type: "radio",
-              label: "Orientační počet oken na patře",
+              label: "Okna na podestách schodišť",
               required: true,
-              layout: "vertical",
+              layout: "horizontal",
               options: [
-                { value: 1, label: "1", coefficient: 0.98 },
-                { value: 2, label: "2", coefficient: 1.0 },
-                { value: 3, label: "3", coefficient: 1.05 },
-                { value: 4, label: "4", coefficient: 1.015 },
-                { value: "5-10", label: "5-10", coefficient: 1.05 }
+                { value: "yes", label: "Ano", coefficient: 1.0 },
+                { value: "no", label: "Ne, v nadzemních společných prostorech domu se okna nevyskytují a v ceně generálního úklidu není započítané mytí oken (okna se mohou vyskytovat pouze v rámci vstupního parteru domu v přízemí).", coefficient: 0.4 }
               ]
             }
           ]

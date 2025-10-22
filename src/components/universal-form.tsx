@@ -197,7 +197,7 @@ function RadioFieldWithHiddenOptions({
       <FormControl>
         <RadioGroupItem value={option.value.toString()} id={`${field.id}_${option.value}`} className="mt-0.5" />
       </FormControl>
-      <FormLabel htmlFor={`${field.id}_${option.value}`} className="font-normal cursor-pointer flex-1">
+      <FormLabel htmlFor={`${field.id}_${option.value}`} className="font-normal cursor-pointer flex-1 max-w-2xl">
         <div className="flex items-center gap-2">
           <span>{option.label}</span>
           {option.note && (
@@ -580,7 +580,7 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
             </FormControl>
             <FormLabel 
               htmlFor={`${field.id}_${option.value}`} 
-              className={`font-normal cursor-pointer flex-1 ${isDisabled ? 'text-muted-foreground' : ''}`}
+              className={`font-normal cursor-pointer flex-1 max-w-2xl ${isDisabled ? 'text-muted-foreground' : ''}`}
             >
               <div className="flex items-center gap-2">
                 <span>{option.label}</span>
