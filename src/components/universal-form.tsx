@@ -587,7 +587,7 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
                 {option.note && (
                   <Badge 
                     variant="default"
-                    className="text-xs bg-accent text-accent-foreground"
+                    className="text-xs bg-orange-100 text-orange-800 border-orange-200"
                   >
                     {option.note === 'frequent' ? 'Nejvyužívanější' : 'Doporučeno'}
                   </Badge>
