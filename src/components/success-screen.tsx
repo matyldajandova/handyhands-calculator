@@ -20,6 +20,89 @@ interface SuccessScreenProps {
   formData: FormSubmissionData;
 }
 
+// Helper function to get minimum hours for hourly services
+function getMinimumHours(formData: FormSubmissionData): number {
+  // For one-time cleaning
+  if (formData.spaceArea) {
+    const areaHours: Record<string, number> = {
+      "up-to-30": 3,
+      "up-to-50": 3.5,
+      "50-75": 4,
+      "75-100": 4,
+      "100-125": 4,
+      "125-200": 4,
+      "200-plus": 4
+    };
+    return areaHours[formData.spaceArea as string] || 4;
+  }
+  
+  // For handyman services (window cleaning)
+  if (formData.roomCount) {
+    const roomHours: Record<string, number> = {
+      "up-to-2": 2,
+      "3": 2,
+      "4": 3,
+      "5-plus": 4
+    };
+    return roomHours[formData.roomCount as string] || 2;
+  }
+  
+  return 4; // Default
+}
+
+// Helper function to get individual addon items grouped by section
+function getIndividualAddons(formData: FormSubmissionData, formConfig: FormConfig | null, calculationResult: CalculationResult) {
+  if (!formConfig) return [];
+  
+  const items: Array<{ label: string; amount: number }> = [];
+  
+  // Get fixed addons from applied coefficients
+  const fixedAddons = calculationResult.calculationDetails.appliedCoefficients
+    .filter(coeff => coeff.impact > 0 && coeff.coefficient === 1);
+  
+  // Group addons by section
+  const sectionMap = new Map<string, number>();
+  let transportAmount = 0;
+  
+  for (const addon of fixedAddons) {
+    // Special handling for transport/delivery
+    if (addon.field === 'zipCode' || addon.label.includes('Doprava') || addon.label.includes('doprava')) {
+      transportAmount = addon.impact;
+    } else {
+      // Find the section title for this field
+      const section = formConfig.sections.find(section => 
+        section.fields.some(field => field.id === addon.field)
+      );
+      
+      if (section) {
+        const sectionTitle = section.title;
+        if (!sectionMap.has(sectionTitle)) {
+          sectionMap.set(sectionTitle, 0);
+        }
+        sectionMap.set(sectionTitle, sectionMap.get(sectionTitle)! + addon.impact);
+      }
+    }
+  }
+  
+  // Convert grouped sections to items
+  for (const [title, totalAmount] of sectionMap) {
+    items.push({
+      label: title,
+      amount: totalAmount
+    });
+  }
+  
+  // Add transport at the end
+  if (transportAmount > 0) {
+    items.push({
+      label: 'Doprava',
+      amount: transportAmount
+    });
+  }
+  
+  return items;
+}
+
 export function SuccessScreen({ onBackToServices, calculationResult, formConfig, formData }: SuccessScreenProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isDownloaded, setIsDownloaded] = useState(false);
@@ -34,15 +117,31 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
     }
   }, []);
 
-  // Round calculation results to whole 10 Kč
+  // Round calculation results to whole 10 Kč (or whole crowns for hourly services)
   const roundedResults = useMemo(() => {
-    return calculationResult ? {
-      regularCleaningPrice: Math.round(calculationResult.regularCleaningPrice / 10) * 10,
-      generalCleaningPrice: calculationResult.generalCleaningPrice ? 
-        Math.round(calculationResult.generalCleaningPrice / 10) * 10 : undefined,
-      totalMonthlyPrice: Math.round(calculationResult.totalMonthlyPrice / 10) * 10
-    } : null;
-  }, [calculationResult]);
+    if (!calculationResult) return null;
+    
+    const isHourlyService = formConfig?.id === "one-time-cleaning" || formConfig?.id === "handyman-services";
+    
+    if (isHourlyService) {
+      // For hourly services, round to whole crowns
+      return {
+        regularCleaningPrice: Math.round(calculationResult.regularCleaningPrice),
+        generalCleaningPrice: calculationResult.generalCleaningPrice ? 
+          Math.round(calculationResult.generalCleaningPrice) : undefined,
+        totalMonthlyPrice: Math.round(calculationResult.totalMonthlyPrice), // This is actually hourly rate
+        hourlyRate: Math.round(calculationResult.hourlyRate || calculationResult.totalMonthlyPrice)
+      };
+    } else {
+      // For other services, round to whole 10 Kč
+      return {
+        regularCleaningPrice: Math.round(calculationResult.regularCleaningPrice / 10) * 10,
+        generalCleaningPrice: calculationResult.generalCleaningPrice ? 
+          Math.round(calculationResult.generalCleaningPrice / 10) * 10 : undefined,
+        totalMonthlyPrice: Math.round(calculationResult.totalMonthlyPrice / 10) * 10
+      };
+    }
+  }, [calculationResult, formConfig]);
 
   // Handle form data changes and update hash (with debouncing)
   const handleFormDataChange = useCallback((newCustomerData: { firstName: string; lastName: string; email: string }) => {
@@ -161,10 +260,19 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
     }
   };
 
-  // Format currency for display - round to whole 10 Kč (desetikoruny)
+  // Format currency for display - round to whole 10 Kč (desetikoruny) for regular services, whole crowns for hourly services
   const formatCurrency = (amount: number) => {
-    const roundedAmount = Math.round(amount / 10) * 10; // Round to nearest 10 Kč
-    return `${roundedAmount.toLocaleString('cs-CZ')} Kč`;
+    const isHourlyService = formConfig?.id === "one-time-cleaning" || formConfig?.id === "handyman-services";
+    
+    if (isHourlyService) {
+      // For hourly services, round to whole crowns
+      const roundedAmount = Math.round(amount);
+      return `${roundedAmount.toLocaleString('cs-CZ')} Kč`;
+    } else {
+      // For regular services, round to nearest 10 Kč
+      const roundedAmount = Math.round(amount / 10) * 10;
+      return `${roundedAmount.toLocaleString('cs-CZ')} Kč`;
+    }
   };
 
   if (!calculationResult || !roundedResults) {
@@ -245,13 +353,52 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
             <CardContent className="space-y-6 px-3 md:px-6">
               {/* Main Price Display */}
               <div className="text-center">
-                <div className="text-4xl font-bold text-accent mb-2">
-                  {formatCurrency(roundedResults.totalMonthlyPrice)} <span className="font-normal text-muted-foreground">za měsíc</span>
-                </div>
-                <div className="text-base text-muted-foreground">
-                  Cena za pravidelný úklid domu
-                </div>
+                {formConfig?.id === "one-time-cleaning" || formConfig?.id === "handyman-services" ? (
+                  // Hourly services display
+                  <div>
+                    <div className="text-4xl font-bold text-accent mb-2">
+                      {roundedResults.hourlyRate} Kč <span className="font-normal text-muted-foreground">/hod/pracovník</span>
+                    </div>
+                    <div className="text-muted-foreground mt-2 italic">
+                      Minimální délka {formConfig?.id === "one-time-cleaning" ? "úklidu" : "mytí oken"} je {getMinimumHours(formData)} hod. práce
+                    </div>
+                  </div>
+                ) : (
+                  // Regular services display
+                  <div>
+                    <div className="text-4xl font-bold text-accent mb-2">
+                      {formatCurrency(roundedResults.totalMonthlyPrice)} <span className="font-normal text-muted-foreground">za měsíc</span>
+                    </div>
+                    <div className="text-base text-muted-foreground">
+                      Cena za pravidelný úklid domu
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {/* Hourly Services Extra Items */}
+              {(formConfig?.id === "one-time-cleaning" || formConfig?.id === "handyman-services") && (
+                <div className="p-4 bg-card dark:bg-card rounded-lg border border-border relative">
+                  {/* Plus Icon */}
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-grey-800 dark:bg-slate-200 rounded-full p-1.5">
+                    <Plus className="h-3 w-3 text-white dark:text-slate-800" strokeWidth={3} />
+                  </div>
+                  
+                  <div className="text-center pt-2">
+                    <div className="text-lg font-semibold text-foreground dark:text-slate-300 mb-3 flex items-center justify-center gap-2">
+                      <CheckCircle className="h-5 w-5 text-grey-500" />
+                      Extra položky
+                    </div>
+                    
+                    {/* Show individual addon items */}
+                    {getIndividualAddons(formData, formConfig, calculationResult).map((item, index) => (
+                      <div key={index} className="text-sm text-muted-foreground dark:text-slate-400 mb-1">
+                        {item.label} ({item.amount} Kč)
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* General Cleaning Price (if applicable) */}
               {roundedResults.generalCleaningPrice && (

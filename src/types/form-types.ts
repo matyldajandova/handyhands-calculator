@@ -207,6 +207,7 @@ export interface CalculationResult {
   generalCleaningPrice?: number;
   generalCleaningFrequency?: string;
   totalMonthlyPrice: number;
+  hourlyRate?: number; // For hourly services (one-time cleaning, handyman services)
   winterServiceFee?: number;
   winterCalloutFee?: number;
   orderId?: string;

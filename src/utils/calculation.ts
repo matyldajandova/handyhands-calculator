@@ -135,6 +135,7 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
       basePrice = 320; // Hourly rate base price
     }
   }
+  
   let finalCoefficient = 1.0;
   const appliedCoefficients: Array<{
     field: string;
@@ -184,9 +185,27 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
   }
 
   // Get field labels for better display
-  function getFieldLabel(fieldId: string): string {
+  function getFieldLabel(fieldId: string, value?: string | number | string[]): string {
     const field = findFieldInConfig(formConfig, fieldId);
-    return field?.label || fieldId;
+    if (!field) return fieldId;
+    
+    // For checkbox fields, get the specific option labels
+    if (field.type === 'checkbox' && Array.isArray(value)) {
+      const checkboxField = field as CheckboxField;
+      return value.map(v => {
+        const option = checkboxField.options.find(opt => opt.value === v);
+        return option?.label || v;
+      }).join(", ");
+    }
+    
+    // For radio/select fields, get the specific option label
+    if ((field.type === 'radio' || field.type === 'select') && value) {
+      const optionField = field as RadioField | SelectField;
+      const option = optionField.options.find(opt => opt.value === value);
+      return option?.label || field.label || fieldId;
+    }
+    
+    return field.label || fieldId;
   }
 
   // Apply coefficients and fixed addons for all form fields
@@ -197,12 +216,21 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
       const coefficient = getCoefficientFromConfig(formConfig, fieldId, value);
       const fixedAddon = getFixedAddonFromConfig(formConfig, fieldId, value);
       
+      // For hourly services, exclude space area coefficient from hourly rate calculation
+      // (space area coefficient represents minimum hours, not a rate multiplier)
+      const isHourlyService = formConfig.id === "one-time-cleaning" || formConfig.id === "handyman-services";
+      const isSpaceAreaField = fieldId === "spaceArea" || fieldId === "roomCount";
+      
       // Apply coefficient if it's different from 1.0 (has an effect)
       if (coefficient !== 1.0) {
-        finalCoefficient *= coefficient;
+        // For hourly services, don't apply space area coefficient to hourly rate
+        if (!(isHourlyService && isSpaceAreaField)) {
+          finalCoefficient *= coefficient;
+        }
+        
         appliedCoefficients.push({
           field: fieldId,
-          label: getFieldLabel(fieldId),
+          label: getFieldLabel(fieldId, value),
           coefficient,
           impact: (coefficient - 1) * 100
         });
@@ -213,7 +241,7 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
         totalFixedAddons += fixedAddon;
         appliedCoefficients.push({
           field: fieldId,
-          label: getFieldLabel(fieldId),
+          label: getFieldLabel(fieldId, value),
           coefficient: 1, // Fixed addons don't affect the coefficient
           impact: fixedAddon
         });
@@ -222,7 +250,19 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
   }
 
   // Calculate regular cleaning price (including fixed addons)
-  const regularCleaningPrice = Math.round((basePrice * finalCoefficient + totalFixedAddons) * 10) / 10; // Round to 0.1 Kč
+  // For one-time cleaning and handyman services, we calculate hourly rate instead of total price
+  let regularCleaningPrice: number;
+  let hourlyRate: number | undefined;
+  
+  if (formConfig.id === "one-time-cleaning" || formConfig.id === "handyman-services") {
+    // For hourly services, calculate the hourly rate (rounded to whole crowns)
+    hourlyRate = Math.round(basePrice * finalCoefficient);
+    // The regularCleaningPrice will be used for display purposes but represents hourly rate
+    regularCleaningPrice = hourlyRate;
+  } else {
+    // For other services, calculate total price as before
+    regularCleaningPrice = Math.round((basePrice * finalCoefficient + totalFixedAddons) * 10) / 10; // Round to 0.1 Kč
+  }
 
   // Calculate general cleaning price if applicable
   let generalCleaningPrice: number | undefined;
@@ -319,16 +359,27 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
   }
 
   // Calculate total monthly price
-  // Note: regularCleaningPrice already includes regional coefficients applied to base price
-  // regionalFixedFee is added on top as a fixed amount (not affected by coefficients or inflation)
-  // winterServiceFee and generalCleaningPrice are shown separately and NOT included in monthly price
-  const totalMonthlyPrice = regularCleaningPrice + regionalFixedFee;
+  // For hourly services, totalMonthlyPrice represents the hourly rate
+  // For other services, it's the total monthly price
+  let totalMonthlyPrice: number;
+  
+  if (formConfig.id === "one-time-cleaning" || formConfig.id === "handyman-services") {
+    // For hourly services, totalMonthlyPrice represents the hourly rate
+    totalMonthlyPrice = hourlyRate!;
+  } else {
+    // For other services, calculate total monthly price as before
+    // Note: regularCleaningPrice already includes regional coefficients applied to base price
+    // regionalFixedFee is added on top as a fixed amount (not affected by coefficients or inflation)
+    // winterServiceFee and generalCleaningPrice are shown separately and NOT included in monthly price
+    totalMonthlyPrice = regularCleaningPrice + regionalFixedFee;
+  }
 
   return {
     regularCleaningPrice,
     generalCleaningPrice,
     generalCleaningFrequency,
     totalMonthlyPrice,
+    hourlyRate, // Add hourly rate for hourly services
     winterServiceFee: winterServiceFee > 0 ? winterServiceFee : undefined,
     winterCalloutFee: winterCalloutFee > 0 ? winterCalloutFee : undefined,
     orderId,

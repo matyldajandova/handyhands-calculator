@@ -1,6 +1,87 @@
 import { FormSubmissionData, FormConfig, CalculationResult, FormField } from "@/types/form-types";
 import { OfferData } from "@/pdf/templates/OfferPDF";
 
+// Helper function to get minimum hours for hourly services
+function getMinimumHours(formData: FormSubmissionData): number {
+  // For one-time cleaning
+  if (formData.spaceArea) {
+    const areaHours: Record<string, number> = {
+      "up-to-30": 3,
+      "up-to-50": 3.5,
+      "50-75": 4,
+      "75-100": 4,
+      "100-125": 4,
+      "125-200": 4,
+      "200-plus": 4
+    };
+    return areaHours[formData.spaceArea as string] || 4;
+  }
+  
+  // For handyman services (window cleaning)
+  if (formData.roomCount) {
+    const roomHours: Record<string, number> = {
+      "up-to-2": 2,
+      "3": 2,
+      "4": 3,
+      "5-plus": 4
+    };
+    return roomHours[formData.roomCount as string] || 2;
+  }
+  
+  return 4; // Default
+}
+
+// Helper function to get grouped addons for PDF (matches success screen logic)
+function getGroupedAddonsForPDF(formData: FormSubmissionData, formConfig: FormConfig, calculationResult: CalculationResult) {
+  const items: Array<{ label: string; amount: number }> = [];
+  
+  // Get fixed addons from applied coefficients
+  const fixedAddons = calculationResult.calculationDetails.appliedCoefficients
+    .filter(coeff => coeff.impact > 0 && coeff.coefficient === 1);
+  
+  // Group addons by section
+  const sectionMap = new Map<string, number>();
+  let transportAmount = 0;
+  
+  for (const addon of fixedAddons) {
+    // Special handling for transport/delivery
+    if (addon.field === 'zipCode' || addon.label.includes('Doprava') || addon.label.includes('doprava')) {
+      transportAmount = addon.impact;
+    } else {
+      // Find the section title for this field
+      const section = formConfig.sections.find(section => 
+        section.fields.some(field => field.id === addon.field)
+      );
+      
+      if (section) {
+        const sectionTitle = section.title;
+        if (!sectionMap.has(sectionTitle)) {
+          sectionMap.set(sectionTitle, 0);
+        }
+        sectionMap.set(sectionTitle, sectionMap.get(sectionTitle)! + addon.impact);
+      }
+    }
+  }
+  
+  // Convert grouped sections to items
+  for (const [title, totalAmount] of sectionMap) {
+    items.push({
+      label: title,
+      amount: totalAmount
+    });
+  }
+  
+  // Add transport at the end
+  if (transportAmount > 0) {
+    items.push({
+      label: 'Doprava',
+      amount: transportAmount
+    });
+  }
+  
+  return items;
+}
+
 /**
  * Converts form data and calculation results to OfferData format for PDF generation
  * Uses the form's existing structure and labels instead of complex mappings
@@ -26,8 +107,11 @@ export function convertFormDataToOfferData(
     invoiceEmail?: string;
   }
 ): OfferData {
-  // Round prices to nearest 10 Kč (desetikoruny)
-  const roundedPrice = Math.round(calculationResult.totalMonthlyPrice / 10) * 10;
+  // Round prices appropriately based on service type
+  const isHourlyService = formConfig.id === "one-time-cleaning" || formConfig.id === "handyman-services";
+  const roundedPrice = isHourlyService 
+    ? Math.round(calculationResult.hourlyRate || calculationResult.totalMonthlyPrice) // Round to whole crowns for hourly services
+    : Math.round(calculationResult.totalMonthlyPrice / 10) * 10; // Round to nearest 10 Kč for regular services
   
   // Generate Q&A pairs directly from form structure
   const summaryItems = generateSummaryItems(formData, formConfig);
@@ -91,6 +175,12 @@ export function convertFormDataToOfferData(
       })()
     : minDate.toLocaleDateString("cs-CZ");
   
+  // Extract fixed addons for hourly services (grouped by section like in success screen)
+  const fixedAddons = isHourlyService ? getGroupedAddonsForPDF(formData, formConfig, calculationResult) : undefined;
+
+  // Get minimum hours for hourly services
+  const minimumHours = isHourlyService ? getMinimumHours(formData) : undefined;
+
   return {
     quoteDate: new Date().toLocaleDateString("cs-CZ"),
     price: roundedPrice,
@@ -126,7 +216,12 @@ export function convertFormDataToOfferData(
     // Add winter maintenance pricing (displayed separately from monthly price)
     winterServiceFee: calculationResult.winterServiceFee,
     winterCalloutFee: calculationResult.winterCalloutFee,
-    winterPeriod: formConfig.winterPeriod
+    winterPeriod: formConfig.winterPeriod,
+    // Add hourly service information
+    isHourlyService,
+    hourlyRate: calculationResult.hourlyRate,
+    fixedAddons,
+    minimumHours
   };
 }
 

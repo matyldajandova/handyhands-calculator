@@ -21,6 +21,94 @@ import { FormConfig, CalculationResult } from "@/types/form-types";
 import { cn } from "@/lib/utils";
 import { CalculationData } from "@/utils/hash-generator";
 
+// Helper function to get minimum hours for hourly services
+function getMinimumHours(formData: Record<string, unknown>): number {
+  // For one-time cleaning
+  if (formData.spaceArea) {
+    const areaHours: Record<string, number> = {
+      "up-to-30": 3,
+      "up-to-50": 3.5,
+      "50-75": 4,
+      "75-100": 4,
+      "100-125": 4,
+      "125-200": 4,
+      "200-plus": 4
+    };
+    return areaHours[formData.spaceArea as string] || 4;
+  }
+  
+  // For handyman services (window cleaning)
+  if (formData.roomCount) {
+    const roomHours: Record<string, number> = {
+      "up-to-2": 2,
+      "3": 2,
+      "4": 3,
+      "5-plus": 4
+    };
+    return roomHours[formData.roomCount as string] || 2;
+  }
+  
+  return 4; // Default
+}
+
+// Helper function to get grouped addons for poptavka (matches success screen logic)
+function getGroupedAddonsForPoptavka(calculationData: CalculationData) {
+  const items: Array<{ label: string; amount: number }> = [];
+  
+  // Get fixed addons from applied coefficients
+  const fixedAddons = calculationData.calculationDetails?.appliedCoefficients
+    ?.filter(coeff => coeff.impact > 0 && coeff.coefficient === 1) || [];
+  
+  // Group addons by section
+  const sectionMap = new Map<string, number>();
+  let transportAmount = 0;
+  
+  for (const addon of fixedAddons) {
+    // Special handling for transport/delivery
+    if (addon.field === 'zipCode' || addon.label.includes('Doprava') || addon.label.includes('doprava')) {
+      transportAmount = addon.impact;
+    } else {
+      // For poptavka, we need to find the section title from the form config
+      // Since we don't have direct access to formConfig here, we'll use a simplified approach
+      // and group by field type or use the label as is
+      const sectionTitle = getSectionTitleFromField(addon.field);
+      if (!sectionMap.has(sectionTitle)) {
+        sectionMap.set(sectionTitle, 0);
+      }
+      sectionMap.set(sectionTitle, sectionMap.get(sectionTitle)! + addon.impact);
+    }
+  }
+  
+  // Convert grouped sections to items
+  for (const [title, totalAmount] of sectionMap) {
+    items.push({
+      label: title,
+      amount: totalAmount
+    });
+  }
+  
+  // Add transport at the end
+  if (transportAmount > 0) {
+    items.push({
+      label: 'Doprava',
+      amount: transportAmount
+    });
+  }
+  
+  return items;
+}
+
+// Helper function to get section title from field ID
+function getSectionTitleFromField(fieldId: string): string {
+  const fieldToSectionMap: Record<string, string> = {
+    'cleaningSupplies': 'Úklidové náčiní a úklidová chemie',
+    'ladders': 'Úklidové náčiní a úklidová chemie',
+    'zipCode': 'Doprava'
+  };
+  
+  return fieldToSectionMap[fieldId] || fieldId;
+}
+
 interface FormData {
   // Personal information
   firstName: string;
@@ -614,9 +702,25 @@ function PoptavkaContent() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground mb-2">Celková cena</h3>
-                    <p className="text-2xl font-bold text-primary">
-                      {hashData.totalPrice.toLocaleString('cs-CZ')} Kč <span className="font-normal text-muted-foreground">za měsíc</span>
-                    </p>
+                    {hashData.calculationData && (
+                      <>
+                        {/* Check if this is an hourly service */}
+                        {(hashData.serviceType === "one-time-cleaning" || hashData.serviceType === "handyman-services") ? (
+                          <div>
+                            <p className="text-2xl font-bold text-primary">
+                              {Math.round(hashData.calculationData.hourlyRate || hashData.totalPrice)} Kč <span className="font-normal text-muted-foreground">/hod/pracovník</span>
+                            </p>
+                            <p className="text-sm text-muted-foreground mt-1 italic">
+                              Minimální délka {hashData.serviceType === "one-time-cleaning" ? "úklidu" : "mytí oken"} je {getMinimumHours(hashData.calculationData.formData || {})} hod. práce
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-2xl font-bold text-primary">
+                            {hashData.totalPrice.toLocaleString('cs-CZ')} Kč <span className="font-normal text-muted-foreground">za měsíc</span>
+                          </p>
+                        )}
+                      </>
+                    )}
                     {/* Additional services line items */}
                     {!!hashData.calculationData?.generalCleaningPrice && (
                       <p className="text-sm text-muted-foreground mt-1">
@@ -634,6 +738,15 @@ function PoptavkaContent() {
                         }
                       </p>
                     )}
+                    
+                    {/* Extra položky line items for hourly services */}
+                    {hashData.calculationData && (hashData.serviceType === "one-time-cleaning" || hashData.serviceType === "handyman-services") && 
+                      getGroupedAddonsForPoptavka(hashData.calculationData).map((item, index) => (
+                        <p key={index} className="text-sm text-muted-foreground mt-2">
+                          + {item.label} ({item.amount} Kč)
+                        </p>
+                      ))
+                    }
                   </div>
                 </div>
               </CardContent>

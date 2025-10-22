@@ -35,6 +35,11 @@ export type OfferData = {
   winterServiceFee?: number;
   winterCalloutFee?: number;
   winterPeriod?: { start: { day: number; month: number }; end: { day: number; month: number } };
+  // Hourly service information
+  isHourlyService?: boolean;
+  hourlyRate?: number;
+  fixedAddons?: Array<{ label: string; amount: number }>;
+  minimumHours?: number;
 };
 /**
  * Returns the HTML body markup for the Offer PDF using Tailwind classes.
@@ -158,16 +163,21 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
     </section>
 
     <section class="mt-6">
-      <div class="font-bold">2. Celková cena pravidelného úklidu</div>
+      <div class="font-bold">2. ${data.isHourlyService ? 'Cena služby' : 'Celková cena pravidelného úklidu'}</div>
       <div class="hh-divider mt-1"></div>
       
       <!-- Main pricing section -->
       <div class="mt-4">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
           <div>
-            <div class="text-2xl font-bold text-primary-pdf">${Number(data.price).toLocaleString("cs-CZ")} Kč <span style="color: #000000; font-weight: normal;">za měsíc</span></div>
-            <div class="text-muted-foreground">Celková částka pravidelného úklidu bytového domu</div>
-            <div class="hh-small hh-muted">(tj. včetně níže popsaných náležitostí)</div>
+            ${data.isHourlyService ? `
+              <div class="text-2xl font-bold text-primary-pdf">${Number(data.hourlyRate || data.price).toLocaleString("cs-CZ")} Kč <span style="color: #000000; font-weight: normal;">/hod/pracovník</span></div>
+              <div class="text-muted-foreground mt-2 italic">Minimální délka ${data.serviceTitle === 'Jednorázový úklid' ? 'úklidu' : 'mytí oken'} je ${data.minimumHours} hod. práce</div>
+            ` : `
+              <div class="text-2xl font-bold text-primary-pdf">${Number(data.price).toLocaleString("cs-CZ")} Kč <span style="color: #000000; font-weight: normal;">za měsíc</span></div>
+              <div class="text-muted-foreground">Celková částka pravidelného úklidu bytového domu</div>
+              <div class="hh-small hh-muted">(tj. včetně níže popsaných náležitostí)</div>
+            `}
             <div class="text-muted-foreground" style="font-size: 14px; margin-top: 8px;">S úklidovými službami jsme schopni začít od <span style="font-weight: bold;">${escapeHtml(data.startDate)}</span></div>
           </div>
           ${data.poptavkaHash ? `
@@ -180,6 +190,25 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
           ` : ''}
         </div>
       </div>
+
+      <!-- Extra položky section for hourly services -->
+      ${data.isHourlyService && data.fixedAddons && data.fixedAddons.length > 0 ? `
+        <div class="mt-4" style="display: flex; gap: 12px; flex-wrap: wrap;">
+          ${data.fixedAddons.map(addon => `
+            <div style="flex: 1; min-width: 200px; padding: 8px; background-color: #ffffff; border: 1px solid #D4D4D4; border-radius: 4px; position: relative;">
+              <div style="position: absolute; top: -8px; left: 50%; transform: translateX(-50%); background-color: #2e2e2e; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;">
+                <span style="color: #ffffff; font-size: 12px; font-weight: bold; line-height: 1;">+</span>
+              </div>
+              <div style="text-align: center; padding-top: 4px;">
+                <div style="font-size: 12px; font-weight: 600; color: #2e2e2e; margin-bottom: 4px;">
+                  ${escapeHtml(addon.label)}
+                </div>
+                <div style="font-size: 16px; font-weight: bold; color: #2e2e2e;">${addon.amount} Kč</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
 
       <!-- Additional services - compact horizontal layout -->
       ${data.generalCleaningPrice || data.winterServiceFee ? `

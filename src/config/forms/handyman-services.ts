@@ -90,7 +90,7 @@ export const handymanServicesFormConfig: FormConfig = {
     },
     {
       id: "cleaning-supplies",
-      title: "Příplatky",
+      title: "Úklidové náčiní a úklidová chemie",
       icon: "Droplets",
       fields: [
         {
