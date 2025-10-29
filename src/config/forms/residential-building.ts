@@ -479,6 +479,9 @@ export const residentialBuildingFormConfig: FormConfig = {
                 ]
               },
               options: [
+                // Coefficients applied manually in calculation.ts:
+                // "general" -> general cleaning: 1.0, regular cleaning: 0.95
+                // "regular" -> general cleaning: 0.95, regular cleaning: 1.0
                 { value: "general", label: "rámci generálního úklidu", coefficient: 1.0 },
                 { value: "regular", label: "rámci pravidelného úklidu", coefficient: 1.0 }
               ]

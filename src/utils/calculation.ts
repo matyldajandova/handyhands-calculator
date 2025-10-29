@@ -211,8 +211,15 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
   // Apply coefficients and fixed addons for all form fields
   let totalFixedAddons = 0;
   
+  // Special handling for basementCleaning - it affects different coefficients based on selection
+  const basementCleaningValue = calculationData.basementCleaning;
+  const hasUndergroundFloors = calculationData.undergroundFloors && Number(calculationData.undergroundFloors) > 0;
+  
   for (const [fieldId, value] of Object.entries(calculationData)) {
     if (value !== undefined && value !== null && value !== '') {
+      // Skip basementCleaning from general coefficient loop - it's handled separately
+      if (fieldId === 'basementCleaning') continue;
+      
       const coefficient = getCoefficientFromConfig(formConfig, fieldId, value);
       const fixedAddon = getFixedAddonFromConfig(formConfig, fieldId, value);
       
@@ -247,6 +254,22 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
         });
       }
     }
+  }
+
+  // Apply basementCleaning coefficient to regular cleaning (finalCoefficient)
+  // If basement is cleaned in general: regular coefficient = 0.95
+  // If basement is cleaned in regular: regular coefficient = 1.0 (no change)
+  if (basementCleaningValue && hasUndergroundFloors && formConfig.id === "residential-building") {
+    if (basementCleaningValue === "general") {
+      finalCoefficient *= 0.95;
+      appliedCoefficients.push({
+        field: "basementCleaning",
+        label: getFieldLabel("basementCleaning", basementCleaningValue),
+        coefficient: 0.95,
+        impact: -5
+      });
+    }
+    // If "regular", no change to finalCoefficient (1.0)
   }
 
   // Calculate regular cleaning price (including fixed addons)
@@ -289,9 +312,16 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
       generalCoefficient *= windowTypeCoefficient;
     }
 
+    // Apply basementCleaning coefficient to general cleaning
+    // If basement is cleaned in general: general coefficient = 1.0 (no change)
+    // If basement is cleaned in regular: general coefficient = 0.95
     if (calculationData.basementCleaning && calculationData.undergroundFloors && Number(calculationData.undergroundFloors) > 0) {
-      const basementCoefficient = getCoefficientFromConfig(formConfig, 'basementCleaning', calculationData.basementCleaning);
-      generalCoefficient *= basementCoefficient;
+      if (calculationData.basementCleaning === "regular") {
+        generalCoefficient *= 0.95;
+        // This coefficient applies to general cleaning, but we show it in the regular coefficients list
+        // since the logic is: if basement is cleaned in regular cleaning, then general cleaning gets cheaper
+      }
+      // If "general", no change to generalCoefficient (1.0) because basement is included in general price
     }
 
     if (calculationData.basementCleaningDetails) {
