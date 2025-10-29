@@ -215,10 +215,28 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
   const basementCleaningValue = calculationData.basementCleaning;
   const hasUndergroundFloors = calculationData.undergroundFloors && Number(calculationData.undergroundFloors) > 0;
   
+  // Fields that should only affect general cleaning, not regular cleaning
+  // (only when building has no basement, or they are specific to general cleaning)
+  const generalCleaningOnlyFields = [
+    'windowsPerFloor',
+    'floorsWithWindows', 
+    'windowType',
+    'generalCleaningType',
+    'basementCleaningDetails'
+  ];
+  
+  // If building has no basement, exclude general cleaning fields from regular cleaning calculation
+  const excludeGeneralFieldsFromRegular = !hasUndergroundFloors && formConfig.id === "residential-building";
+  
   for (const [fieldId, value] of Object.entries(calculationData)) {
     if (value !== undefined && value !== null && value !== '') {
       // Skip basementCleaning from general coefficient loop - it's handled separately
       if (fieldId === 'basementCleaning') continue;
+      
+      // Skip general cleaning specific fields from regular cleaning when building has no basement
+      if (excludeGeneralFieldsFromRegular && generalCleaningOnlyFields.includes(fieldId)) {
+        continue;
+      }
       
       const coefficient = getCoefficientFromConfig(formConfig, fieldId, value);
       const fixedAddon = getFixedAddonFromConfig(formConfig, fieldId, value);

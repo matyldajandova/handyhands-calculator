@@ -354,7 +354,7 @@ function PoptavkaContent() {
                 formData: {
                   ...safeFormDataForHash,
                   // Preserve original notes, don't overwrite with poptavka notes
-                  notes: (hashData.calculationData?.formData as any)?.notes || (formData as any).notes
+                  notes: (hashData.calculationData?.formData as unknown as Record<string, unknown>)?.notes || (formData as unknown as Record<string, unknown>).notes
                 },
               // Preserve the original order ID
               orderId: hashData.calculationData?.orderId
