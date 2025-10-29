@@ -132,7 +132,7 @@ export function ServiceTypeSelector({ onServiceTypeSelect }: ServiceTypeSelector
                     <div className={`${isDisabled ? 'text-muted-foreground/70' : 'text-accent'}`}>
                       <IconComponent className="h-8 w-8" />
                     </div>
-                    <CardTitle className={`text-lg font-semibold font-heading ${
+                    <CardTitle className={`text-lg font-semibold font-heading break-words max-w-2xs ${
                       isDisabled ? 'text-foreground/80' : 'text-foreground'
                     }`}>
                       {service.title}

@@ -172,7 +172,7 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
           <div>
             ${data.isHourlyService ? `
               <div class="text-2xl font-bold text-primary-pdf">${Number(data.hourlyRate || data.price).toLocaleString("cs-CZ")} Kč <span style="color: #000000; font-weight: normal;">/hod/pracovník</span></div>
-              <div class="text-muted-foreground mt-2 italic">Minimální délka ${data.serviceTitle === 'Jednorázový úklid' ? 'úklidu' : 'mytí oken'} je ${data.minimumHours} hod. práce</div>
+              <div class="text-muted-foreground mt-2 italic">Minimální délka ${data.serviceTitle && data.serviceTitle.startsWith('Jednorázový úklid') ? 'úklidu' : 'mytí oken'} je ${data.minimumHours} hod. práce</div>
             ` : `
               <div class="text-2xl font-bold text-primary-pdf">${Number(data.price).toLocaleString("cs-CZ")} Kč <span style="color: #000000; font-weight: normal;">za měsíc</span></div>
               <div class="text-muted-foreground">Celková částka pravidelného úklidu bytového domu</div>
