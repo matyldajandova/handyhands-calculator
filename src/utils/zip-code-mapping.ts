@@ -27,9 +27,34 @@ async function loadZipCodeMapping(): Promise<Map<string, string>> {
     return zipCodeCache;
   }
 
+  // Allow tests/server environments to skip CSV fetch
+  if (typeof process !== 'undefined' && process.env && process.env.HH_SKIP_ZIP_RESOLVE === '1') {
+    zipCodeCache = new Map();
+    return zipCodeCache;
+  }
+
   try {
-    const response = await fetch('/lib/zv_cobce_psc.csv');
-    const csvText = await response.text();
+    let csvText = '';
+    const isBrowser = typeof window !== 'undefined' && typeof fetch !== 'undefined';
+    // In browser/Next client, fetch from public path. In Node (tests/server), read from filesystem via dynamic import.
+    if (isBrowser) {
+      try {
+        const url = new URL('/lib/zv_cobce_psc.csv', window.location.origin).toString();
+        const response = await fetch(url, { cache: 'force-cache' });
+        if (!response.ok) {
+          return new Map();
+        }
+        csvText = await response.text();
+      } catch (_err) {
+        // Silent fallback on client to avoid breaking UX
+        return new Map();
+      }
+    } else {
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      const filePath = path.resolve(process.cwd(), 'public', 'lib', 'zv_cobce_psc.csv');
+      csvText = await fs.readFile(filePath, 'utf8');
+    }
     
     const lines = csvText.split('\n');
     const mapping = new Map<string, string>();
@@ -60,7 +85,10 @@ async function loadZipCodeMapping(): Promise<Map<string, string>> {
     zipCodeCache = mapping;
     return mapping;
   } catch (error) {
-    console.error('Error loading zip code mapping:', error);
+    // Suppress noisy logs in tests when explicit skip flag is set
+    if (!(typeof process !== 'undefined' && process.env && process.env.HH_SKIP_ZIP_RESOLVE === '1')) {
+      console.error('Error loading zip code mapping:', error);
+    }
     return new Map();
   }
 }
