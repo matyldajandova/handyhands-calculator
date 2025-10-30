@@ -49,7 +49,7 @@ async function loadZipCodeMapping(): Promise<Map<string, string>> {
         return new Map();
       }
       csvText = await response.text();
-    } catch (_err) {
+    } catch {
       return new Map();
     }
     
