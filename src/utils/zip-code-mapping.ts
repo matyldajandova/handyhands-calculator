@@ -36,24 +36,21 @@ async function loadZipCodeMapping(): Promise<Map<string, string>> {
   try {
     let csvText = '';
     const isBrowser = typeof window !== 'undefined' && typeof fetch !== 'undefined';
-    // In browser/Next client, fetch from public path. In Node (tests/server), read from filesystem via dynamic import.
-    if (isBrowser) {
-      try {
-        const url = new URL('/lib/zv_cobce_psc.csv', window.location.origin).toString();
-        const response = await fetch(url, { cache: 'force-cache' });
-        if (!response.ok) {
-          return new Map();
-        }
-        csvText = await response.text();
-      } catch (_err) {
-        // Silent fallback on client to avoid breaking UX
+    const baseOrigin = isBrowser
+      ? window.location.origin
+      : (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_APP_URL) || '';
+    if (!baseOrigin) {
+      return new Map();
+    }
+    try {
+      const url = new URL('/lib/zv_cobce_psc.csv', baseOrigin).toString();
+      const response = await fetch(url, { cache: 'force-cache' });
+      if (!response.ok) {
         return new Map();
       }
-    } else {
-      const fs = await import('fs/promises');
-      const path = await import('path');
-      const filePath = path.resolve(process.cwd(), 'public', 'lib', 'zv_cobce_psc.csv');
-      csvText = await fs.readFile(filePath, 'utf8');
+      csvText = await response.text();
+    } catch (_err) {
+      return new Map();
     }
     
     const lines = csvText.split('\n');

@@ -1,3 +1,7 @@
+// Ensure PSČ resolution is skipped in tests to avoid network/URL issues
+(globalThis as any).process = (globalThis as any).process || {};
+(globalThis as any).process.env = (globalThis as any).process.env || {};
+(globalThis as any).process.env.HH_SKIP_ZIP_RESOLVE = '1';
 import { calculatePrice } from "@/utils/calculation";
 import { residentialBuildingFormConfig } from "@/config/forms/residential-building";
 
@@ -67,6 +71,79 @@ async function run() {
   // Allow small rounding tolerance (0.1 Kč steps)
   if (Math.abs(res3.generalCleaningPrice - expectedGeneral3) > 0.1) {
     throw new Error(`Mismatch: general with basement in regular should be ~${expectedGeneral3}, got ${res3.generalCleaningPrice}`);
+  }
+
+  // 4) No basement: selecting general must NOT change regular price
+  const nobase_base = {
+    cleaningFrequency: "weekly",
+    aboveGroundFloors: 4,
+    undergroundFloors: 0,
+    apartmentsPerFloor: "3",
+    hasElevator: "no",
+    hasHotWater: "yes",
+    buildingPeriod: "pre1945",
+    generalCleaning: "no",
+    winterMaintenance: "no",
+    zipCode: "14000"
+  } as any;
+  const nobase_res_regular = await calculatePrice(nobase_base, residentialBuildingFormConfig);
+  const nobase_with_general = await calculatePrice({
+    ...nobase_base,
+    generalCleaning: "yes",
+    generalCleaningType: "standard",
+    windowsPerFloor: 2,
+    floorsWithWindows: "all",
+    windowType: ["original"]
+  }, residentialBuildingFormConfig);
+  console.log("No-basement regular:", nobase_res_regular.regularCleaningPrice, "| With general regular:", nobase_with_general.regularCleaningPrice, "general:", nobase_with_general.generalCleaningPrice);
+  if (nobase_res_regular.regularCleaningPrice !== nobase_with_general.regularCleaningPrice) {
+    throw new Error(`No-basement: regular must be unchanged when general is selected. Expected ${nobase_res_regular.regularCleaningPrice}, got ${nobase_with_general.regularCleaningPrice}`);
+  }
+
+  // 5) With undergroundFloors=2: verify exact 0.95 split logic
+  const twoBase = {
+    cleaningFrequency: "weekly",
+    aboveGroundFloors: 5,
+    undergroundFloors: 2,
+    apartmentsPerFloor: "3",
+    hasElevator: "yes",
+    hasHotWater: "no",
+    buildingPeriod: "pre1945",
+    generalCleaning: "no",
+    winterMaintenance: "no",
+    zipCode: "14000"
+  } as any;
+  const two_regular = await calculatePrice(twoBase, residentialBuildingFormConfig);
+  const two_gen_in_general = await calculatePrice({
+    ...twoBase,
+    generalCleaning: "yes",
+    generalCleaningType: "standard",
+    windowsPerFloor: 2,
+    floorsWithWindows: "all",
+    windowType: ["original"],
+    basementCleaning: "general",
+    basementCleaningDetails: "corridors-and-rooms"
+  }, residentialBuildingFormConfig);
+  const two_gen_in_regular = await calculatePrice({
+    ...twoBase,
+    generalCleaning: "yes",
+    generalCleaningType: "standard",
+    windowsPerFloor: 2,
+    floorsWithWindows: "all",
+    windowType: ["original"],
+    basementCleaning: "regular",
+    basementCleaningDetails: "corridors-and-rooms"
+  }, residentialBuildingFormConfig);
+  const exp_two_reg_with_general = roundToTenth(two_regular.regularCleaningPrice! * 0.95);
+  if (Math.abs(two_gen_in_general.regularCleaningPrice! - exp_two_reg_with_general) > 0.2) {
+    throw new Error(`UF=2: expected regular with basement in general to be ~${exp_two_reg_with_general}, got ${two_gen_in_general.regularCleaningPrice}`);
+  }
+  if (two_gen_in_regular.regularCleaningPrice !== two_regular.regularCleaningPrice) {
+    throw new Error(`UF=2: expected regular with basement in regular to equal base ${two_regular.regularCleaningPrice}, got ${two_gen_in_regular.regularCleaningPrice}`);
+  }
+  const exp_two_general_in_regular = roundToTenth((two_gen_in_general.generalCleaningPrice || 0) * 0.95);
+  if (Math.abs((two_gen_in_regular.generalCleaningPrice || 0) - exp_two_general_in_regular) > 0.1) {
+    throw new Error(`UF=2: expected general with basement in regular ~${exp_two_general_in_regular}, got ${two_gen_in_regular.generalCleaningPrice}`);
   }
 
   console.log("All residential-building checks passed.");

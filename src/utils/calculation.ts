@@ -232,8 +232,10 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
   
   for (const [fieldId, value] of Object.entries(calculationData)) {
     if (value !== undefined && value !== null && value !== '') {
-      // Skip basementCleaning from general coefficient loop - it's handled separately
-      if (fieldId === 'basementCleaning') continue;
+      // Skip basementCleaning in the general coefficient loop ONLY for residential buildings
+      // (handled separately for residential-building). For other forms (e.g., panel-building),
+      // allow the configured coefficient (e.g., 1.02 / 0.96) to apply here.
+      if (formConfig.id === 'residential-building' && fieldId === 'basementCleaning') continue;
       
       // Skip general cleaning specific fields from regular cleaning
       if (excludeGeneralFieldsFromRegular && generalCleaningOnlyFields.includes(fieldId)) {
