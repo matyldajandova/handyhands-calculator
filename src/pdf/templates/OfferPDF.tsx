@@ -395,7 +395,7 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
 
     <section class="hh-last-page">
       <div class="hh-last-note">
-        <div class="text-center font-bold text-sm text-black-pdf">Tato cenová nabídka je platná po dobu 30 dnů od data jejího vytvoření.</div>
+        <div class="text-center font-bold text-sm text-black-pdf mt-4">Tato cenová nabídka je platná po dobu 30 dnů od data jejího vytvoření.</div>
       </div>
     </section>
   `;
