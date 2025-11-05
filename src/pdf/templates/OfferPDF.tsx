@@ -49,7 +49,7 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
   const tasksHtml = (data.tasks?.length ?? 0) || (data.summaryItems?.length ?? 0)
     ? `
       <section class="mt-8" style="page-break-inside: avoid;">
-        <div class="text-xl font-bold">3. Shrnutí - rozsah a specifikace pracovních úkonů</div>
+        <div class="font-bold">3. Shrnutí - rozsah a specifikace pracovních úkonů</div>
         <div class="hh-divider mt-2"></div>      
         ${renderCompleteQATable(data.tasks, data.summaryItems)}
         
@@ -58,64 +58,54 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
       </section>
 
       <section class="hh-section mt-8">
-        <div class="text-xl font-bold">4. Proč si vybrat právě nás?</div>
+        <div class="font-bold">4. Proč si vybrat právě nás?</div>
         <div class="hh-divider mt-2"></div>
         
-        <div class="grid grid-cols-2 gap-6 mt-6">
-          <div class="hh-card">
-            <div class="hh-card-title">20 let</div>
-            <div class="hh-card-subtitle">zkušeností s úklidovými službami</div>
-          </div>
-          <div class="hh-card">
-            <div class="hh-card-title">5 mil. Kč</div>
-            <div class="hh-card-subtitle">pojištění odpovědnosti za způsobené škody</div>
+        <div class="hh-features-box mt-6">
+          <div class="hh-features-grid">
+            <div class="hh-feature-item">
+              <div class="hh-feature-icon">
+                <img src="money-time.svg" alt="money-time" class="hh-svg-icon" />
+              </div>
+              <div class="hh-feature-value">5 mil. Kč</div>
+              <div class="hh-feature-label">Pojištění odpovědnosti za způsobené škody</div>
+            </div>
+            <div class="hh-feature-item">
+              <div class="hh-feature-icon">
+                <img src="calendar.svg" alt="calendar" class="hh-svg-icon" />
+              </div>
+              <div class="hh-feature-value">20 let</div>
+              <div class="hh-feature-label">Zkušeností s úklidovými službami</div>
+            </div>
           </div>
         </div>
 
-        <div class="hh-benefits">
+        <div class="hh-benefits mt-6">
           <div class="hh-benefit-item" style="page-break-inside: avoid;">
-            <div class="hh-benefit-title">Zkušenosti s úklidovými službami již 20 let</div>
+            <div class="hh-benefit-title text-xs">Zkušenosti s úklidovými službami již 20 let</div>
             <div class="hh-benefit-text">Naše dlouholeté působení na trhu je zárukou profesionálního přístupu, osvědčených postupů a stabilního týmu. Víme, jak zajistit maximální kvalitu a spokojenost našich klientů.</div>
           </div>
           <div class="hh-benefit-item" style="page-break-inside: avoid;">
-            <div class="hh-benefit-title">Prověření a kvalifikovaní pracovníci</div>
+            <div class="hh-benefit-title text-xs">Prověření a kvalifikovaní pracovníci</div>
             <div class="hh-benefit-text">Naši pracovníci jsou pečlivě prověřeni, jsou spolehliví, dochvilní a prošli důkladným školením. Můžete se na ně plně spolehnout, že odvedou svoji práci na 100 %.</div>
           </div>
           <div class="hh-benefit-item" style="page-break-inside: avoid;">
-            <div class="hh-benefit-title">Garance kvality a spolehlivosti</div>
+            <div class="hh-benefit-title text-xs">Garance kvality a spolehlivosti</div>
             <div class="hh-benefit-text">Dbáme na nejvyšší standardy úklidu, používáme kvalitní čisticí prostředky a moderní vybavení. Váš prostor bude vždy čistý, upravený a voňavý. Také Vaše zpětná vazba je pro nás velmi důležitá.</div>
           </div>
           <div class="hh-benefit-item" style="page-break-inside: avoid;">
-            <div class="hh-benefit-title">Flexibilita a individuální přístup</div>
+            <div class="hh-benefit-title text-xs">Flexibilita a individuální přístup</div>
             <div class="hh-benefit-text">Chápeme, že každý klient má jiné požadavky. Nabízíme pravidelné či nepravidelné úklidy, přizpůsobíme se Vám podle rozvrhu a potřeb. Můžete si vybrat termíny i rozsah služeb, jak Vám to nejvíce vyhovuje.</div>
           </div>
           <div class="hh-benefit-item" style="page-break-inside: avoid;">
-            <div class="hh-benefit-title">Pojištění do výše 5 mil. Kč a jistota</div>
+            <div class="hh-benefit-title text-xs">Pojištění do výše 5 mil. Kč a jistota</div>
             <div class="hh-benefit-text">Veškeré naše práce jsou kryty pojištěním, což zajišťuje ochranu Vašeho majetku a absolutní klid na duši. Při jakékoliv nečekané události za nás ručíme.</div>
           </div>
           <div class="hh-benefit-item" style="page-break-inside: avoid;">
-            <div class="hh-benefit-title">Zákaznická spokojenost na prvním místě</div>
+            <div class="hh-benefit-title text-xs">Zákaznická spokojenost na prvním místě</div>
             <div class="hh-benefit-text">Naším cílem je vybudovat dlouhodobé vztahy založené na důvěře, profesionalitě a individuálním přístupu. Vaše spokojenost je pro nás vždy na prvním místě.</div>
           </div>
         </div>
-      </section>
-
-      <section class="hh-section mt-8">
-        <div class="text-xl font-bold">Destatero HandyHands</div>
-        <div class="hh-divider mt-2"></div>
-        <ol class="list-decimal pl-6 mt-4 space-y-2">
-          <li><strong>Platí to, na čem se dohodneme</strong> – Pečlivě se věnujeme Vašim požadavkům a zavazujeme se k dodržování dohodnutých podmínek.</li>
-          <li><strong>Spokojenost zákazníků je pro nás klíčová</strong> – Usilujeme o Vaši maximální spokojenost a komfort.</li>
-          <li><strong>Zajišťujeme stálost Vašeho úklidového pracovníka</strong> – Upřednostňujeme stabilního pracovníka, s případnou minimální změnou, a v případě absence rychle zajistíme náhradního.</li>
-          <li><strong>Naši pracovníci fungují samostatně</strong> – Jsou aktivní, samostatní a nevyžadují neustálé řízení, ale v případě potřeby Vás kontaktují a upozorní na nedostatky.</li>
-          <li><strong>Komunikace a upozornění na nedostatky</strong> – Pokud objevíme jakékoli problémy, včas Vás informujeme a po vzájemné dohodě je odstraníme.</li>
-          <li><strong>Máme přehled o aktuálním stavu prostor</strong> – Sledujeme a známe stav prostor určených k úklidu, aby byla zajištěna kvalita práce.</li>
-          <li><strong>Udržujeme prostory v dlouhodobé čistotě</strong> – Dbáme na to, aby byly prostory udržovány ve stavu přiměřené čistoty i v dlouhodobém horizontu.</li>
-          <li><strong>Respektujeme Vaše prostředí a pravidla</strong> – Chováme se s úctou k Vašim prostorům a dodržujeme všechny stanovené bezpečnostní a hygienické normy.</li>
-          <li><strong>Flexibilita a vstřícnost</strong> – Přizpůsobíme se Vašim časovým požadavkům a specifikacím.</li>
-          <li><strong>Profesionalita a důvěra</strong> – Garantujeme kvalitní služby, poctivost a důvěrnost Vašich informací.</li>
-        </ol>
-        <p class="mt-6 hh-small hh-muted"><strong>Všechny požadavky a reklamace se vyřizují pouze online nebo telefonicky.</strong> Toto je důležité pravidlo a je uvedeno ve všech cenových nabídkách (web, PDF atd.); zákazník s ním musí při objednávce souhlasit.</p>
       </section>
     `
     : "";
@@ -130,7 +120,7 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
       <div class="font-bold">1. Identifikace a kontaktní údaje</div>
       <div class="hh-divider mt-2"></div>
       <div class="grid grid-cols-2 gap-6 mt-4">
-        <div>
+        <div class="text-xs">
           <div class="font-semibold">Údaje o Vás:</div>
           <div>${escapeHtml(data.customer.name)}</div>
           ${data.customer.address ? `<div>${escapeHtml(data.customer.address)}</div>` : ""}
@@ -148,11 +138,11 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
           `;
           })() : ""}
         </div>
-        <div>
+        <div class="text-xs">
           <div class="font-semibold">Údaje o nás:</div>
-          <div>HandyHands s.r.o.</div>
-          <div>Jičínská 226/17, Žižkov, 130 00 Praha</div>
-          <div>IČO: 08405867</div>
+          <div>Topclassservice, s.r.o.</div>
+          <div>Hvězdova 1566/21, Praha 4 – Nusle, 140 00</div>
+          <div>IČO: 22230092</div>
         </div>
       </div>
       ${data.poptavkaNotes ? `
@@ -163,52 +153,124 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
     </section>
 
     <section class="mt-6">
-      <div class="font-bold">2. ${data.isHourlyService ? 'Cena služby' : 'Celková cena pravidelného úklidu'}</div>
+      <div class="font-bold">2. ${data.isHourlyService ? 'Cena jednorázového úklidu - mytí oken nebo ostatních služeb' : 'Celková cena pravidelného úklidu'}</div>
       <div class="hh-divider mt-1"></div>
       
-      <!-- Main pricing section -->
-      <div class="mt-4">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
-          <div>
-            ${data.isHourlyService ? `
-              <div class="text-2xl font-bold text-primary-pdf">${Number(data.hourlyRate || data.price).toLocaleString("cs-CZ")} Kč <span style="color: #000000; font-weight: normal;">/hod/pracovník</span></div>
-              <div class="text-muted-foreground mt-2 italic">Minimální délka ${data.serviceTitle && data.serviceTitle.startsWith('Jednorázový úklid') ? 'úklidu' : 'mytí oken'} je ${data.minimumHours} hod. práce</div>
-            ` : `
+      ${data.isHourlyService ? `
+        <!-- New layout for hourly services -->
+        <p class="mt-4 text-xs text-black-pdf">Cena za vámi požadovaný <strong>jednorázový úklid (mytí oken nebo ostatních služeb)</strong> je ve výši:</p>
+        
+        <!-- Orange-bordered box -->
+        <div class="mt-4 hh-pricing-box">
+          <!-- Top section: Price and Date side by side -->
+          <div class="hh-pricing-top">
+            <!-- Left: Pricing -->
+            <div>
+              <!-- Icon -->
+              <div class="text-center mb-2">
+                <img src="money-time.svg" alt="money-time" class="hh-svg-icon" />
+              </div>
+              <!-- Main Price -->
+              <div class="text-center mb-2">
+                <span class="text-2xl font-bold text-primary-pdf">${Number(data.hourlyRate || data.price).toLocaleString("cs-CZ")} Kč</span>
+                <span class="text-base font-normal text-black"> / hod. / pracovník</span>
+              </div>
+              <!-- Description -->
+              <div class="text-left text-xs text-black-pdf leading-relaxed">
+                Hodinová sazba jednorázového úklidu - mytí oken apod. (minimální délka trvání prací jsou ${data.minimumHours || 2} hodiny)
+              </div>
+            </div>
+            
+            <!-- Right: Availability -->
+            <div>
+              <!-- Icon -->
+              <div class="text-center mb-2">
+                <img src="calendar.svg" alt="calendar" class="hh-svg-icon" />
+              </div>
+              <!-- Main Date -->
+              <div class="text-center mb-2">
+                <div class="text-2xl font-bold text-primary-pdf leading-tight">
+                  ${escapeHtml(data.startDate)}
+                </div>
+              </div>
+              <!-- Description -->
+              <div class="text-center text-xs text-black-pdf leading-relaxed">
+                S úklidovými službami jsme schopni začít od tohoto dne
+              </div>
+            </div>
+          </div>
+          
+          <!-- Solid horizontal separator with plus circles -->
+          <div class="hh-pricing-separator">
+            ${(() => {
+              const cleaningSupplies = data.fixedAddons?.find(a => a.label.includes('Úklidové náčiní') || a.label.includes('úklidové náčiní'));
+              const transport = data.fixedAddons?.find(a => a.label.includes('Doprava') || a.label.includes('doprava'));
+              const hasBoth = cleaningSupplies && transport;
+              return hasBoth ? `
+                <span class="hh-addon-plus hh-addon-plus-left">+</span>
+                <span class="hh-addon-plus hh-addon-plus-right">+</span>
+              ` : cleaningSupplies ? `
+                <span class="hh-addon-plus" style="left: 50%;">+</span>
+              ` : transport ? `
+                <span class="hh-addon-plus" style="left: 50%;">+</span>
+              ` : '';
+            })()}
+          </div>
+          
+          <!-- Bottom section: Add-ons in two columns (or one full width if only one) -->
+          ${(() => {
+            const cleaningSupplies = data.fixedAddons?.find(a => a.label.includes('Úklidové náčiní') || a.label.includes('úklidové náčiní'));
+            const transport = data.fixedAddons?.find(a => a.label.includes('Doprava') || a.label.includes('doprava'));
+            const hasBoth = cleaningSupplies && transport;
+            
+            return `
+            <div class="hh-addon-grid ${hasBoth ? 'hh-addon-grid-double' : 'hh-addon-grid-single'}">
+              ${cleaningSupplies ? `
+                <div class="${hasBoth ? 'hh-addon-item-left' : ''}">
+                  <div class="text-center">
+                    <div class="text-xs text-black-pdf">
+                      <div class="font-bold">úklidové náčiní a úklidová chemie</div>
+                      <div class="font-bold mt-1">${cleaningSupplies.amount} Kč</div>
+                    </div>
+                  </div>
+                </div>
+              ` : ''}
+              
+              ${transport ? `
+                <div class="${hasBoth ? 'hh-addon-item-right' : ''}">
+                  <div class="text-center">
+                    <div class="text-xs text-black-pdf">
+                      <div class="font-bold">doprava tam a zpět</div>
+                      <div class="font-bold mt-1">${transport.amount} Kč</div>
+                    </div>
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+            `;
+          })()}
+        </div>
+      ` : `
+        <!-- Original layout for regular services -->
+        <div class="mt-4">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+            <div>
               <div class="text-2xl font-bold text-primary-pdf">${Number(data.price).toLocaleString("cs-CZ")} Kč <span style="color: #000000; font-weight: normal;">za měsíc</span></div>
               <div class="text-muted-foreground">Celková částka pravidelného úklidu bytového domu</div>
               <div class="hh-small hh-muted">(tj. včetně níže popsaných náležitostí)</div>
-            `}
-            <div class="text-muted-foreground" style="font-size: 14px; margin-top: 8px;">S úklidovými službami jsme schopni začít od <span style="font-weight: bold;">${escapeHtml(data.startDate)}</span></div>
+              <div class="text-muted-foreground" style="font-size: 14px; margin-top: 8px;">S úklidovými službami jsme schopni začít od <span style="font-weight: bold;">${escapeHtml(data.startDate)}</span></div>
+            </div>
+            ${data.poptavkaHash ? `
+              <div>
+                <a href="${baseUrl}/poptavka?hash=${escapeHtml(data.poptavkaHash)}" 
+                   style="display: inline-block; padding: 8px 16px; background-color: #f6a85a; border: 2px solid #f6a85a; border-radius: 4px; text-decoration: none; font-weight: bold; color: #000000; font-size: 14px;">
+                  Závazná poptávka
+                </a>
+              </div>
+            ` : ''}
           </div>
-          ${data.poptavkaHash ? `
-            <div>
-              <a href="${baseUrl}/poptavka?hash=${escapeHtml(data.poptavkaHash)}" 
-                 style="display: inline-block; padding: 8px 16px; background-color: #f6a85a; border: 2px solid #f6a85a; border-radius: 4px; text-decoration: none; font-weight: bold; color: #000000; font-size: 14px;">
-                Závazná poptávka
-              </a>
-            </div>
-          ` : ''}
         </div>
-      </div>
-
-      <!-- Extra položky section for hourly services -->
-      ${data.isHourlyService && data.fixedAddons && data.fixedAddons.length > 0 ? `
-        <div class="mt-4" style="display: flex; gap: 12px; flex-wrap: wrap;">
-          ${data.fixedAddons.map(addon => `
-            <div style="flex: 1; min-width: 200px; padding: 8px; background-color: #ffffff; border: 1px solid #D4D4D4; border-radius: 4px; position: relative;">
-              <div style="position: absolute; top: -8px; left: 50%; transform: translateX(-50%); background-color: #2e2e2e; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;">
-                <span style="color: #ffffff; font-size: 12px; font-weight: bold; line-height: 1;">+</span>
-              </div>
-              <div style="text-align: center; padding-top: 4px;">
-                <div style="font-size: 12px; font-weight: 600; color: #2e2e2e; margin-bottom: 4px;">
-                  ${escapeHtml(addon.label)}
-                </div>
-                <div style="font-size: 16px; font-weight: bold; color: #2e2e2e;">${addon.amount} Kč</div>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      ` : ''}
+      `}
 
       <!-- Additional services - compact horizontal layout -->
       ${data.generalCleaningPrice || data.winterServiceFee ? `
@@ -274,32 +336,77 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
 
       
       ${renderConditionsSection(data.conditions)}
-      <p class="mt-4 hh-muted hh-small">Cena obsahuje pravidelný týdenní, měsíční a generální úklid 2x ročně, dopravu pracovníků na místo úklidových prací, pojištění odpovědnosti do výše 5 mil. Kč, běžné úklidové prostředky a vlastní úklidové náčiní.</p>
-      <p class="hh-muted hh-small">Ostatní práce nad rámec smlouvy (např. úklid po řemeslnících, výjezd na vyžádání apod.): 345 Kč / hod. za pracovníka.</p>
-      <p class="hh-muted hh-small">Nejsme plátci DPH. Úklidové práce provádějí vždy naši stálí pracovníci.</p>
-
-      
-      <div style="page-break-inside: avoid;">
-        <p class="mt-4">V Praze, dne ${escapeHtml(data.quoteDate)}</p>
-        <div class="grid grid-cols-2 gap-12 hh-signature-block">
-          <div>
-            <img src="signature-lenka.svg" alt="Podpis Lenka Krátká" style="width: 120px; height: 40px; margin-bottom: 8px;" />
-            <div class="hh-signature-line"></div>
-            <div class="hh-sign-name">Lenka Krátká</div>
-            <div class="hh-small hh-muted">Regionální manažer pravidelných úklidů</div>
+      ${data.isHourlyService ? `
+        <!-- Footer text for hourly services -->
+        <div class="mt-6 flex items-start gap-6">
+          <div class="flex-1">
+            <p class="hh-muted hh-small mb-8 text-black-pdf">Cena obsahuje pojištění odpovědnosti do výše 5 mil. Kč.</p>
+            <p class="hh-muted text-sm mb-2 text-black-pdf"><strong>Nejsme plátci DPH</strong>, uvedené ceny jsou <strong>konečné</strong>.</p>
+            <p class="hh-muted text-sm mb-2 text-black-pdf">Úklidové práce provádějí vždy naši <strong>stálí</strong> pracovníci.</p>
+            <p class="hh-muted text-sm mb-2 text-black-pdf">V případě dotazů nebo nejasností se na nás neváhejte obrátit.</p>
+            <p class="hh-muted text-sm mt-4 text-black-pdf">V Praze, dne ${escapeHtml(data.quoteDate)}</p>
           </div>
-          <div>
-            <img src="signature-jana.svg" alt="Podpis Jana Dvořáková" style="width: 120px; height: 40px; margin-bottom: 8px;" />
-            <div class="hh-signature-line"></div>
-            <div class="hh-sign-name">Jana Dvořáková</div>
-            <div class="hh-small hh-muted">Jednatel HandyHands, s.r.o.</div>
+          ${data.poptavkaHash ? `
+            <div class="self-start">
+              <a href="${baseUrl}/poptavka?hash=${escapeHtml(data.poptavkaHash)}" 
+                 class="inline-block px-5 py-2.5 bg-primary-pdf border-2 border-primary-pdf rounded-md font-bold text-black text-sm">
+                Závazná poptávka
+              </a>
+            </div>
+          ` : ''}
+        </div>
+        
+        <!-- Signatures for hourly services -->
+        <div class="mt-6" style="page-break-inside: avoid;">
+          <div class="grid grid-cols-2 gap-12 hh-signature-block">
+            <div class="hh-signature-content">
+              <img src="signature-lenka.svg" alt="Podpis Lenka Krátká" class="hh-signature-image" />
+              <div class="hh-sign-name">Lenka Krátká</div>
+              <div class="hh-small hh-muted">Regionální manažer pravidelných úklidů</div>
+            </div>
+            <div class="hh-signature-content">
+              <img src="signature-jana.svg" alt="Podpis Jana Dvořáková" class="hh-signature-image" />
+              <div class="hh-sign-name">Petr Jančálek</div>
+              <div class="hh-small hh-muted">Jednatel Topclassservice, s.r.o.</div>
+            </div>
           </div>
         </div>
-      </div>
+      ` : `
+        <!-- Footer text for regular services -->
+        <p class="mt-4 hh-muted hh-small">Cena obsahuje pravidelný týdenní, měsíční a generální úklid 2x ročně, dopravu pracovníků na místo úklidových prací, pojištění odpovědnosti do výše 5 mil. Kč, běžné úklidové prostředky a vlastní úklidové náčiní.</p>
+        <p class="hh-muted hh-small">Ostatní práce nad rámec smlouvy (např. úklid po řemeslnících, výjezd na vyžádání apod.): 345 Kč / hod. za pracovníka.</p>
+        <p class="hh-muted hh-small">Nejsme plátci DPH. Úklidové práce provádějí vždy naši stálí pracovníci.</p>
+      `}
 
-      <p class="mt-6 hh-note">Pozn.: tato nabídka je nezávazná a slouží pouze k poskytnutí předběžné informace. Vypracování konečné nabídky a realizace služeb je podmíněná vzájemnou dohodou a potvrzením objednávky. Nemáme žádnou právní povinnost akceptovat nebo realizovat nabízené služby na základě této nabídky.</p>
+      ${!data.isHourlyService ? `
+        <div style="page-break-inside: avoid;">
+          <p class="mt-4">V Praze, dne ${escapeHtml(data.quoteDate)}</p>
+          <div class="grid grid-cols-2 gap-12 hh-signature-block">
+            <div>
+              <img src="signature-lenka.svg" alt="Podpis Lenka Krátká" style="width: 256px; height: 64px; margin-bottom: 8px;" />
+              <div class="hh-signature-line"></div>
+              <div class="hh-sign-name">Lenka Krátká</div>
+              <div class="hh-small hh-muted">Regionální manažer pravidelných úklidů</div>
+            </div>
+            <div>
+              <img src="signature-jana.svg" alt="Podpis Petr Jančálek" style="width: 256px; height: 64px; margin-bottom: 8px;" />
+              <div class="hh-signature-line"></div>
+              <div class="hh-sign-name">Petr Jančálek</div>
+              <div class="hh-small hh-muted">Jednatel Topclassservice, s.r.o.</div>
+            </div>
+          </div>
+        </div>
+
+        <p class="mt-6 hh-note">Pozn.: tato nabídka je nezávazná a slouží pouze k poskytnutí předběžné informace. Vypracování konečné nabídky a realizace služeb je podmíněná vzájemnou dohodou a potvrzením objednávky. Nemáme žádnou právní povinnost akceptovat nebo realizovat nabízené služby na základě této nabídky.</p>
+      ` : ""}
     </section>
     ${tasksHtml}
+
+    <section class="hh-last-page">
+      <div class="hh-last-note">
+        <div class="text-center font-bold text-sm text-black-pdf">Tato cenová nabídka je platná po dobu 30 dnů od data jejího vytvoření.</div>
+      </div>
+    </section>
   `;
 }
 
@@ -343,19 +450,20 @@ function renderCompleteQATable(tasks?: string[], summaryItems?: { label: string;
     .map((item, index) => {
       const isEven = index % 2 === 0;
       const bgColor = isEven ? "bg-light-gray" : "bg-white";
+      const isLastRow = index === allItems.length - 1;
       
       return `
         <tr class="${bgColor}">
-          <td class="px-3 py-1 text-sm border border-gray-pdf font-medium text-left">${escapeHtml(item.label)}</td>
-          <td class="px-3 py-1 text-sm border border-gray-pdf text-left">${escapeHtml(item.value)}</td>
+          <td class="px-3 py-1 text-xs border-r border-b border-gray-pdf font-medium text-left" style="${isLastRow ? 'border-bottom: none;' : ''}">${escapeHtml(item.label)}</td>
+          <td class="px-3 py-1 text-xs border-b border-gray-pdf text-left" style="${isLastRow ? 'border-bottom: none;' : ''}">${escapeHtml(item.value)}</td>
         </tr>
       `;
     })
     .join("");
   
   return `
-    <div class="mt-4">
-      <table class="w-full border-collapse border border-gray-pdf text-sm">
+    <div class="mt-4" style="border: 2px solid var(--border-gray); border-radius: 8px; overflow: hidden;">
+      <table class="w-full border-collapse text-xs">
         <colgroup>
           <col style="width: 75%;">
           <col style="width: 25%;">
@@ -373,9 +481,9 @@ function renderNotesSection(notes?: string): string {
   
   return `
     <div class="mt-6" style="page-break-inside: avoid;">
-      <div class="font-semibold mb-2">Poznámka zákazníka:</div>
+      <div class="font-semibold mb-2 text-xs">Poznámka zákazníka:</div>
       <div class="bg-light-gray border border-gray-pdf rounded-lg p-4">
-        <p class="text-sm leading-relaxed">${escapeHtml(notes.trim())}</p>
+        <p class="text-xs leading-relaxed">${escapeHtml(notes.trim())}</p>
       </div>
     </div>
   `;
@@ -429,19 +537,19 @@ function renderCommonServicesSection(commonServices?: {
   
   let html = `
     <div class="mt-6">
-      <div class="font-semibold mb-3 text-lg">Seznam běžně prováděných úkonů</div>
+      <div class="font-semibold mb-3 text-xs">Seznam běžně prováděných úkonů</div>
   `;
   
   // Render each active category
   activeCategories.forEach(category => {
     const services = commonServices[category.key as keyof typeof commonServices] as string[];
     const servicesList = services
-      .map(service => `<li class="text-sm">${escapeHtml(service)}</li>`)
+      .map(service => `<li class="text-xs">${escapeHtml(service)}</li>`)
       .join("");
     
     html += `
       <div class="mb-3">
-        <div class="font-medium mb-2 font-semibold">${category.label}</div>
+        <div class="font-medium mb-2 font-semibold text-xs">${category.label}</div>
         <ul class="list-outside list-disc ml-6 space-y-1 marker:text-primary-pdf">
           ${servicesList}
         </ul>

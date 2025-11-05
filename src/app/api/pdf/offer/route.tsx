@@ -83,12 +83,16 @@ export async function POST(req: NextRequest) {
   const logoBase64 = await fs.readFile(path.join(publicPath, 'handyhands_horizontal.svg'), 'base64');
   const signatureLenkaBase64 = await fs.readFile(path.join(publicPath, 'signature-lenka.svg'), 'base64');
   const signatureJanaBase64 = await fs.readFile(path.join(publicPath, 'signature-jana.svg'), 'base64');
+  const moneyTimeBase64 = await fs.readFile(path.join(publicPath, 'money-time.svg'), 'base64').catch(() => '');
+  const calendarBase64 = await fs.readFile(path.join(publicPath, 'calendar.svg'), 'base64').catch(() => '');
   
   // Replace image sources with base64 data URLs
   const htmlBodyWithBase64 = htmlBody
     .replace(/src="handyhands_horizontal\.svg"/g, `src="data:image/svg+xml;base64,${logoBase64}"`)
     .replace(/src="signature-lenka\.svg"/g, `src="data:image/svg+xml;base64,${signatureLenkaBase64}"`)
-    .replace(/src="signature-jana\.svg"/g, `src="data:image/svg+xml;base64,${signatureJanaBase64}"`);
+    .replace(/src="signature-jana\.svg"/g, `src="data:image/svg+xml;base64,${signatureJanaBase64}"`)
+    .replace(/src="money-time\.svg"/g, moneyTimeBase64 ? `src="data:image/svg+xml;base64,${moneyTimeBase64}"` : 'src="money-time.svg"')
+    .replace(/src="calendar\.svg"/g, calendarBase64 ? `src="data:image/svg+xml;base64,${calendarBase64}"` : 'src="calendar.svg"');
 
   const pageHtml = `<!doctype html><html><head><meta charset="utf-8"/><style>@page{size:A4;margin:30mm 18mm 20mm 18mm} ${css}</style></head><body class="font-sans text-sm">${htmlBodyWithBase64}</body></html>`;
 
@@ -265,12 +269,16 @@ export async function GET(req: NextRequest) {
     const logoBase64 = await fs.readFile(path.join(publicPath, 'handyhands_horizontal.svg'), 'base64');
     const signatureLenkaBase64 = await fs.readFile(path.join(publicPath, 'signature-lenka.svg'), 'base64');
     const signatureJanaBase64 = await fs.readFile(path.join(publicPath, 'signature-jana.svg'), 'base64');
+    const moneyTimeBase64 = await fs.readFile(path.join(publicPath, 'money-time.svg'), 'base64').catch(() => '');
+    const calendarBase64 = await fs.readFile(path.join(publicPath, 'calendar.svg'), 'base64').catch(() => '');
     
     // Replace image sources with base64 data URLs
     const htmlBodyWithBase64 = htmlBody
       .replace(/src="handyhands_horizontal\.svg"/g, `src="data:image/svg+xml;base64,${logoBase64}"`)
       .replace(/src="signature-lenka\.svg"/g, `src="data:image/svg+xml;base64,${signatureLenkaBase64}"`)
-      .replace(/src="signature-jana\.svg"/g, `src="data:image/svg+xml;base64,${signatureJanaBase64}"`);
+      .replace(/src="signature-jana\.svg"/g, `src="data:image/svg+xml;base64,${signatureJanaBase64}"`)
+      .replace(/src="money-time\.svg"/g, moneyTimeBase64 ? `src="data:image/svg+xml;base64,${moneyTimeBase64}"` : 'src="money-time.svg"')
+      .replace(/src="calendar\.svg"/g, calendarBase64 ? `src="data:image/svg+xml;base64,${calendarBase64}"` : 'src="calendar.svg"');
 
     const pageHtml = `<!doctype html><html><head><meta charset="utf-8"/><style>@page{size:A4;margin:30mm 18mm 20mm 18mm} ${css}</style></head><body class="font-sans text-sm">${htmlBodyWithBase64}</body></html>`;
     

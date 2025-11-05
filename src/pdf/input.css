@@ -122,4 +122,149 @@ html, body, * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   line-height: 1.4;
 }
 
+/* Pricing box for hourly services */
+.hh-pricing-box {
+  border: 2px solid var(--primary-color);
+  border-radius: 8px;
+  background-color: #fffef8;
+  padding: 12px;
+}
+.hh-pricing-top {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.hh-pricing-separator {
+  position: relative;
+  border-top: 1px solid var(--primary-color);
+  margin: 16px -12px;
+  width: calc(100% + 24px);
+  z-index: 1;
+}
+.hh-addon-plus {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  background-color: var(--primary-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: black;
+  font-weight: bold;
+  font-size: 14px;
+  line-height: 1;
+}
+.hh-addon-plus-left {
+  left: 25%;
+}
+.hh-addon-plus-right {
+  left: 75%;
+}
+.hh-addon-grid {
+  display: grid;
+  position: relative;
+  margin: 0 -12px;
+  padding: 0 12px;
+  margin-top: -16px;
+  padding-top: 16px;
+}
+.hh-addon-grid-single {
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+.hh-addon-grid-double {
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.hh-addon-grid-double::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: -12px;
+  width: 2px;
+  background-color: var(--primary-color);
+  transform: translateX(-50%);
+  z-index: 0;
+}
+.hh-addon-item-left {
+  padding-right: 22px;
+}
+.hh-addon-item-right {
+  padding-left: 22px;
+}
+.hh-signature-image {
+  width: 256px;
+  height: 48px;
+  margin: 0 auto 8px auto;
+  display: block;
+}
+.hh-signature-content {
+  text-align: center;
+}
+
+/* Features box matching pricing box design */
+.hh-svg-icon {
+  width: 40px;
+  height: 40px;
+  display: inline-block;
+}
+.hh-features-box {
+  border: 2px solid var(--primary-color);
+  border-radius: 8px;
+  background-color: #fffef8;
+  padding: 16px;
+}
+.hh-features-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.hh-feature-item {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.hh-feature-icon {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hh-feature-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+.hh-feature-label {
+  font-size: 12px;
+  color: var(--black);
+  line-height: 1.4;
+  text-align: center;
+}
+
+/* Last page bottom note - compact, pushed to bottom when space available */
+.hh-last-page {
+  display: flex;
+  flex-direction: column;
+  page-break-inside: avoid;
+}
+.hh-last-note {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 0;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.hh-last-note div {
+  color: var(--black);
+}
 
