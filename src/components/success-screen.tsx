@@ -20,6 +20,21 @@ interface SuccessScreenProps {
   formData: FormSubmissionData;
 }
 
+// Helper function to get price description based on form type
+function getPriceDescription(formConfig: FormConfig | null): string {
+  if (!formConfig) return "Cena za pravidelný úklid domu";
+  
+  const descriptions: Record<string, string> = {
+    "commercial-spaces": "Cena za pravidelný úklid komerčních nebytových (retailových) prostor",
+    "residential-building": "Cena za pravidelný úklid domu",
+    "panel-building": "Cena za pravidelný úklid domu",
+    "home-cleaning": "Cena za pravidelný úklid domácnosti",
+    "office-cleaning": "Cena za pravidelný úklid kanceláří",
+  };
+  
+  return descriptions[formConfig.id] || "Cena za pravidelný úklid";
+}
+
 // Helper function to get minimum hours for hourly services
 function getMinimumHours(formData: FormSubmissionData): number {
   // For one-time cleaning
@@ -370,7 +385,7 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
                       {formatCurrency(roundedResults.totalMonthlyPrice)} <span className="font-normal text-muted-foreground">za měsíc</span>
                     </div>
                     <div className="text-base text-muted-foreground">
-                      Cena za pravidelný úklid domu
+                      {getPriceDescription(formConfig)}
                     </div>
                   </div>
                 )}

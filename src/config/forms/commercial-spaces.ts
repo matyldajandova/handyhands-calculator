@@ -184,6 +184,20 @@ export const commercialSpacesFormConfig: FormConfig = {
   validationSchema: commercialSpacesSchema,
   basePrice: CURRENT_PRICES.regularCleaning,
   conditions: [],
+  commonServices: {
+    perCleaning: [
+      "všechny místnosti a prostory nebytových prostor, kuchyňky a hygienické zařízení (zametení a vytření podlah)",
+      "otírání okenních parapetů od prachu a jejich mytí",
+      "vyleštění zrdacel na WC, umyvadel včetně vodovodních baterií, mytí dřezů v kuchyňské lince apod.",
+      "vyprázdňování odpadkových košů a vyhazování odpadků do nádob k tomu určených",
+      "vysávání koberců (pokud jsou)"
+    ],
+    generalCleaning: [
+      "oboustranné / jednostranné mytí otevíravých částí oken včetně jejich rámů a parapetů",
+      "mytí osvětlení zvenčí",
+      "dezinfekce kuchyňských spotřebičů"
+    ]
+  },
   sections: [
     {
       id: "cleaning-frequency",

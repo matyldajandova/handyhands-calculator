@@ -58,27 +58,29 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
       </section>
 
       <section class="hh-section mt-8">
-        <div class="font-bold">4. Proč si vybrat právě nás?</div>
-        <div class="hh-divider mt-2"></div>
-        
-        <div class="hh-features-box mt-6">
-          <div class="hh-features-grid">
-            <div class="hh-feature-item">
-              <div class="hh-feature-icon">
-                <img src="money-time.svg" alt="money-time" class="hh-svg-icon" />
+        <div style="page-break-inside: avoid;">
+          <div class="font-bold">4. Proč si vybrat právě nás?</div>
+          <div class="hh-divider mt-2"></div>
+          
+          <div class="hh-features-box mt-6">
+            <div class="hh-features-grid">
+              <div class="hh-feature-item">
+                <div class="hh-feature-icon">
+                  <img src="money-time.svg" alt="money-time" class="hh-svg-icon" />
+                </div>
+                <div class="hh-feature-value">5 mil. Kč</div>
+                <div class="hh-feature-label">Pojištění odpovědnosti za způsobené škody</div>
               </div>
-              <div class="hh-feature-value">5 mil. Kč</div>
-              <div class="hh-feature-label">Pojištění odpovědnosti za způsobené škody</div>
-            </div>
-            <div class="hh-feature-item">
-              <div class="hh-feature-icon">
-                <img src="calendar.svg" alt="calendar" class="hh-svg-icon" />
+              <div class="hh-feature-item">
+                <div class="hh-feature-icon">
+                  <img src="calendar.svg" alt="calendar" class="hh-svg-icon" />
+                </div>
+                <div class="hh-feature-value">20 let</div>
+                <div class="hh-feature-label">Zkušeností s úklidovými službami</div>
               </div>
-              <div class="hh-feature-value">20 let</div>
-              <div class="hh-feature-label">Zkušeností s úklidovými službami</div>
             </div>
           </div>
-        </div>
+        <div>
 
         <div class="hh-benefits mt-6">
           <div class="hh-benefit-item" style="page-break-inside: avoid;">
@@ -251,25 +253,46 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
           })()}
         </div>
       ` : `
-        <!-- Original layout for regular services -->
-        <div class="mt-4">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <!-- Retail/regular services pricing box -->
+        <div class="mt-4 hh-pricing-box">
+          <div class="hh-pricing-top">
+            <!-- Left: Monthly price -->
             <div>
-              <div class="text-2xl font-bold text-primary-pdf">${Number(data.price).toLocaleString("cs-CZ")} Kč <span style="color: #000000; font-weight: normal;">za měsíc</span></div>
-              <div class="text-muted-foreground">Celková částka pravidelného úklidu bytového domu</div>
-              <div class="hh-small hh-muted">(tj. včetně níže popsaných náležitostí)</div>
-              <div class="text-muted-foreground" style="font-size: 14px; margin-top: 8px;">S úklidovými službami jsme schopni začít od <span style="font-weight: bold;">${escapeHtml(data.startDate)}</span></div>
-            </div>
-            ${data.poptavkaHash ? `
-              <div>
-                <a href="${baseUrl}/poptavka?hash=${escapeHtml(data.poptavkaHash)}" 
-                   style="display: inline-block; padding: 8px 16px; background-color: #f6a85a; border: 2px solid #f6a85a; border-radius: 4px; text-decoration: none; font-weight: bold; color: #000000; font-size: 14px;">
-                  Závazná poptávka
-                </a>
+              <div class="text-center mb-2">
+                <img src="money-time.svg" alt="money-time" class="hh-svg-icon" />
               </div>
-            ` : ''}
+              <div class="text-center mb-2">
+                <span class="text-2xl font-bold text-primary-pdf">${Number(data.price).toLocaleString("cs-CZ")} Kč</span>
+                <span class="text-base font-normal text-black"> za měsíc</span>
+              </div>
+              <div class="text-center text-xs text-black-pdf leading-relaxed">
+                Celková částka pravidelného úklidu prostor<br/>
+                (včetně níže popsaných náležitostí)
+              </div>
+            </div>
+            <!-- Right: Start date -->
+            <div>
+              <div class="text-center mb-2">
+                <img src="calendar.svg" alt="calendar" class="hh-svg-icon" />
+              </div>
+              <div class="text-center mb-2">
+                <div class="text-2xl font-bold text-primary-pdf leading-tight">${escapeHtml(data.startDate)}</div>
+              </div>
+              <div class="text-center text-xs text-black-pdf leading-relaxed">
+                S úklidovými službami jsme schopni začít od tohoto dne
+              </div>
+            </div>
           </div>
         </div>
+
+        ${data.poptavkaHash ? `
+          <div class="mt-4" style="text-align: right;">
+            <a href="${baseUrl}/poptavka?hash=${escapeHtml(data.poptavkaHash)}" 
+               class="inline-block px-5 py-2.5 bg-primary-pdf border-2 border-primary-pdf rounded-md font-bold text-black text-sm">
+              Zaslat návrh smlouvy
+            </a>
+          </div>
+        ` : ''}
       `}
 
       <!-- Additional services - compact horizontal layout -->
@@ -357,47 +380,15 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
         </div>
         
         <!-- Signatures for hourly services -->
-        <div class="mt-6" style="page-break-inside: avoid;">
-          <div class="grid grid-cols-2 gap-12 hh-signature-block">
-            <div class="hh-signature-content">
-              <img src="signature-lenka.svg" alt="Podpis Lenka Krátká" class="hh-signature-image" />
-              <div class="hh-sign-name">Lenka Krátká</div>
-              <div class="hh-small hh-muted">Regionální manažer pravidelných úklidů</div>
-            </div>
-            <div class="hh-signature-content">
-              <img src="signature-jana.svg" alt="Podpis Jana Dvořáková" class="hh-signature-image" />
-              <div class="hh-sign-name">Petr Jančálek</div>
-              <div class="hh-small hh-muted">Jednatel Topclassservice, s.r.o.</div>
-            </div>
-          </div>
-        </div>
+        ${renderSignaturesSection(data.quoteDate, true)}
       ` : `
-        <!-- Footer text for regular services -->
-        <p class="mt-4 hh-muted hh-small">Cena obsahuje pravidelný týdenní, měsíční a generální úklid 2x ročně, dopravu pracovníků na místo úklidových prací, pojištění odpovědnosti do výše 5 mil. Kč, běžné úklidové prostředky a vlastní úklidové náčiní.</p>
-        <p class="hh-muted hh-small">Ostatní práce nad rámec smlouvy (např. úklid po řemeslnících, výjezd na vyžádání apod.): 345 Kč / hod. za pracovníka.</p>
-        <p class="hh-muted hh-small">Nejsme plátci DPH. Úklidové práce provádějí vždy naši stálí pracovníci.</p>
+        <!-- Footer text for regular (retail) services -->
+        <p class="mt-6 hh-small text-black-pdf">Cena obsahuje pravidelný úklid komerčních nebytových (retailových) prostor podle rozpisu níže, dopravu pracovníků na místo úklidových prací, <span class="hh-small text-black-pdf font-semibold">pojištění odpovědnosti do výše 5 mil. Kč.</span></p>
+        <p class="hh-small text-black-pdf">Ostatní práce nad rámec smlouvy (např. mimořádný úklid na vyžádání, po havárii apod.)꞉ 345 Kč / hod. za pracovníka.</p>
       `}
 
       ${!data.isHourlyService ? `
-        <div style="page-break-inside: avoid;">
-          <p class="mt-4">V Praze, dne ${escapeHtml(data.quoteDate)}</p>
-          <div class="grid grid-cols-2 gap-12 hh-signature-block">
-            <div>
-              <img src="signature-lenka.svg" alt="Podpis Lenka Krátká" style="width: 256px; height: 64px; margin-bottom: 8px;" />
-              <div class="hh-signature-line"></div>
-              <div class="hh-sign-name">Lenka Krátká</div>
-              <div class="hh-small hh-muted">Regionální manažer pravidelných úklidů</div>
-            </div>
-            <div>
-              <img src="signature-jana.svg" alt="Podpis Petr Jančálek" style="width: 256px; height: 64px; margin-bottom: 8px;" />
-              <div class="hh-signature-line"></div>
-              <div class="hh-sign-name">Petr Jančálek</div>
-              <div class="hh-small hh-muted">Jednatel Topclassservice, s.r.o.</div>
-            </div>
-          </div>
-        </div>
-
-        <p class="mt-6 hh-note">Pozn.: tato nabídka je nezávazná a slouží pouze k poskytnutí předběžné informace. Vypracování konečné nabídky a realizace služeb je podmíněná vzájemnou dohodou a potvrzením objednávky. Nemáme žádnou právní povinnost akceptovat nebo realizovat nabízené služby na základě této nabídky.</p>
+        ${renderSignaturesSection(data.quoteDate)}
       ` : ""}
     </section>
     ${tasksHtml}
@@ -407,6 +398,26 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
         <div class="text-center font-bold text-sm text-black-pdf">Tato cenová nabídka je platná po dobu 30 dnů od data jejího vytvoření.</div>
       </div>
     </section>
+  `;
+}
+
+function renderSignaturesSection(quoteDate: string, addTopMargin: boolean = false): string {
+  return `
+    <div class="${addTopMargin ? 'mt-6' : ''}" style="page-break-inside: avoid;">
+      <p class="mt-4">V Praze, dne ${escapeHtml(quoteDate)}</p>
+      <div class="grid grid-cols-2 gap-12 hh-signature-block">
+        <div class="hh-signature-content">
+          <img src="signature-lenka.svg" alt="Podpis Lenka Krátká" class="hh-signature-image" />
+          <div class="hh-sign-name">Lenka Krátká</div>
+          <div class="hh-small hh-muted">Regionální manažer pravidelných úklidů</div>
+        </div>
+        <div class="hh-signature-content">
+          <img src="signature-jana.svg" alt="Podpis Petr Jančálek" class="hh-signature-image" />
+          <div class="hh-sign-name">Petr Jančálek</div>
+          <div class="hh-small hh-muted">Jednatel Topclassservice, s.r.o.</div>
+        </div>
+      </div>
+    </div>
   `;
 }
 
@@ -537,7 +548,7 @@ function renderCommonServicesSection(commonServices?: {
   
   let html = `
     <div class="mt-6">
-      <div class="font-semibold mb-3 text-xs">Seznam běžně prováděných úkonů</div>
+      <div class="font-semibold mb-3 text-sm">Seznam běžně prováděných úkonů</div>
   `;
   
   // Render each active category
