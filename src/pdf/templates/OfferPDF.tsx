@@ -42,6 +42,7 @@ export type OfferData = {
   minimumHours?: number;
   cleaningFrequency?: string; // For mapping perCleaning to frequency category
   cleaningFrequencyLabel?: string; // Human-readable frequency label for dynamic text
+  serviceType?: string; // Service type ID (e.g., "one-time-cleaning", "handyman-services")
 };
 /**
  * Returns the HTML body markup for the Offer PDF using Tailwind classes.
@@ -129,12 +130,21 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
           ${data.customer.phone ? `<div>${escapeHtml(data.customer.phone)}</div>` : ""}
           ${(data.customer as Record<string, unknown>).company ? (() => {
             const company = (data.customer as Record<string, unknown>).company as Record<string, unknown>;
+            const companyName = company.name as string || '';
+            const companyIco = company.ico as string || '';
+            const companyDic = company.dic as string || '';
+            const companyAddress = company.address as string || '';
+            
+            // Build company info with name on its own line
+            const companyIdParts: string[] = [];
+            if (companyIco) companyIdParts.push(`IČO: ${escapeHtml(companyIco)}`);
+            if (companyDic) companyIdParts.push(`DIČ: ${escapeHtml(companyDic)}`);
+            
             return `
             <div class="mt-2">
-              <div class="font-semibold">společnost:</div>
-              <div>${escapeHtml(company.name as string || '')}</div>
-              <div>IČO: ${escapeHtml(company.ico as string || '')}${company.dic ? `, DIČ: ${escapeHtml(company.dic as string || '')}` : ""}</div>
-              <div>${escapeHtml(company.address as string || '')}</div>
+              ${companyName ? `<div>${escapeHtml(companyName)}</div>` : ''}
+              ${companyIdParts.length > 0 ? `<div>${companyIdParts.join(', ')}</div>` : ''}
+              ${companyAddress ? `<div>${escapeHtml(companyAddress)}</div>` : ''}
             </div>
           `;
           })() : ""}
@@ -159,7 +169,17 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
       
       ${data.isHourlyService ? `
         <!-- New layout for hourly services -->
-        <p class="mt-4 text-xs text-black-pdf">Cena za vámi požadovaný <strong>jednorázový úklid (mytí oken nebo ostatních služeb)</strong> je ve výši:</p>
+        <p class="mt-4 text-xs text-black-pdf">${(() => {
+          // Format service title based on service type
+          const serviceType = data.serviceType || (data.customer as Record<string, unknown>)?.serviceType as string | undefined;
+          if (serviceType === "handyman-services") {
+            return `Cena za vámi požadovaný <strong>jednorázový úklid (mytí oken nebo ostatních služeb)</strong> je ve výši:`;
+          } else if (serviceType === "one-time-cleaning") {
+            return `Cena za vámi požadovaný <strong>jednorázový úklid jakékoliv nemovitosti</strong> je ve výši:`;
+          } else {
+            return `Cena za vámi požadovaný <strong>${escapeHtml((data.serviceTitle || 'službu').toLowerCase())}</strong> je ve výši:`;
+          }
+        })()}</p>
         
         <!-- Orange-bordered box -->
         <div class="mt-4 hh-pricing-box">
@@ -204,8 +224,14 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
           <!-- Solid horizontal separator with plus circles -->
           <div class="hh-pricing-separator">
             ${(() => {
-              const cleaningSupplies = data.fixedAddons?.find(a => a.label.includes('Úklidové náčiní') || a.label.includes('úklidové náčiní'));
-              const transport = data.fixedAddons?.find(a => a.label.includes('Doprava') || a.label.includes('doprava'));
+              const cleaningSupplies = data.fixedAddons?.find(a => {
+                const labelLower = a.label.toLowerCase();
+                return labelLower.includes('úklidové náčiní') || labelLower.includes('úklidová chemie');
+              });
+              const transport = data.fixedAddons?.find(a => {
+                const labelLower = a.label.toLowerCase();
+                return labelLower.includes('doprava') || a.label === 'Doprava' || a.label === 'doprava';
+              });
               const hasBoth = cleaningSupplies && transport;
               return hasBoth ? `
                 <span class="hh-addon-plus hh-addon-plus-left">+</span>
@@ -220,8 +246,14 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
           
           <!-- Bottom section: Add-ons in two columns (or one full width if only one) -->
           ${(() => {
-            const cleaningSupplies = data.fixedAddons?.find(a => a.label.includes('Úklidové náčiní') || a.label.includes('úklidové náčiní'));
-            const transport = data.fixedAddons?.find(a => a.label.includes('Doprava') || a.label.includes('doprava'));
+            const cleaningSupplies = data.fixedAddons?.find(a => {
+              const labelLower = a.label.toLowerCase();
+              return labelLower.includes('úklidové náčiní') || labelLower.includes('úklidová chemie');
+            });
+            const transport = data.fixedAddons?.find(a => {
+              const labelLower = a.label.toLowerCase();
+              return labelLower.includes('doprava') || a.label === 'Doprava' || a.label === 'doprava';
+            });
             const hasBoth = cleaningSupplies && transport;
             
             return `
@@ -253,6 +285,7 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
         </div>
       ` : `
         <!-- Retail/regular services pricing box - merged with general cleaning and winter service -->
+        <p class="mt-4 text-xs text-black-pdf">Cena za vámi požadovaný <strong>${escapeHtml((data.serviceTitle || 'službu').toLowerCase())}</strong> je ve výši:</p>
         <div class="mt-4 hh-pricing-box">
           <div class="hh-pricing-top">
             <!-- Left: Monthly price -->
@@ -376,6 +409,31 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
       ` : `
         <!-- Footer text for regular services - dynamic based on cleaning frequency -->
         ${(() => {
+          // Check if this is office cleaning
+          const isOfficeCleaning = data.serviceTitle?.toLowerCase().includes('kancelář') || false;
+          
+          // Check if this is retail/commercial spaces
+          const isRetail = data.serviceTitle?.toLowerCase().includes('komerčních') || 
+                          data.serviceTitle?.toLowerCase().includes('retailových') || false;
+          
+          if (isOfficeCleaning) {
+            // Special text for office cleaning
+            return `<p class="mt-6 hh-small text-black-pdf">Cena obsahuje pravidelný úklid kancelářských prostor podle rozpisu níže, dopravu pracovníků na místo úklidových prací, pojištění odpovědnosti do výše 5 mil. Kč.</p>
+            <p class="hh-small text-black-pdf">Ostatní práce nad rámec smlouvy (např. mimořádný úklid na vyžádání, po havárii apod.): 345 Kč / hod. za pracovníka.</p>
+            <p class="hh-muted text-xs text-black-pdf mt-4"><strong>Nejsme plátci DPH, uvedené ceny jsou konečné</strong>.</p>
+            <p class="hh-muted text-xs text-black-pdf">Úklidové práce provádějí vždy naši <strong>stálí</strong> pracovníci.</p>
+            <p class="hh-muted text-xs text-black-pdf">V případě dotazů nebo nejasností se na nás neváhejte obrátit.</p>`;
+          }
+          
+          if (isRetail) {
+            // Special text for retail/commercial spaces
+            return `<p class="mt-6 hh-small text-black-pdf">Cena obsahuje pravidelný úklid komerčních nebytových (retailových) prostor podle rozpisu níže, dopravu pracovníků na místo úklidových prací, pojištění odpovědnosti do výše 5 mil. Kč.</p>
+            <p class="hh-small text-black-pdf">Ostatní práce nad rámec smlouvy (např. mimořádný úklid na vyžádání, po havárii apod.): 345 Kč / hod. za pracovníka.</p>
+            <p class="hh-muted text-xs text-black-pdf mt-4"><strong>Nejsme plátci DPH, uvedené ceny jsou konečné</strong>.</p>
+            <p class="hh-muted text-xs text-black-pdf">Úklidové práce provádějí vždy naši <strong>stálí</strong> pracovníci.</p>
+            <p class="hh-muted text-xs text-black-pdf">V případě dotazů nebo nejasností se na nás neváhejte obrátit.</p>`;
+          }
+          
           // Build dynamic frequency text - handle different form types
           let frequencyPart = '';
           
@@ -404,7 +462,7 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
           const includeSupplies = !data.generalCleaningPrice && !data.winterServiceFee;
           const suppliesText = includeSupplies ? ', běžné úklidové prostředky a vlastní úklidové náčiní' : '';
           
-          return `<p class="mt-6 hh-small text-black-pdf">Cena obsahuje ${frequencyPart} ${generalCleaningFreq} podle rozpisu níže, dopravu pracovníků na místo úklidových prací, pojištění odpovědnosti do výše 5 mil. Kč${suppliesText}. Ostatní práce nad rámec smlouvy (např. úklid po řemeslnících, výjezd na vyžádání apod.): 345 Kč / hod. za pracovníka.</p>
+          return `<p class="mt-6 hh-small text-black-pdf">Cena obsahuje ${frequencyPart} ${generalCleaningFreq} podle rozpisu níže, dopravu pracovníků na místo úklidových prací, pojištění odpovědnosti do výše 5 mil. Kč${suppliesText}, běžné úklidové prostředky a vlastní úklidové náčinní. Ostatní práce nad rámec smlouvy (např. úklid po řemeslnících, po havárii apod.): 345 Kč / hod. za pracovníka.</p>
             <p class="hh-muted text-xs text-black-pdf mt-4"><strong>Nejsme plátci DPH, uvedené ceny jsou konečné</strong>.</p>
             <p class="hh-muted text-xs text-black-pdf">Úklidové práce provádějí vždy naši <strong>stálí</strong> pracovníci.</p>
             <p class="hh-muted text-xs text-black-pdf">V případě dotazů nebo nejasností se na nás neváhejte obrátit.</p>`;
@@ -490,19 +548,19 @@ function renderCompleteQATable(tasks?: string[], summaryItems?: { label: string;
       
       return `
         <tr class="${bgColor}">
-          <td class="px-3 py-1 text-xs border-r border-b border-gray-pdf font-medium text-left" style="${isLastRow ? 'border-bottom: none;' : ''}">${escapeHtml(item.label)}</td>
-          <td class="px-3 py-1 text-xs border-b border-gray-pdf text-left" style="${isLastRow ? 'border-bottom: none;' : ''}">${escapeHtml(item.value)}</td>
+          <td class="px-2 py-1 text-xs font-medium text-left" style="border-right: 1px solid var(--border-gray); border-bottom: ${isLastRow ? 'none' : '1px solid var(--border-gray)'};">${escapeHtml(item.label)}</td>
+          <td class="px-2 py-1 text-xs text-left" style="border-bottom: ${isLastRow ? 'none' : '1px solid var(--border-gray)'};">${escapeHtml(item.value)}</td>
         </tr>
       `;
     })
     .join("");
   
   return `
-    <div class="mt-4" style="border: 2px solid var(--border-gray); border-radius: 8px; overflow: hidden;">
-      <table class="w-full border-collapse text-xs">
+    <div class="mt-4" style="border: 1px solid var(--border-gray); border-radius: 8px; overflow: hidden;">
+      <table class="w-full text-xs" style="border-collapse: collapse;">
         <colgroup>
-          <col style="width: 75%;">
-          <col style="width: 25%;">
+          <col style="width: 65%;">
+          <col style="width: 35%;">
         </colgroup>
         <tbody>
           ${rows}
@@ -558,6 +616,8 @@ function renderCommonServicesSection(commonServices?: {
     'twice-weekly': 'weekly',
     'biweekly': 'weekly',
     'daily': 'weekly',
+    'workdays': 'weekly', // Commercial spaces: every workday
+    'everyday': 'weekly', // Commercial spaces: every day including weekends
     '3x-weekly': 'weekly',
     '2x-weekly': 'weekly',
     'daily-basic-weekly': 'weekly',
@@ -587,6 +647,7 @@ function renderCommonServicesSection(commonServices?: {
   const serviceCategories = [
     { key: 'weekly', label: 'Při každém úklidu' },
     { key: 'monthly', label: '1 x měsíčně' },
+    { key: 'perCleaning', label: 'Při každém úklidu' }, // Fallback if perCleaning wasn't merged
     { key: 'generalCleaning', label: 'V rámci pravidelného generálního úklidu (pokud je zadán v poptávkovém formuláři)' }
   ];
   

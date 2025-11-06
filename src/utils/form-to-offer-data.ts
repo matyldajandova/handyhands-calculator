@@ -33,13 +33,13 @@ function getMinimumHours(formData: FormSubmissionData): number {
 }
 
 // Helper function to get grouped addons for PDF (matches success screen logic)
-function getGroupedAddonsForPDF(formData: FormSubmissionData, formConfig: FormConfig, calculationResult: CalculationResult) {
+async function getGroupedAddonsForPDF(formData: FormSubmissionData, formConfig: FormConfig, calculationResult: CalculationResult) {
   const items: Array<{ label: string; amount: number }> = [];
   
   // Reconstruct calculationDetails if missing (for optimized hashes)
   let calculationDetails = calculationResult.calculationDetails;
   if (!calculationDetails?.appliedCoefficients || calculationDetails.appliedCoefficients.length === 0) {
-    calculationDetails = reconstructCalculationDetails(formData, formConfig, calculationResult);
+    calculationDetails = await reconstructCalculationDetails(formData, formConfig, calculationResult);
   }
   
   // Get fixed addons from applied coefficients
@@ -151,7 +151,7 @@ function extractOptionalServices(formData: FormSubmissionData, formConfig: FormC
  * Converts form data and calculation results to OfferData format for PDF generation
  * Uses the form's existing structure and labels instead of complex mappings
  */
-export function convertFormDataToOfferData(
+export async function convertFormDataToOfferData(
   formData: FormSubmissionData,
   calculationResult: CalculationResult,
   formConfig: FormConfig,
@@ -241,7 +241,7 @@ export function convertFormDataToOfferData(
     : minDate.toLocaleDateString("cs-CZ");
   
   // Extract fixed addons for hourly services (grouped by section like in success screen)
-  const fixedAddons = isHourlyService ? getGroupedAddonsForPDF(formData, formConfig, calculationResult) : undefined;
+  const fixedAddons = isHourlyService ? await getGroupedAddonsForPDF(formData, formConfig, calculationResult) : undefined;
 
   // Get minimum hours for hourly services
   const minimumHours = isHourlyService ? getMinimumHours(formData) : undefined;
@@ -263,6 +263,7 @@ export function convertFormDataToOfferData(
     price: roundedPrice,
     startDate,
     serviceTitle: formConfig.title,
+    serviceType: formConfig.id,
     customer: customerData ? {
       name: `${customerData.firstName} ${customerData.lastName}`,
       email: customerData.email,
@@ -340,6 +341,103 @@ function generateSummaryItems(formData: FormSubmissionData, formConfig: FormConf
     return items;
   }
   
+  // Helper function to process a field (used recursively for conditional fields)
+  const processField = (field: FormField, sectionTitle: string) => {
+    // Validate field structure
+    if (!field || !field.id) {
+      return;
+    }
+    
+    // Handle conditional fields - process their nested fields
+    if (field.type === 'conditional' && 'fields' in field) {
+      const conditionalField = field as import("@/types/form-types").ConditionalField;
+      // Check if condition is met
+      let conditionMet = false;
+      if ('field' in conditionalField.condition) {
+        const conditionValue = formData[conditionalField.condition.field];
+        const operator = conditionalField.condition.operator || 'equals';
+        conditionMet = operator === 'equals' 
+          ? conditionValue === conditionalField.condition.value
+          : conditionValue !== conditionalField.condition.value;
+      } else {
+        // Complex condition with 'and' or 'or'
+        // For now, skip complex conditions - they're less common
+        conditionMet = false;
+      }
+      
+      if (conditionMet && conditionalField.fields) {
+        conditionalField.fields.forEach(subField => {
+          processField(subField, sectionTitle);
+        });
+      }
+      return;
+    }
+    
+    // Check if field has its own condition (nested conditional)
+    if ('condition' in field && field.condition && 'field' in field.condition) {
+      const conditionValue = formData[field.condition.field];
+      const operator = field.condition.operator || 'equals';
+      const conditionMet = operator === 'equals' 
+        ? conditionValue === field.condition.value
+        : conditionValue !== field.condition.value;
+      
+      if (!conditionMet) {
+        return; // Skip this field if condition not met
+      }
+    }
+    
+    const value = formData[field.id];
+    if (value === undefined || value === null || value === "") return;
+    
+    // Skip notes field as it's handled separately
+    if (field.id === "notes") return;
+    
+    // Skip optional service fields as they're handled in commonServices section
+    if (field.id === "optionalServicesPerCleaning" || 
+        field.id === "optionalServicesMonthly" || 
+        field.id === "optionalServicesWeekly" ||
+        field.id === "optionalServices") return;
+    
+    // Special handling for preferred time fields - combine preferredTimeType with hour
+    if (field.id === "preferredHourMorning" || field.id === "preferredHourEvening") {
+      const timeType = formData.preferredTimeType as string | undefined;
+      // Find the preferredTimeType field in the form config
+      let timeTypeField: FormField | undefined;
+      for (const section of formConfig.sections) {
+        for (const f of section.fields) {
+          if (f.type === 'conditional' && 'fields' in f) {
+            timeTypeField = f.fields?.find(subF => subF.id === 'preferredTimeType');
+            if (timeTypeField) break;
+          }
+        }
+        if (timeTypeField) break;
+      }
+      
+      if (timeType && timeTypeField && 'options' in timeTypeField) {
+        const timeTypeOption = timeTypeField.options.find(opt => opt.value === timeType);
+        const timeTypeLabel = timeTypeOption?.label || '';
+        const hourValue = getFieldDisplayValue(field, value);
+        if (timeTypeLabel && hourValue) {
+          items.push({ label: timeTypeLabel, value: hourValue });
+          return;
+        }
+      }
+    }
+    
+    // Skip preferredTimeType as it's combined with the hour fields above
+    if (field.id === "preferredTimeType") {
+      return;
+    }
+    
+    // Use the form's existing label, fallback to section title if empty
+    const label = field.label || sectionTitle || field.id;
+    const displayValue = getFieldDisplayValue(field, value);
+    
+    if (displayValue) {
+      items.push({ label, value: displayValue });
+    }
+  };
+  
   // Process each form section
   formConfig.sections.forEach((section) => {
     // Validate section structure
@@ -348,30 +446,7 @@ function generateSummaryItems(formData: FormSubmissionData, formConfig: FormConf
     }
     
     section.fields.forEach((field) => {
-      // Validate field structure
-      if (!field || !field.id) {
-        return;
-      }
-      
-      const value = formData[field.id];
-      if (value === undefined || value === null || value === "") return;
-      
-      // Skip notes field as it's handled separately
-      if (field.id === "notes") return;
-      
-      // Skip optional service fields as they're handled in commonServices section
-      if (field.id === "optionalServicesPerCleaning" || 
-          field.id === "optionalServicesMonthly" || 
-          field.id === "optionalServicesWeekly" ||
-          field.id === "optionalServices") return;
-      
-      // Use the form's existing label, fallback to section title if empty
-      const label = field.label || section.title || field.id;
-      const displayValue = getFieldDisplayValue(field, value);
-      
-      if (displayValue) {
-        items.push({ label, value: displayValue });
-      }
+      processField(field, section.title);
     });
   });
   

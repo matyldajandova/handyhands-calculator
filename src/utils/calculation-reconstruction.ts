@@ -113,11 +113,11 @@ function getFixedAddonFromConfig(config: FormConfig, fieldId: string, value: str
  * Reconstruct calculationDetails from formData and formConfig
  * This mimics the logic from calculation.ts but only reconstructs the details structure
  */
-export function reconstructCalculationDetails(
+export async function reconstructCalculationDetails(
   formData: FormSubmissionData,
   formConfig: FormConfig,
   calculationResult: Partial<CalculationResult>
-): CalculationResult['calculationDetails'] {
+): Promise<CalculationResult['calculationDetails']> {
   // Use the base price from the calculation result if available, otherwise from config
   const basePrice = calculationResult.calculationDetails?.basePrice ?? formConfig.basePrice ?? 1500;
   
@@ -193,6 +193,32 @@ export function reconstructCalculationDetails(
     }
   }
 
+  // Add regional fixed fee (transport) for one-time cleaning, home cleaning (hourly only) and handyman services
+  const shouldApplyFixedFee = 
+    (formConfig.id === "one-time-cleaning" || formConfig.id === "handyman-services") ||
+    (formConfig.id === "home-cleaning" && formData.pricingType === "hourly");
+  
+  if (shouldApplyFixedFee && formData.zipCode && typeof formData.zipCode === 'string') {
+    try {
+      const { getRegionFromZipCode } = await import("@/utils/zip-code-mapping");
+      const { getFixedFeeForService } = await import("@/utils/regional-fixed-fees");
+      const regionKey = await getRegionFromZipCode(formData.zipCode);
+      if (regionKey) {
+        const regionalFixedFee = getFixedFeeForService(formConfig.id, regionKey);
+        if (regionalFixedFee > 0) {
+          appliedCoefficients.push({
+            field: 'zipCode',
+            label: `Doprava (${regionKey}) - pevná cena`,
+            coefficient: 1,
+            impact: regionalFixedFee
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error getting fixed fee for region:', error);
+    }
+  }
+
   return {
     basePrice,
     appliedCoefficients,
@@ -217,7 +243,7 @@ export async function ensureCalculationDetails(
     throw new Error('formData is required to reconstruct calculationDetails');
   }
 
-  const reconstructedDetails = reconstructCalculationDetails(
+  const reconstructedDetails = await reconstructCalculationDetails(
     calculationData.formData as FormSubmissionData,
     formConfig,
     calculationData

@@ -40,6 +40,29 @@ export async function POST(req: NextRequest) {
             }
           }
           
+          // Extract serviceType from hash if not already set
+          if (!data.serviceType && decodedHash.serviceType) {
+            data.serviceType = decodedHash.serviceType;
+          }
+          
+          // Reconstruct fixedAddons for hourly services if not already present
+          if (data.isHourlyService && !data.fixedAddons && decodedHash.calculationData) {
+            const { getFormConfig } = await import("@/config/services");
+            const formConfig = getFormConfig(decodedHash.serviceType);
+            if (formConfig) {
+              const { convertFormDataToOfferData } = await import("@/utils/form-to-offer-data");
+              // Create a temporary OfferData to extract fixedAddons
+              const tempOfferData = await convertFormDataToOfferData(
+                hashFormData as import("@/types/form-types").FormSubmissionData,
+                decodedHash.calculationData as import("@/types/form-types").CalculationResult,
+                formConfig
+              );
+              if (tempOfferData.fixedAddons && tempOfferData.fixedAddons.length > 0) {
+                data.fixedAddons = tempOfferData.fixedAddons;
+              }
+            }
+          }
+          
           // Extract customer information from hash if not already set in OfferData
           // This includes phone, address, and company information
           if (data.customer) {

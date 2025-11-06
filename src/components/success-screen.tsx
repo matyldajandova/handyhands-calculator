@@ -8,7 +8,7 @@ import { isWinterMaintenancePeriod } from "@/utils/date-utils";
 import { reconstructCalculationDetails } from "@/utils/calculation-reconstruction";
 import { IdentificationStep } from "@/components/identification-step";
 import { useState, useCallback, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { hashService } from "@/services/hash-service";
 import { orderStorage } from "@/services/order-storage";
 import { buildPoptavkaHashData } from "@/utils/hash-data-builder";
@@ -67,7 +67,7 @@ function getMinimumHours(formData: FormSubmissionData): number {
 }
 
 // Helper function to get individual addon items grouped by section
-function getIndividualAddons(formData: FormSubmissionData, formConfig: FormConfig | null, calculationResult: CalculationResult) {
+async function getIndividualAddons(formData: FormSubmissionData, formConfig: FormConfig | null, calculationResult: CalculationResult) {
   if (!formConfig) return [];
   
   const items: Array<{ label: string; amount: number }> = [];
@@ -75,7 +75,7 @@ function getIndividualAddons(formData: FormSubmissionData, formConfig: FormConfi
   // Reconstruct calculationDetails if missing (for optimized hashes)
   let calculationDetails = calculationResult.calculationDetails;
   if (!calculationDetails?.appliedCoefficients || calculationDetails.appliedCoefficients.length === 0) {
-    calculationDetails = reconstructCalculationDetails(formData, formConfig, calculationResult);
+    calculationDetails = await reconstructCalculationDetails(formData, formConfig, calculationResult);
   }
   
   // Get fixed addons from applied coefficients
@@ -129,7 +129,9 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
   const [isDownloading, setIsDownloading] = useState(false);
   const [isDownloaded, setIsDownloaded] = useState(false);
   const [customerData, setCustomerData] = useState<{ firstName: string; lastName: string; email: string } | null>(null);
+  const [individualAddons, setIndividualAddons] = useState<Array<{ label: string; amount: number }>>([]);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Load customer data from localStorage on mount and check for new order
   useEffect(() => {
@@ -142,6 +144,15 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
       orderStorage.checkAndClearNotesForNewOrder(calculationResult.orderId);
     }
   }, [calculationResult?.orderId ?? null]);
+
+  // Compute individual addons asynchronously
+  useEffect(() => {
+    if (calculationResult && formConfig && (formConfig.id === "one-time-cleaning" || formConfig.id === "handyman-services")) {
+      getIndividualAddons(formData, formConfig, calculationResult).then(setIndividualAddons).catch(() => setIndividualAddons([]));
+    } else {
+      setIndividualAddons([]);
+    }
+  }, [calculationResult, formConfig, formData]);
 
   // Round calculation results to whole 10 Kč (or whole crowns for hourly services)
   const roundedResults = useMemo(() => {
@@ -280,7 +291,13 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
       // IMPORTANT: Pass formDataWithNotes to ensure form notes are included
       // Do NOT pass poptavka notes in customerData - they should only come from /poptavka page
       const { convertFormDataToOfferData } = await import("@/utils/form-to-offer-data");
-      const offerData = convertFormDataToOfferData(formDataWithNotes, calculationResult, formConfig, enhancedCustomerData);
+      const offerData = await convertFormDataToOfferData(formDataWithNotes, calculationResult, formConfig, enhancedCustomerData);
+      
+      // Extract hash from URL to pass to PDF API so it can extract customer data (phone, address, company info)
+      const urlHash = searchParams.get('hash');
+      if (urlHash) {
+        offerData.poptavkaHash = urlHash;
+      }
       
       // Generate PDF via API
       const response = await fetch('/api/pdf/offer', {
@@ -470,7 +487,7 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
                     </div>
                     
                     {/* Show individual addon items */}
-                    {getIndividualAddons(formData, formConfig, calculationResult).map((item, index) => (
+                    {individualAddons.map((item, index) => (
                       <div key={index} className="text-sm text-muted-foreground dark:text-slate-400 mb-1">
                         {item.label} ({item.amount} Kč)
                       </div>

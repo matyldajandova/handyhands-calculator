@@ -30,7 +30,7 @@ async function run() {
   } as any;
 
   const oneTimeResult = await calculatePrice(oneTimeFormData, oneTimeCleaningFormConfig);
-  const oneTimeOffer = convertFormDataToOfferData(oneTimeFormData, oneTimeResult, oneTimeCleaningFormConfig);
+  const oneTimeOffer = await convertFormDataToOfferData(oneTimeFormData, oneTimeResult, oneTimeCleaningFormConfig);
 
   // Parse the Czech date format (DD. MM. YYYY)
   const oneTimeDateParts = oneTimeOffer.startDate.split('. ');
@@ -59,7 +59,7 @@ async function run() {
   } as any;
 
   const handymanResult = await calculatePrice(handymanFormData, handymanServicesFormConfig);
-  const handymanOffer = convertFormDataToOfferData(handymanFormData, handymanResult, handymanServicesFormConfig);
+  const handymanOffer = await convertFormDataToOfferData(handymanFormData, handymanResult, handymanServicesFormConfig);
 
   const handymanDateParts = handymanOffer.startDate.split('. ');
   const handymanDate = new Date(
@@ -94,7 +94,7 @@ async function run() {
   } as any;
 
   const regularResult = await calculatePrice(regularFormData, residentialBuildingFormConfig);
-  const regularOffer = convertFormDataToOfferData(regularFormData, regularResult, residentialBuildingFormConfig);
+  const regularOffer = await convertFormDataToOfferData(regularFormData, regularResult, residentialBuildingFormConfig);
 
   const regularDateParts = regularOffer.startDate.split('. ');
   const regularDate = new Date(
@@ -241,7 +241,7 @@ async function run() {
     throw new Error("calculationData missing in hash");
   }
   
-  const offerWithOldDate = convertFormDataToOfferData(
+  const offerWithOldDate = await convertFormDataToOfferData(
     hashDataWithOldDate.calculationData.formData as any,
     oneTimeResult,
     oneTimeCleaningFormConfig

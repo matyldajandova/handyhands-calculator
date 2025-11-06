@@ -279,7 +279,7 @@ function PoptavkaContent() {
               const formConfig = getFormConfig(decodedData.serviceType);
               if (formConfig && decodedData.calculationData?.formData) {
                 const { reconstructCalculationDetails } = await import("@/utils/calculation-reconstruction");
-                const details = reconstructCalculationDetails(
+                const details = await reconstructCalculationDetails(
                   decodedData.calculationData.formData as FormSubmissionData,
                   formConfig,
                   decodedData.calculationData
@@ -631,7 +631,7 @@ function PoptavkaContent() {
         notes: originalFormNotes // Use ONLY original form notes, NEVER poptavka notes
       };
       
-      const offerData = convertFormDataToOfferData(
+      const offerData = await convertFormDataToOfferData(
         formDataForConversion,
         finalCalculationData,
         formConfig as unknown as FormConfig,
