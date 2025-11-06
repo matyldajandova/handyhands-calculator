@@ -68,6 +68,31 @@ function VysledekContent() {
         }
 
         
+        // Derive serviceTitle if omitted in hash
+        if (!decodedData.serviceTitle || decodedData.serviceTitle.trim?.() === '') {
+          try {
+            const cfg = getFormConfig(decodedData.serviceType);
+            if (cfg?.title) decodedData.serviceTitle = cfg.title;
+          } catch {}
+        }
+
+        // Ensure calculationData exists; if missing, try to reconstruct from formData + config
+        if (!decodedData.calculationData) {
+          try {
+            const cfg = getFormConfig(decodedData.serviceType || decodedData.serviceTitle);
+            const fd = (decodedData as any)?.calculationData?.formData || (decodedData as any)?.cd?.fd; // compatibility
+            if (cfg && fd) {
+              const { calculatePrice } = await import("@/utils/calculation");
+              const calc = await calculatePrice(fd as any, cfg);
+              decodedData.calculationData = {
+                ...calc,
+                formData: fd,
+                orderId: (decodedData as any)?.calculationData?.orderId || (decodedData as any)?.cd?.oid
+              } as unknown as CalculationData;
+            }
+          } catch {}
+        }
+
         // Set the result data
         setResultData(decodedData);
         setIsLoading(false);

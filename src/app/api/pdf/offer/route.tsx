@@ -16,6 +16,36 @@ export async function POST(req: NextRequest) {
   try {
     const data = (await req.json()) as OfferData;
     
+    // If poptavkaHash is provided, decode it to extract poptavkaNotes and other data
+    if (data.poptavkaHash) {
+      try {
+        const decodedHash = hashService.decodeHash(data.poptavkaHash);
+        if (decodedHash?.calculationData?.formData) {
+          const hashFormData = decodedHash.calculationData.formData as Record<string, unknown>;
+          
+          // Extract poptavkaNotes from hash if not already set in OfferData
+          if (!data.poptavkaNotes && hashFormData.poptavkaNotes) {
+            data.poptavkaNotes = String(hashFormData.poptavkaNotes);
+          }
+          
+          // Extract serviceStartDate from hash if not already set
+          if (!data.startDate && hashFormData.serviceStartDate) {
+            const dateStr = String(hashFormData.serviceStartDate);
+            // Convert ISO format (YYYY-MM-DD) to Czech format (DD. MM. YYYY) if needed
+            if (dateStr.includes('-') && dateStr.length === 10) {
+              const [year, month, day] = dateStr.split('-');
+              data.startDate = `${day}. ${month}. ${year}`;
+            } else {
+              data.startDate = dateStr;
+            }
+          }
+        }
+      } catch (hashError) {
+        console.error('Failed to decode poptavkaHash:', hashError);
+        // Continue anyway - hash might be invalid but we can still generate PDF
+      }
+    }
+    
     // Generate hash for poptavka form if not already present
     if (!data.poptavkaHash) {
       // Extract customer data from the customer name and email
@@ -35,46 +65,65 @@ export async function POST(req: NextRequest) {
       // Try to extract from customer data if available (e.g., from existing hash)
       const serviceType = (data.customer as Record<string, unknown>)?.serviceType as string | undefined;
       
-      // Build form data for hash - include all form fields from customer data
-      const formData = {
-        firstName: firstName,
-        lastName: lastName,
-        email: customerEmail,
-        phone: customerPhone,
-        // Parse address into separate fields if available
-        ...(customerAddress ? {
-          propertyStreet: customerAddress.split(',')[0] || '',
-          propertyCity: customerAddress.split(',')[1] || '',
-          propertyZipCode: customerAddress.split(',')[2] || ''
-        } : {}),
-        // Include the start date from the PDF data to ensure consistency
-        // Convert Czech date format (DD. MM. YYYY) to ISO format (YYYY-MM-DD) for hash
-        serviceStartDate: (() => {
-          const dateStr = data.startDate;
-          // Check if it's already in ISO format
-          if (dateStr.includes('-') && dateStr.length === 10) {
-            return dateStr;
-          }
-          // Parse Czech format (DD. MM. YYYY) and convert to ISO
-          const parts = dateStr.split('. ');
-          if (parts.length === 3) {
-            const day = parts[0].padStart(2, '0');
-            const month = parts[1].padStart(2, '0');
-            const year = parts[2];
-            return `${year}-${month}-${day}`;
-          }
-          return dateStr; // Fallback to original if parsing fails
-        })(),
         // Include any additional form data that might be in the customer object
         // This will include company data, notes, serviceType, and most importantly:
         // - cleaningSupplies, zipCode, ladders fields for extra services
         // Exclude calculationResult and formConfig as they're handled separately
-        ...(Object.fromEntries(
+        // IMPORTANT: Extract notes and poptavkaNotes separately to preserve them correctly
+        const customerDataFiltered = Object.fromEntries(
           Object.entries(data.customer as Record<string, unknown>).filter(
-            ([key]) => key !== 'calculationResult' && key !== 'formConfig'
+            ([key]) => key !== 'calculationResult' && key !== 'formConfig' && key !== 'notes' && key !== 'poptavkaNotes'
           )
-        ) as Record<string, unknown>)
-      };
+        ) as Record<string, unknown>;
+        
+        // Preserve notes (form note) and poptavkaNotes separately
+        // IMPORTANT: data.customer.notes contains the poptavka note (passed from success-screen.tsx)
+        // data.poptavkaNotes contains the poptavka note if extracted from hash
+        // We need to check both sources and use the correct one
+        const poptavkaNotesFromCustomer = typeof (data.customer as Record<string, unknown>)?.notes === 'string' 
+          ? (data.customer as Record<string, unknown>).notes as string 
+          : undefined;
+        // If data.poptavkaNotes exists, use it (extracted from hash)
+        // Otherwise, if customer.notes exists and it's not the form note, it might be the poptavka note
+        const poptavkaNotes = data.poptavkaNotes || poptavkaNotesFromCustomer;
+        // Form notes should come from data.notes (the original form note)
+        const formNotes = typeof data.notes === 'string' ? data.notes : undefined;
+        
+        const formData = {
+          firstName: firstName,
+          lastName: lastName,
+          email: customerEmail,
+          phone: customerPhone,
+          // Parse address into separate fields if available
+          ...(customerAddress ? {
+            propertyStreet: customerAddress.split(',')[0] || '',
+            propertyCity: customerAddress.split(',')[1] || '',
+            propertyZipCode: customerAddress.split(',')[2] || ''
+          } : {}),
+          // Include the start date from the PDF data to ensure consistency
+          // Convert Czech date format (DD. MM. YYYY) to ISO format (YYYY-MM-DD) for hash
+          serviceStartDate: (() => {
+            const dateStr = data.startDate;
+            // Check if it's already in ISO format
+            if (dateStr.includes('-') && dateStr.length === 10) {
+              return dateStr;
+            }
+            // Parse Czech format (DD. MM. YYYY) and convert to ISO
+            const parts = dateStr.split('. ');
+            if (parts.length === 3) {
+              const day = parts[0].padStart(2, '0');
+              const month = parts[1].padStart(2, '0');
+              const year = parts[2];
+              return `${year}-${month}-${day}`;
+            }
+            return dateStr; // Fallback to original if parsing fails
+          })(),
+          // Include filtered customer data (without calculationResult, formConfig, notes, poptavkaNotes)
+          ...customerDataFiltered,
+          // Preserve notes and poptavkaNotes separately
+          ...(formNotes ? { notes: formNotes } : {}),
+          ...(poptavkaNotes ? { poptavkaNotes: poptavkaNotes } : {})
+        };
 
       // Try to preserve original calculationResult from customer data if available
       // This preserves appliedCoefficients for extra services display

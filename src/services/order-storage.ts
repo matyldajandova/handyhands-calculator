@@ -12,6 +12,7 @@ export interface OrderData {
   };
   
   // Poptavka form data (excludes customer fields - they're in customer object)
+  // Note: 'notes' field removed - poptavka notes are stored in hash only, never in localStorage
   poptavka?: {
     phone: string;
     propertyStreet: string;
@@ -24,11 +25,12 @@ export interface OrderData {
     companyStreet: string;
     companyCity: string;
     companyZipCode: string;
-    notes: string;
   };
   
   // Last updated timestamp
   lastUpdated?: number;
+  // Current order ID - used to detect new orders
+  currentOrderId?: string;
 }
 
 const STORAGE_KEY = 'handyhands-order';
@@ -77,6 +79,8 @@ export const orderStorage = {
    */
   updatePoptavka(poptavka: Partial<OrderData['poptavka']>): void {
     const currentData = this.get() || {};
+    // Exclude notes from poptavka data - they're stored in hash only
+    const { notes: _, ...poptavkaWithoutNotes } = poptavka as Record<string, unknown>;
     this.set({
       ...currentData,
       poptavka: {
@@ -91,9 +95,8 @@ export const orderStorage = {
         companyStreet: '',
         companyCity: '',
         companyZipCode: '',
-        notes: '',
         ...currentData.poptavka,
-        ...poptavka
+        ...poptavkaWithoutNotes
       }
     });
   },
@@ -103,6 +106,10 @@ export const orderStorage = {
    */
   updateCustomerAndPoptavka(customer: { firstName: string; lastName: string; email: string }, poptavkaData?: Partial<OrderData['poptavka']>): void {
     const currentData = this.get() || {};
+    // Exclude notes from poptavka data - they're stored in hash only
+    const { notes: _, ...poptavkaDataWithoutNotes } = (poptavkaData || {}) as Record<string, unknown>;
+    // Also exclude notes from current poptavka data
+    const { notes: __, ...currentPoptavkaWithoutNotes } = (currentData.poptavka || {}) as Record<string, unknown>;
     this.set({
       ...currentData,
       customer,
@@ -118,11 +125,38 @@ export const orderStorage = {
         companyStreet: '',
         companyCity: '',
         companyZipCode: '',
-        notes: '',
-        ...currentData.poptavka,
-        ...poptavkaData
+        ...currentPoptavkaWithoutNotes,
+        ...poptavkaDataWithoutNotes
       }
     });
+  },
+
+  /**
+   * Clear poptavka notes (but keep other poptavka data)
+   * Note: This is a no-op now since notes are not stored in localStorage
+   */
+  clearPoptavkaNotes(): void {
+    // Notes are stored in hash only, not localStorage, so nothing to clear
+  },
+
+  /**
+   * Check if order ID changed and clear poptavka notes if it did
+   */
+  checkAndClearNotesForNewOrder(orderId: string): void {
+    try {
+      const currentData = this.get();
+      if (currentData?.currentOrderId && currentData.currentOrderId !== orderId) {
+        // New order detected - clear poptavka notes
+        this.clearPoptavkaNotes();
+      }
+      // Update current order ID
+      this.set({
+        ...currentData,
+        currentOrderId: orderId
+      });
+    } catch {
+      // Silently fail if localStorage is not available
+    }
   },
 
   /**

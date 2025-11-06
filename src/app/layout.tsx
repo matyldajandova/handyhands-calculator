@@ -2,11 +2,19 @@ import type { Metadata } from "next";
 import { Raleway, Open_Sans } from "next/font/google";
 import "./globals.css";
 
-const openSans = Open_Sans({ subsets: ["latin"], variable: "--font-sans" });
+const openSans = Open_Sans({ 
+  subsets: ["latin"], 
+  variable: "--font-sans",
+  display: "swap",
+  fallback: ["system-ui", "arial"]
+});
+
 const raleway = Raleway({ 
   subsets: ["latin"], 
   weight: ["400", "500", "600", "700"],
-  variable: "--font-heading" 
+  variable: "--font-heading",
+  display: "swap",
+  fallback: ["system-ui", "arial"]
 });
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';

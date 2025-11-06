@@ -213,6 +213,8 @@ function PoptavkaContent() {
     calculationData?: CalculationData;
   } | null>(null);
   const [reconstructedDetails, setReconstructedDetails] = useState<CalculationResult['calculationDetails'] | null>(null);
+  // Store original form notes separately to preserve them across hash updates
+  const [originalFormNotesFromHash, setOriginalFormNotesFromHash] = useState<string>('');
 
   // Load hash data on component mount
   useEffect(() => {
@@ -229,6 +231,32 @@ function PoptavkaContent() {
           setIsLoading(false);
           return;
         }
+        
+        // If serviceTitle is empty (omitted in hash), derive from config
+        if (!decodedData.serviceTitle || decodedData.serviceTitle.trim() === '') {
+          (async () => {
+            try {
+              const { getFormConfig } = await import("@/config/services");
+              const cfg = getFormConfig(decodedData.serviceType);
+              if (cfg?.title) {
+                decodedData.serviceTitle = cfg.title;
+                setHashData({ ...decodedData }); // Update state with derived title
+              }
+            } catch {}
+          })();
+        }
+        // Extract and preserve original form notes BEFORE any processing
+        // notes = form note from results page
+        // poptavkaNotes = note from poptavka page
+        // IMPORTANT: If poptavkaNotes exists in hash, then notes is definitely the form note
+        // If poptavkaNotes doesn't exist, we can't know if notes is form note or poptavka note
+        // So we'll only preserve notes as form note if poptavkaNotes exists (meaning it's a properly formatted hash)
+        const hashFormData = decodedData.calculationData?.formData as Record<string, unknown> | undefined;
+        const hasPoptavkaNotes = hashFormData?.poptavkaNotes;
+        // If poptavkaNotes exists, then notes is definitely the form note - preserve it
+        // If poptavkaNotes doesn't exist, notes might be form note or poptavka note - set to empty to be safe
+        const formNote = hasPoptavkaNotes ? (hashFormData?.notes as string | undefined) : '';
+        setOriginalFormNotesFromHash(typeof formNote === 'string' ? formNote : '');
         
         setHashData(decodedData);
         setIsLoading(false);
@@ -266,20 +294,35 @@ function PoptavkaContent() {
         if (decodedData.calculationData?.formData) {
           const hashFormData = decodedData.calculationData.formData as Record<string, unknown>;
           
+          // Extract poptavkaNotes separately - it's stored separately in the hash
+          // IMPORTANT: Only use poptavkaNotes from the CURRENT hash, never from localStorage
+          const poptavkaNotesFromHash = hashFormData.poptavkaNotes ? String(hashFormData.poptavkaNotes) : '';
+          
           // Load existing order data first
           const orderData = orderStorage.get();
           const existingData = orderData?.poptavka || {};
           
           // Merge: customer data + existing poptavka data + hash data
-          // IMPORTANT: Exclude serviceStartDate from existingData - dates should never persist between orders
+          // IMPORTANT: Exclude serviceStartDate and notes from existingData - they should never persist between orders
           const customerData = orderData?.customer || {};
-          const existingDataWithoutDate = { ...existingData };
-          delete (existingDataWithoutDate as Record<string, unknown>).serviceStartDate;
+          const existingDataWithoutDateAndNotes = { ...existingData };
+          delete (existingDataWithoutDateAndNotes as Record<string, unknown>).serviceStartDate;
+          delete (existingDataWithoutDateAndNotes as Record<string, unknown>).notes;
+          
+          // Remove poptavkaNotes from hashFormData before merging to prevent old notes from carrying over
+          // We'll set it explicitly from poptavkaNotesFromHash instead
+          const { poptavkaNotes: _oldPoptavkaNotes, ...hashFormDataWithoutPoptavkaNotes } = hashFormData;
+          
           const mergedData = {
             ...customerData, // Customer data (firstName, lastName, email)
-            ...existingDataWithoutDate, // Existing poptavka data (without date)
-            ...hashFormData   // Hash data (takes precedence, includes date if present)
+            ...existingDataWithoutDateAndNotes, // Existing poptavka data (without date and notes)
+            ...hashFormDataWithoutPoptavkaNotes   // Hash data (without poptavkaNotes to prevent carryover)
           } as Record<string, unknown>;
+          
+          // Explicitly set poptavkaNotes only if it exists in the CURRENT hash
+          if (poptavkaNotesFromHash) {
+            (mergedData as Record<string, unknown>).poptavkaNotes = poptavkaNotesFromHash;
+          }
           
           // Always get serviceStartDate from hash only, never from localStorage
           const serviceStartDate = hashFormData.serviceStartDate 
@@ -359,7 +402,8 @@ function PoptavkaContent() {
             companyZipCode: String(mergedData.companyZipCode || ''),
             serviceStartDate: serviceStartDate,
             invoiceEmail: String(mergedData.invoiceEmail || ''),
-            notes: String(mergedData.notes || ''),
+            // ONLY use poptavkaNotes from hash. NEVER use form notes as fallback.
+            notes: poptavkaNotesFromHash,
           };
           
           setFormData(safeFormData);
@@ -408,11 +452,12 @@ function PoptavkaContent() {
     
     if (Object.keys(formData).length > 0) {
       // Split form data into customer and poptavka parts
-      // Exclude serviceStartDate from persistence - it should only exist in hash or be calculated fresh for each order
+      // Exclude serviceStartDate and notes from persistence - they should not carry between orders
+      // Notes are stored in hash only, never in localStorage
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { firstName, lastName, email, serviceStartDate, ...poptavkaData } = formData;
+      const { firstName, lastName, email, serviceStartDate, notes: _notes, ...poptavkaData } = formData;
       
-      // Save customer data and poptavka data separately (without serviceStartDate)
+      // Save customer data and poptavka data separately (without serviceStartDate and notes)
       orderStorage.updateCustomerAndPoptavka(
         { firstName, lastName, email },
         poptavkaData
@@ -421,20 +466,33 @@ function PoptavkaContent() {
       // Update hash after delay to avoid excessive updates
       const timeoutId = setTimeout(() => {
         if (hashData) {
-          // Ensure dates are serialized as local date strings to avoid TZ shifts
+          // Get the poptavka note from the form (what user typed in the textarea)
+          const poptavkaNote = (formData as unknown as Record<string, unknown>).notes || '';
+          
+          // Get the original form note (from results page) - preserve it
+          // Try originalFormNotesFromHash first (preserved from initial load), then check existing hash data
+          const existingFormData = hashData.calculationData?.formData as Record<string, unknown> | undefined;
+          const formNoteFromHash = typeof existingFormData?.notes === 'string' ? existingFormData.notes as string : undefined;
+          const formNote = originalFormNotesFromHash || formNoteFromHash || '';
+          
+          // Exclude notes from formData when building the hash (we'll add them separately)
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { notes: _poptavkaNote, ...formDataWithoutNotes } = formData as unknown as Record<string, unknown>;
+          
+          // Exclude notes and poptavkaNotes from existing hash data
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { notes: _oldNotes, poptavkaNotes: _oldPoptavkaNotes, ...existingFormDataWithoutNotes } = existingFormData || {};
+          
           const safeFormDataForHash = {
-            ...(hashData.calculationData?.formData || {}),
-            ...formData,
+            ...existingFormDataWithoutNotes,
+            ...formDataWithoutNotes,
             serviceStartDate: formData.serviceStartDate
               ? (() => {
-                  // Ensure we format the exact calendar date the user selected
-                  // Extract local date components directly to avoid timezone shifts
                   const date = formData.serviceStartDate as Date;
                   const y = date.getFullYear();
                   const m = String(date.getMonth() + 1).padStart(2, '0');
                   const d = String(date.getDate()).padStart(2, '0');
-                  const formatted = `${y}-${m}-${d}`;
-                  return formatted;
+                  return `${y}-${m}-${d}`;
                 })()
               : formData.serviceStartDate
           } as Record<string, unknown>;
@@ -443,14 +501,11 @@ function PoptavkaContent() {
             ...hashData,
             calculationData: {
               ...(hashData.calculationData || {}),
-              // Don't preserve calculationDetails - it will be reconstructed when needed
-              // This keeps the hash minimal
               formData: {
                 ...safeFormDataForHash,
-                // Preserve original notes, don't overwrite with poptavka notes
-                notes: (hashData.calculationData?.formData as unknown as Record<string, unknown>)?.notes || (formData as unknown as Record<string, unknown>).notes
+                notes: formNote, // Original form note from results page (preserve from hash if originalFormNotesFromHash is empty)
+                poptavkaNotes: typeof poptavkaNote === 'string' ? poptavkaNote : '' // Poptavka page note
               },
-              // Preserve the original order ID
               orderId: hashData.calculationData?.orderId
             } as CalculationData
           };
@@ -458,12 +513,15 @@ function PoptavkaContent() {
           const newHash = hashService.generateHash(enhancedHashData);
           const newUrl = `/poptavka?hash=${newHash}`;
           window.history.replaceState({}, '', newUrl);
+          
+          // IMPORTANT: Update hashData state so future updates use the new hash structure
+          setHashData(enhancedHashData);
         }
       }, 1000); // 1 second delay
       
       return () => clearTimeout(timeoutId);
     }
-  }, [formData, hashData, isSubmitted]);
+  }, [formData, hashData, isSubmitted, originalFormNotesFromHash]);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -521,6 +579,13 @@ function PoptavkaContent() {
 
       // Get the original calculation form data from hash
       const originalFormData = calculationData.formData as Record<string, string | number | boolean | string[] | undefined>;
+      
+      // Extract original form notes (from calculation form) - separate from poptavka notes
+      // The hash stores both: 'notes' (original form) and 'poptavkaNotes' (poptavka page)
+      // IMPORTANT: These are ABSOLUTELY separate and must NEVER be interchanged
+      // Use originalFormNotesFromHash if available (preserved from initial load), otherwise from hash
+      const originalFormNotes = originalFormNotesFromHash || (originalFormData.notes as string | undefined) || '';
+      const poptavkaPageNotes = formData.notes || ''; // This is the /poptavka page note field
 
       // Reconstruct calculationDetails if missing (for optimized hashes)
       let finalCalculationData = calculationData as CalculationResult;
@@ -531,8 +596,16 @@ function PoptavkaContent() {
 
       // Convert form data to OfferData format and generate PDF with final poptavka data
       const { convertFormDataToOfferData } = await import("@/utils/form-to-offer-data");
+      // Ensure originalFormData has ONLY the original form notes (not poptavka notes)
+      // Remove poptavkaNotes from formData to prevent any confusion
+      const { poptavkaNotes: _, ...formDataWithoutPoptavkaNotes } = originalFormData;
+      const formDataForConversion = {
+        ...formDataWithoutPoptavkaNotes,
+        notes: originalFormNotes // Use ONLY original form notes, NEVER poptavka notes
+      };
+      
       const offerData = convertFormDataToOfferData(
-        originalFormData,
+        formDataForConversion,
         finalCalculationData,
         formConfig as unknown as FormConfig,
         {
@@ -549,7 +622,7 @@ function PoptavkaContent() {
             address: `${formData.companyStreet}, ${formData.companyCity}, ${formData.companyZipCode}`
           } : undefined,
           startDate: formData.serviceStartDate ? formData.serviceStartDate.toISOString().split('T')[0] : '',
-          notes: formData.notes || '',
+          notes: poptavkaPageNotes, // Pass poptavka page notes as customerData.notes (will become poptavkaNotes)
           invoiceEmail: formData.invoiceEmail || '',
           // Include original calculationResult and formConfig to preserve appliedCoefficients
           // These are passed as additional properties using type assertion

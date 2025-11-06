@@ -28,9 +28,10 @@ export interface PoptavkaHashData {
  */
 export interface MinimalPoptavkaHashData {
   st: string; // serviceType
-  stt: string; // serviceTitle
+  // stt (serviceTitle) omitted to save space; derive from config when needed
   tp: number; // totalPrice
-  c: string; // currency
+  // c (currency) omitted when default 'Kč' to save space
+  c?: string; // currency
   cd?: {
     // calculationData - minimal fields only
     rcp?: number; // regularCleaningPrice
@@ -54,11 +55,36 @@ export interface MinimalPoptavkaHashData {
  * Convert full hash data to minimal structure
  */
 function minifyHashData(data: PoptavkaHashData): MinimalPoptavkaHashData {
+  // Helper: clean form data by removing empty/default/redundant fields
+  const cleanFormData = (fd?: Record<string, unknown>): Record<string, unknown> | undefined => {
+    if (!fd) return undefined;
+    const cleaned: Record<string, unknown> = {};
+    const email = typeof fd.email === 'string' ? (fd.email as string) : undefined;
+    const isCompany = Boolean(fd.isCompany);
+    for (const [key, value] of Object.entries(fd)) {
+      // Drop redundant or derivable fields
+      if (key === 'name' || key === 'address' || key === 'serviceType') continue;
+      // Drop empty strings, null, undefined
+      if (value === '' || value === null || value === undefined) continue;
+      // Drop false booleans to save space
+      if (typeof value === 'boolean' && value === false) continue;
+      // Drop empty arrays
+      if (Array.isArray(value) && value.length === 0) continue;
+      // If not a company, drop company fields
+      if (!isCompany && (key === 'companyName' || key === 'companyIco' || key === 'companyDic' || key === 'companyStreet' || key === 'companyCity' || key === 'companyZipCode')) {
+        continue;
+      }
+      // Drop invoiceEmail if same as email
+      if (key === 'invoiceEmail' && typeof value === 'string' && email && value === email) continue;
+      cleaned[key] = value;
+    }
+    return cleaned;
+  };
+
   const minimal: MinimalPoptavkaHashData = {
     st: data.serviceType,
-    stt: data.serviceTitle,
     tp: data.totalPrice,
-    c: data.currency || 'Kč',
+    ...(data.currency && data.currency !== 'Kč' ? { c: data.currency } : {}),
   };
 
   if (data.calculationData) {
@@ -85,9 +111,8 @@ function minifyHashData(data: PoptavkaHashData): MinimalPoptavkaHashData {
     if (data.calculationData.orderId) {
       minimal.cd.oid = data.calculationData.orderId;
     }
-    if (data.calculationData.formData) {
-      minimal.cd.fd = data.calculationData.formData;
-    }
+    const cleanedFD = cleanFormData(data.calculationData.formData as Record<string, unknown> | undefined);
+    if (cleanedFD) minimal.cd.fd = cleanedFD;
   }
 
   return minimal;
@@ -100,7 +125,7 @@ function minifyHashData(data: PoptavkaHashData): MinimalPoptavkaHashData {
 function expandHashData(minimal: MinimalPoptavkaHashData): PoptavkaHashData {
   const data: PoptavkaHashData = {
     serviceType: minimal.st,
-    serviceTitle: minimal.stt,
+    serviceTitle: '', // derive from config if needed by consumer
     totalPrice: minimal.tp,
     currency: minimal.c || 'Kč',
   };
@@ -232,13 +257,12 @@ export function decodePoptavkaHash(encodedHash: string): PoptavkaHashData | null
     const parsed = JSON.parse(dataString);
     
     // Check if it's minimal format or full format
-    if (parsed.st && parsed.stt) {
-      // It's already minimal format
+    // Minimal hashes include short keys like 'st' and typically 'cd'/'tp'.
+    if (parsed && typeof parsed === 'object' && ('st' in parsed) && (('cd' in parsed) || ('tp' in parsed))) {
       return expandHashData(parsed as MinimalPoptavkaHashData);
-    } else {
-      // It's full format (old hash)
-      return parsed as PoptavkaHashData;
     }
+    // Otherwise treat as full format (old hash)
+    return parsed as PoptavkaHashData;
   } catch {
     // Silently fail - invalid hash
     return null;

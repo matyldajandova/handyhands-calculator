@@ -48,13 +48,11 @@ export type OfferData = {
  * We avoid JSX/react-dom usage so this can be safely called from a Route Handler.
  */
 export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
-  const tasksHtml = (data.tasks?.length ?? 0) || (data.summaryItems?.length ?? 0)
-    ? `
+  const sectionThree = `
       <section class="mt-8" style="page-break-inside: avoid;">
         <div class="font-bold">3. Shrnutí - rozsah a specifikace pracovních úkonů</div>
-        <div class="hh-divider mt-2"></div>      
-        ${renderCompleteQATable(data.tasks, data.summaryItems)}
-        
+        <div class="hh-divider mt-2"></div>
+        ${(data.tasks?.length ?? 0) || (data.summaryItems?.length ?? 0) ? renderCompleteQATable(data.tasks, data.summaryItems) : ''}
         ${renderNotesSection(data.notes)}
         ${renderCommonServicesSection(data.commonServices, data.cleaningFrequency)}
       </section>
@@ -111,8 +109,7 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
           </div>
         </div>
       </section>
-    `
-    : "";
+    `;
 
   return `
     <section>
@@ -151,7 +148,7 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
       </div>
       ${data.poptavkaNotes ? `
         <div class="mt-2">
-          <div><span class="font-semibold">Poznámka k poptávce:</span> ${escapeHtml(data.poptavkaNotes)}</div>
+          <div class="text-xs"><span class="font-semibold">Poznámka k poptávce:</span> ${escapeHtml(data.poptavkaNotes)}</div>
         </div>
       ` : ""}
     </section>
@@ -418,7 +415,7 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
         ${renderSignaturesSection(data.quoteDate)}
       ` : ""}
     </section>
-    ${tasksHtml}
+    ${sectionThree}
 
     <section class="hh-last-page">
       <div class="hh-last-note">
@@ -521,7 +518,7 @@ function renderNotesSection(notes?: string): string {
   return `
     <div class="mt-6" style="page-break-inside: avoid;">
       <div class="font-semibold mb-2 text-xs">Poznámka zákazníka:</div>
-      <div class="bg-light-gray border border-gray-pdf rounded-lg p-4">
+      <div class="bg-light-gray border border-gray-pdf rounded-lg p-2">
         <p class="text-xs">${escapeHtml(notes.trim())}</p>
       </div>
     </div>

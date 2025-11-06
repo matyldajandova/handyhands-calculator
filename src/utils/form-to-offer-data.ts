@@ -283,8 +283,9 @@ export function convertFormDataToOfferData(
     },
     tasks: [], // Don't create tasks to avoid duplication
     summaryItems,
-    notes: typeof formData.notes === 'string' ? formData.notes : undefined, // Original note from calculation form
-    poptavkaNotes: customerData?.notes || undefined, // Poptávka-specific note
+    // IMPORTANT: These two notes are ABSOLUTELY separate and must NEVER be interchanged
+    notes: typeof formData.notes === 'string' && formData.notes.trim() !== '' ? formData.notes : undefined, // Original note from calculation form ONLY
+    poptavkaNotes: customerData?.notes && customerData.notes.trim() !== '' ? customerData.notes : undefined, // Poptávka page note ONLY
     conditions: formConfig.conditions || [],
     commonServices: (() => {
       const baseServices = formConfig.commonServices || {};
