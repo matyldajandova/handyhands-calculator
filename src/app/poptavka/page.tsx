@@ -703,6 +703,16 @@ function PoptavkaContent() {
       const pdfResult = await pdfResponse.json();
       const pdfUrl = pdfResult.pdfUrl || '';
 
+      // Log PDF upload status for debugging
+      if (!pdfUrl) {
+        console.warn('PDF was generated but no Google Drive URL was returned:', {
+          message: pdfResult.message,
+          uploadError: pdfResult.uploadError
+        });
+      } else {
+        console.log('PDF uploaded to Google Drive:', pdfUrl);
+      }
+
       // Store customer data in Ecomail with Poptávka label
       const ecomailResponse = await fetch('/api/ecomail/subscribe', {
         method: 'POST',
@@ -711,13 +721,17 @@ function PoptavkaContent() {
         },
         body: JSON.stringify({
           ...formData,
-          pdfUrl
+          pdfUrl,
+          serviceType: hashData.serviceType,
+          serviceTitle: hashData.serviceTitle || serviceType
         }),
       });
 
       if (!ecomailResponse.ok) {
         console.error('Failed to store customer data in Ecomail');
         // Continue anyway as the main submission was successful
+      } else {
+        console.log('Customer data stored in Ecomail with PDF URL:', pdfUrl || 'NO URL');
       }
       
       // Clear localStorage data first
@@ -1359,16 +1373,30 @@ function PoptavkaContent() {
                           }}
                           disabled={(date) => {
                             // Determine minimum delay: 1 day for one-time cleaning and window washing, 10 days for regular services
+                            // Normalize dates to start of day for accurate comparison (ignore time component)
+                            const normalizeDate = (d: Date) => {
+                              const normalized = new Date(d);
+                              normalized.setHours(0, 0, 0, 0);
+                              return normalized;
+                            };
+                            
+                            const today = normalizeDate(new Date());
+                            let minDate: Date;
+                            
                             if (!hashData) {
-                              const defaultMinDate = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
-                              defaultMinDate.setHours(12, 0, 0, 0);
-                              return date < defaultMinDate;
+                              // Default to 10 days for regular services
+                              minDate = new Date(today);
+                              minDate.setDate(today.getDate() + 10);
+                            } else {
+                              const isHourlyService = hashData.serviceType === "one-time-cleaning" || hashData.serviceType === "handyman-services";
+                              const daysDelay = isHourlyService ? 1 : 10;
+                              minDate = new Date(today);
+                              minDate.setDate(today.getDate() + daysDelay);
                             }
-                            const isHourlyService = hashData.serviceType === "one-time-cleaning" || hashData.serviceType === "handyman-services";
-                            const daysDelay = isHourlyService ? 1 : 10;
-                            const minDate = new Date(Date.now() + daysDelay * 24 * 60 * 60 * 1000);
-                            minDate.setHours(12, 0, 0, 0); // Use noon to avoid timezone edge cases
-                            return date < minDate;
+                            
+                            // Compare normalized dates (year, month, day only - ignore time)
+                            const normalizedDate = normalizeDate(date);
+                            return normalizedDate < minDate;
                           }}
                           initialFocus
                         />

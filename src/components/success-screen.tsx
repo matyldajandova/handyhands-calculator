@@ -313,6 +313,18 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
         throw new Error(`Failed to generate PDF: ${response.status} ${errorText}`);
       }
       
+      // Get Google Drive URL from response headers BEFORE consuming the body
+      const googleDriveUrl = response.headers.get('X-PDF-URL') || '';
+      const uploadError = response.headers.get('X-PDF-Upload-Error');
+      
+      if (uploadError) {
+        console.warn('PDF upload to Google Drive failed:', uploadError);
+      }
+      
+      if (!googleDriveUrl) {
+        console.warn('No Google Drive URL found in response headers. PDF may not have been uploaded.');
+      }
+      
       // Create blob and download
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -323,9 +335,6 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-
-      // Get Google Drive URL from response headers
-      const googleDriveUrl = response.headers.get('X-PDF-URL') || '';
 
       // Store customer data in Ecomail with PDF label
       try {

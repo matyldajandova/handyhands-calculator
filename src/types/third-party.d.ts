@@ -15,6 +15,7 @@ declare module 'googleapis' {
     setCredentials(tokens: unknown): void;
     generateAuthUrl(options: { access_type: string; prompt: string; scope: string[] }): string;
     getToken(code: string): Promise<{ tokens: unknown }>;
+    refreshAccessToken(): Promise<{ credentials: { access_token?: string; refresh_token?: string; expiry_date?: number; token_type?: string; scope?: string } }>;
   }
 
   export interface DriveFilesListResponse {

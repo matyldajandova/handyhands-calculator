@@ -321,15 +321,56 @@ export async function POST(req: NextRequest) {
 
   // Store the PDF URL for potential return
   let uploadedPdfUrl = '';
+  let uploadError: Error | null = null;
   
   // Upload to Google Drive if tokens are available
   const isPoptavka = data.isPoptavka;
   const tokensCookie = req.cookies.get("gg_tokens")?.value;
   const parentFolderId = process.env.GDRIVE_PARENT_FOLDER_ID;
   const poptavkyFolderId = process.env.GDRIVE_FINAL_OFFER_FOLDER_ID;
+  
+  // Log upload conditions for debugging
+  console.log('PDF Upload conditions:', {
+    isPoptavka,
+    hasTokens: !!tokensCookie,
+    hasParentFolderId: !!parentFolderId,
+    hasPoptavkyFolderId: !!poptavkyFolderId,
+    shouldUpload: tokensCookie && (parentFolderId || (isPoptavka && poptavkyFolderId))
+  });
+  
   if (tokensCookie && (parentFolderId || (isPoptavka && poptavkyFolderId))) {
     try {
       const tokens = JSON.parse(tokensCookie);
+      
+      // Check if access token is expired and refresh if needed
+      let validTokens = tokens;
+      if (tokens.expiry_date && tokens.expiry_date < Date.now() && tokens.refresh_token) {
+        console.log('Access token expired, attempting to refresh...');
+        try {
+          const { getOAuthClient } = await import("@/utils/google-drive");
+          const oauth2Client = getOAuthClient();
+          oauth2Client.setCredentials(tokens);
+          // Type assertion needed because our minimal types don't include all methods
+          const oauthClientWithRefresh = oauth2Client as typeof oauth2Client & {
+            refreshAccessToken: () => Promise<{ 
+              credentials: { 
+                access_token?: string; 
+                refresh_token?: string; 
+                expiry_date?: number; 
+                token_type?: string; 
+                scope?: string;
+              } 
+            }>;
+          };
+          const { credentials } = await oauthClientWithRefresh.refreshAccessToken();
+          validTokens = credentials;
+          console.log('Tokens refreshed successfully');
+        } catch (refreshError) {
+          console.error('Failed to refresh tokens:', refreshError);
+          throw new Error('Access token expired and refresh failed. Please re-authorize Google Drive access.');
+        }
+      }
+      
       const customer = data.customer?.name || "zakaznik";
       const email = data.customer?.email || "bez-emailu";
       const serviceTitle = data.serviceTitle || "Ostatní";
@@ -338,8 +379,14 @@ export async function POST(req: NextRequest) {
       const filename = `${serviceTitle.replace(/\s+/g, "_")}_${customer.replace(/\s+/g, "_")}_${email}_${date}${suffix}`;
       const subfolder = serviceTitle;
       
+      console.log('Uploading PDF to Google Drive:', {
+        filename,
+        subfolder,
+        parentFolderId: isPoptavka ? poptavkyFolderId : parentFolderId
+      });
+      
       const result = await uploadPdfToDrive({
-        tokens,
+        tokens: validTokens,
         parentFolderId: isPoptavka ? poptavkyFolderId! : parentFolderId!,
         subfolderName: subfolder,
         filename,
@@ -347,9 +394,34 @@ export async function POST(req: NextRequest) {
       });
       
       uploadedPdfUrl = `https://drive.google.com/file/d/${result.fileId}/view`;
-    } catch (uploadError) {
+      console.log('PDF uploaded successfully to Google Drive:', uploadedPdfUrl);
+    } catch (err) {
+      uploadError = err instanceof Error ? err : new Error(String(err));
       console.error('Failed to upload to Google Drive:', uploadError);
+      console.error('Upload error stack:', uploadError.stack);
+      // Don't fail the request if upload fails, but log it clearly
     }
+  } else {
+    const missingItems: string[] = [];
+    if (!tokensCookie) {
+      missingItems.push('Google Drive OAuth tokens (complete OAuth flow at /api/google/oauth/init)');
+    }
+    if (isPoptavka && !poptavkyFolderId) {
+      missingItems.push('GDRIVE_FINAL_OFFER_FOLDER_ID environment variable');
+    }
+    if (!isPoptavka && !parentFolderId) {
+      missingItems.push('GDRIVE_PARENT_FOLDER_ID environment variable');
+    }
+    
+    console.warn('PDF upload skipped - missing requirements:', {
+      tokensCookie: !!tokensCookie,
+      parentFolderId: !!parentFolderId,
+      poptavkyFolderId: !!poptavkyFolderId,
+      isPoptavka,
+      missingItems
+    });
+    
+    uploadError = new Error(`PDF upload skipped: ${missingItems.join(', ')}`);
   }
 
   // If this is a poptavka submission, return JSON with PDF URL
@@ -357,7 +429,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       pdfUrl: uploadedPdfUrl,
-      message: 'PDF generated and uploaded successfully'
+      message: uploadedPdfUrl 
+        ? 'PDF generated and uploaded successfully' 
+        : 'PDF generated but upload to Google Drive failed or was skipped',
+      uploadError: uploadError ? uploadError.message : undefined
     });
   }
 
@@ -370,6 +445,11 @@ export async function POST(req: NextRequest) {
   // Add Google Drive URL to headers if available
   if (uploadedPdfUrl) {
     headers["X-PDF-URL"] = uploadedPdfUrl;
+  }
+  
+  // Also add upload error info in header for debugging (if upload failed)
+  if (uploadError) {
+    headers["X-PDF-Upload-Error"] = uploadError.message;
   }
 
   return new NextResponse(pdf as BodyInit, { headers });

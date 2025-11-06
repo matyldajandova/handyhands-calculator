@@ -12,6 +12,8 @@ interface CustomerData {
   invoiceEmail?: string;
   notes?: string;
   pdfUrl?: string;
+  serviceType?: string; // Service type ID (e.g., "office-cleaning", "panel-building")
+  serviceTitle?: string; // Service type title for reference
   // Company data
   isCompany?: boolean;
   companyName?: string;
@@ -37,7 +39,10 @@ export async function POST(request: NextRequest) {
       email: customerData.email,
       firstName: customerData.firstName,
       lastName: customerData.lastName,
-      hasServiceStartDate: !!customerData.serviceStartDate
+      hasServiceStartDate: !!customerData.serviceStartDate,
+      hasPdfUrl: !!customerData.pdfUrl,
+      pdfUrl: customerData.pdfUrl || 'NOT PROVIDED',
+      serviceType: customerData.serviceType || 'NOT PROVIDED'
     });
 
     // Validate API key
@@ -70,8 +75,47 @@ export async function POST(request: NextRequest) {
     // If serviceStartDate is present, it's from poptavka submission
     // Otherwise, it's from PDF download
     const label = customerData.serviceStartDate ? 'Poptávka' : 'PDF';
+    
+    // Map service type IDs to tags for segmentation
+    const getServiceTag = (serviceType: string): string | null => {
+      const serviceTypeMap: Record<string, string> = {
+        'office-cleaning': 'Kanceláře',
+        'panel-building': 'Panelové domy',
+        'residential-building': 'Činžovní domy',
+        'commercial-spaces': 'Komerční prostory',
+        'home-cleaning': 'Domácnosti',
+        'one-time-cleaning': 'Jednorázový úklid',
+        'handyman-services': 'Mytí oken a ostatní služby'
+      };
+      
+      return serviceTypeMap[serviceType] || null;
+    };
+    
+    // Build tags array
+    const tags: string[] = [label];
+    
+    // For poptavka submissions, add additional tags
+    if (customerData.serviceStartDate) {
+      // Add "Kalkulátor nabídka" tag for poptavka submissions
+      tags.push('Kalkulátor nabídka');
+      
+      // Add service type tag if available (use serviceType ID for accurate mapping)
+      if (customerData.serviceType) {
+        const serviceTag = getServiceTag(customerData.serviceType);
+        if (serviceTag) {
+          tags.push(serviceTag);
+        }
+      }
+    }
 
     // Prepare custom fields data based on the merge tags from the image
+    const pdfUrlValue = customerData.pdfUrl || '';
+    console.log('Setting PDF_OBJEDNAVKA custom field:', {
+      hasPdfUrl: !!customerData.pdfUrl,
+      pdfUrlValue: pdfUrlValue || 'EMPTY - PDF may not have been uploaded to Google Drive',
+      pdfUrlLength: pdfUrlValue.length
+    });
+    
     const customFields = {
       'START_UKLIDU': {
         value: customerData.serviceStartDate || '',
@@ -82,7 +126,7 @@ export async function POST(request: NextRequest) {
         type: 'string'
       },
       'PDF_OBJEDNAVKA': {
-        value: customerData.pdfUrl || '',
+        value: pdfUrlValue,
         type: 'url'
       },
       'FAKTURACNI_PSC': {
@@ -116,7 +160,7 @@ export async function POST(request: NextRequest) {
         zip: customerData.propertyZipCode || '',
         country: 'CZ',
         custom_fields: customFields,
-        tags: [label] // Add label as tag to differentiate PDF vs Poptávka
+        tags: tags // Add tags to differentiate PDF vs Poptávka and service types
       },
       trigger_autoresponders: false,
       update_existing: true, // Update existing contacts
