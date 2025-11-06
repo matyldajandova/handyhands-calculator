@@ -39,6 +39,56 @@ export async function POST(req: NextRequest) {
               data.startDate = dateStr;
             }
           }
+          
+          // Extract customer information from hash if not already set in OfferData
+          // This includes phone, address, and company information
+          if (data.customer) {
+            // Extract phone number (always use hash value if available, even if customer.phone exists)
+            if (hashFormData.phone) {
+              data.customer.phone = String(hashFormData.phone);
+            }
+            
+            // Extract address from property fields (always use hash value if available)
+            const propertyStreet = hashFormData.propertyStreet as string | undefined;
+            const propertyCity = hashFormData.propertyCity as string | undefined;
+            const propertyZipCode = hashFormData.propertyZipCode as string | undefined;
+            if (propertyStreet || propertyCity || propertyZipCode) {
+              const addressParts = [
+                propertyStreet,
+                propertyCity,
+                propertyZipCode
+              ].filter(Boolean);
+              if (addressParts.length > 0) {
+                data.customer.address = addressParts.join(', ');
+              }
+            }
+            
+            // Extract company information if isCompany is true (always use hash value if available)
+            const isCompany = hashFormData.isCompany === true || hashFormData.isCompany === 'true';
+            if (isCompany) {
+              const companyName = hashFormData.companyName as string | undefined;
+              const companyIco = hashFormData.companyIco as string | undefined;
+              const companyDic = hashFormData.companyDic as string | undefined;
+              const companyStreet = hashFormData.companyStreet as string | undefined;
+              const companyCity = hashFormData.companyCity as string | undefined;
+              const companyZipCode = hashFormData.companyZipCode as string | undefined;
+              
+              if (companyName || companyIco) {
+                const companyAddressParts = [
+                  companyStreet,
+                  companyCity,
+                  companyZipCode
+                ].filter(Boolean);
+                
+                (data.customer as Record<string, unknown>).company = {
+                  name: companyName || '',
+                  ico: companyIco || '',
+                  dic: companyDic || '',
+                  address: companyAddressParts.length > 0 ? companyAddressParts.join(', ') : ''
+                };
+              }
+            }
+          }
         }
       } catch (hashError) {
         console.error('Failed to decode poptavkaHash:', hashError);

@@ -319,20 +319,12 @@ function PoptavkaContent() {
           
           // Remove poptavkaNotes from hashFormData before merging to prevent old notes from carrying over
           // We'll set it explicitly from poptavkaNotesFromHash instead
-          // IMPORTANT: Also exclude firstName, lastName, email, phone to prevent hash expansion issues
-          // These should always come from customerData (localStorage) or be explicitly set, not from hash
-          const { poptavkaNotes: _oldPoptavkaNotes, firstName: _hashFirstName, lastName: _hashLastName, email: _hashEmail, phone: _hashPhone, ...hashFormDataWithoutPoptavkaNotes } = hashFormData;
+          const { poptavkaNotes: _oldPoptavkaNotes, ...hashFormDataWithoutPoptavkaNotes } = hashFormData;
           
           const mergedData = {
             ...customerData, // Customer data (firstName, lastName, email) - comes from localStorage
             ...existingDataWithoutDateAndNotes, // Existing poptavka data (without date and notes)
-            ...hashFormDataWithoutPoptavkaNotes,   // Hash data (without poptavkaNotes, firstName, lastName, email, phone to prevent carryover)
-            // CRITICAL: Explicitly set firstName, lastName, email, phone from customerData or hashFormData
-            // Priority: customerData (localStorage) > hashFormData (if no customerData)
-            firstName: (customerData as Record<string, unknown>).firstName as string | undefined || (hashFormData.firstName as string | undefined) || '',
-            lastName: (customerData as Record<string, unknown>).lastName as string | undefined || (hashFormData.lastName as string | undefined) || '',
-            email: (customerData as Record<string, unknown>).email as string | undefined || (hashFormData.email as string | undefined) || '',
-            phone: (hashFormData.phone as string | undefined) || '' // Phone comes from hashFormData (poptavka form)
+            ...hashFormDataWithoutPoptavkaNotes,   // Hash data (without poptavkaNotes) - includes firstName, lastName, email, phone, invoiceEmail - this overrides above
           } as Record<string, unknown>;
           
           // Explicitly set poptavkaNotes only if it exists in the CURRENT hash
@@ -500,20 +492,21 @@ function PoptavkaContent() {
           const { notes: _poptavkaNote, ...formDataWithoutNotes } = formData as unknown as Record<string, unknown>;
           
           // Exclude notes and poptavkaNotes from existing hash data
-          // IMPORTANT: Also exclude firstName, lastName, email, phone to prevent hash expansion issues
+          // IMPORTANT: Also exclude firstName, lastName, email, phone, invoiceEmail to prevent hash expansion issues
           // These should always come from formData (user input), not from decoded hash
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { notes: _oldNotes, poptavkaNotes: _oldPoptavkaNotes, firstName: _oldFirstName, lastName: _oldLastName, email: _oldEmail, phone: _oldPhone, ...existingFormDataWithoutNotes } = existingFormData || {};
+          const { notes: _oldNotes, poptavkaNotes: _oldPoptavkaNotes, firstName: _oldFirstName, lastName: _oldLastName, email: _oldEmail, phone: _oldPhone, invoiceEmail: _oldInvoiceEmail, ...existingFormDataWithoutNotes } = existingFormData || {};
           
           const safeFormDataForHash = {
             ...existingFormDataWithoutNotes,
             ...formDataWithoutNotes,
-            // CRITICAL: Explicitly set firstName, lastName, email, phone from formData to prevent hash expansion issues
+            // CRITICAL: Explicitly set firstName, lastName, email, phone, invoiceEmail from formData to prevent hash expansion issues
             // These should NEVER come from existingFormData (decoded hash) as it might have incorrect mappings
             firstName: formData.firstName,
             lastName: formData.lastName,
             email: formData.email,
             phone: formData.phone,
+            invoiceEmail: formData.invoiceEmail,
             serviceStartDate: formData.serviceStartDate
               ? (() => {
                   const date = formData.serviceStartDate as Date;

@@ -64,6 +64,7 @@ function expandKey(abbrev: string): string {
  * Abbreviate a value using the same algorithm as keys
  * For kebab-case values like "hard-to-reach" -> "htr"
  * For already short values (<= 3 chars), keep as-is
+ * IMPORTANT: Never abbreviate email addresses, URLs, or other structured data
  */
 function abbreviateValue(value: string): string {
   // If already short, don't abbreviate (saves space for common values like "yes", "no")
@@ -71,7 +72,18 @@ function abbreviateValue(value: string): string {
     return value;
   }
   
-  // Use same algorithm as keys
+  // Never abbreviate email addresses, URLs, phone numbers, or other structured data
+  // These contain special characters that are important for data integrity
+  if (
+    value.includes('@') || // Email addresses
+    value.includes('://') || // URLs
+    value.includes('+') || // Phone numbers often start with +
+    /^\d+[\d\s\-\(\)]+$/.test(value) // Phone numbers (digits with spaces, dashes, parentheses)
+  ) {
+    return value;
+  }
+  
+  // Use same algorithm as keys for other values
   return abbreviateKey(value);
 }
 
@@ -146,6 +158,7 @@ export interface MinimalPoptavkaHashData {
 /**
  * Minify formData keys and values using algorithm
  * Returns the minified data and the reverse mappings
+ * Handles conflicts by ensuring each abbreviation maps to exactly one key/value
  */
 function minifyFormData(fd: Record<string, unknown>): {
   minified: Record<string, unknown>;
@@ -155,20 +168,85 @@ function minifyFormData(fd: Record<string, unknown>): {
   resetCaches(); // Reset caches for new encoding
   const minified: Record<string, unknown> = {};
   
+  // Track conflicts: if multiple keys abbreviate to the same value, we need to handle it
+  const abbreviationToKeys: Record<string, string[]> = {};
+  
+  // First pass: collect all key abbreviations and detect conflicts
+  for (const key of Object.keys(fd)) {
+    const abbrev = abbreviateKey(key);
+    if (!abbreviationToKeys[abbrev]) {
+      abbreviationToKeys[abbrev] = [];
+    }
+    abbreviationToKeys[abbrev].push(key);
+  }
+  
+  // Handle key conflicts: if multiple keys map to the same abbreviation, keep the full key name
+  // This ensures data integrity - we'd rather have a longer hash than corrupted data
+  const conflictKeys = new Set<string>();
+  for (const [abbrev, keys] of Object.entries(abbreviationToKeys)) {
+    if (keys.length > 1) {
+      // Multiple keys map to the same abbreviation - mark all as conflicts
+      keys.forEach(key => conflictKeys.add(key));
+    }
+  }
+  
+  // Track value conflicts: collect all values that will be abbreviated
+  const allValues: string[] = [];
+  for (const value of Object.values(fd)) {
+    if (typeof value === 'string') {
+      allValues.push(value);
+    } else if (Array.isArray(value)) {
+      value.forEach(item => {
+        if (typeof item === 'string') {
+          allValues.push(item);
+        }
+      });
+    }
+  }
+  
+  // Detect value conflicts: if multiple values abbreviate to the same thing
+  const abbreviationToValues: Record<string, string[]> = {};
+  for (const value of allValues) {
+    const abbrev = abbreviateValue(value);
+    // Only track if value was actually abbreviated (not kept as-is)
+    if (abbrev !== value) {
+      if (!abbreviationToValues[abbrev]) {
+        abbreviationToValues[abbrev] = [];
+      }
+      abbreviationToValues[abbrev].push(value);
+    }
+  }
+  
+  const conflictValues = new Set<string>();
+  for (const [abbrev, values] of Object.entries(abbreviationToValues)) {
+    if (values.length > 1) {
+      // Multiple values map to the same abbreviation - mark all as conflicts
+      values.forEach(value => conflictValues.add(value));
+    }
+  }
+  
+  // Second pass: build minified data and reverse mappings
   for (const [key, value] of Object.entries(fd)) {
-    // Abbreviate key using algorithm
-    const minKey = abbreviateKeyWithCache(key);
+    // If this key has a conflict, use the full key name instead of abbreviation
+    const minKey = conflictKeys.has(key) ? key : abbreviateKeyWithCache(key);
     
     // Minify value based on type
     let minValue = value;
     
     if (typeof value === 'string') {
-      // Abbreviate value using algorithm
-      minValue = abbreviateValueWithCache(value);
+      // If this value has a conflict, keep it as-is instead of abbreviating
+      if (conflictValues.has(value)) {
+        minValue = value; // Keep full value
+      } else {
+        minValue = abbreviateValueWithCache(value);
+      }
     } else if (Array.isArray(value)) {
-      // Abbreviate array values
+      // Abbreviate array values, but keep full value if it has a conflict
       minValue = value.map((item) => {
         if (typeof item === 'string') {
+          if (conflictValues.has(item)) {
+            return item; // Keep full value
+          }
           return abbreviateValueWithCache(item);
         }
         return item;
@@ -188,6 +266,7 @@ function minifyFormData(fd: Record<string, unknown>): {
 /**
  * Expand formData keys and values back to full names using reverse mappings
  * If reverse mappings are not provided (old hash format), return data as-is
+ * Handles keys that weren't abbreviated due to conflicts (they remain as full key names)
  */
 function expandFormData(
   fd: Record<string, unknown>,
@@ -214,13 +293,15 @@ function expandFormData(
   
   for (const [key, value] of Object.entries(fd)) {
     // Expand key using cache (falls back to original if not in cache)
+    // If key is already a full key name (not abbreviated), it won't be in the map - use it as-is
     const expKey = expandKey(key);
     
     // Safety check: if keyMap was provided but key didn't expand, log a warning
     // This helps catch mapping issues during development
     if (keyMap && key !== expKey && !keyMap[key]) {
-      // Key didn't expand and wasn't in the map - this is expected for old hashes
-      // but shouldn't happen for new hashes with proper mappings
+      // Key didn't expand and wasn't in the map - this is expected for:
+      // 1. Old hashes without mappings
+      // 2. Keys that had conflicts and weren't abbreviated (they remain as full names)
       if (process.env.NODE_ENV === 'development') {
         console.warn(`[HashGenerator] Key "${key}" not found in keyMap, keeping as-is. Available keys:`, Object.keys(keyMap));
       }
