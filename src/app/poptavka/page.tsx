@@ -181,8 +181,9 @@ function PoptavkaContent() {
     companyCity: "",
     companyZipCode: "",
     serviceStartDate: (() => {
-      const date = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000); // 10 days from now
-      date.setHours(0, 0, 0, 0);
+      // Default to 10 days (will be updated when hashData is loaded)
+      const date = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
+      date.setHours(12, 0, 0, 0); // Use noon to avoid timezone edge cases with Calendar
       return date;
     })(),
     invoiceEmail: "",
@@ -222,6 +223,12 @@ function PoptavkaContent() {
         setHashData(decodedData);
         setIsLoading(false);
         
+          // Determine minimum delay: 1 day for one-time cleaning and window washing, 10 days for regular services
+          const isHourlyService = decodedData.serviceType === "one-time-cleaning" || decodedData.serviceType === "handyman-services";
+          const daysDelay = isHourlyService ? 1 : 10;
+          const minDate = new Date(Date.now() + daysDelay * 24 * 60 * 60 * 1000);
+          minDate.setHours(12, 0, 0, 0); // Use noon to avoid timezone edge cases
+        
         // Prefill form data if available in hash
         if (decodedData.calculationData?.formData) {
           const hashFormData = decodedData.calculationData.formData as Record<string, unknown>;
@@ -231,19 +238,17 @@ function PoptavkaContent() {
           const existingData = orderData?.poptavka || {};
           
           // Merge: customer data + existing poptavka data + hash data
+          // IMPORTANT: Exclude serviceStartDate from existingData - dates should never persist between orders
           const customerData = orderData?.customer || {};
+          const existingDataWithoutDate = { ...existingData };
+          delete (existingDataWithoutDate as Record<string, unknown>).serviceStartDate;
           const mergedData = {
             ...customerData, // Customer data (firstName, lastName, email)
-            ...existingData, // Existing poptavka data
-            ...hashFormData   // Hash data (takes precedence)
+            ...existingDataWithoutDate, // Existing poptavka data (without date)
+            ...hashFormData   // Hash data (takes precedence, includes date if present)
           } as Record<string, unknown>;
           
-          // Always use 10 days from now for serviceStartDate unless it's explicitly in the hash data
-          // (don't use old dates from localStorage)
-          // IMPORTANT: Ensure the date is always at least 10 days from now
-          const minDate = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
-          minDate.setHours(0, 0, 0, 0);
-          
+          // Always get serviceStartDate from hash only, never from localStorage
           const serviceStartDate = hashFormData.serviceStartDate 
             ? (() => {
                 const dateStr = hashFormData.serviceStartDate as string;
@@ -257,6 +262,7 @@ function PoptavkaContent() {
                     const month = parseInt(parts[1], 10) - 1; // JavaScript months are 0-based
                     const year = parseInt(parts[2], 10);
                     parsedDate = new Date(year, month, day);
+                    parsedDate.setHours(12, 0, 0, 0); // Use noon to avoid timezone edge cases with Calendar
                   } else {
                     parsedDate = minDate;
                   }
@@ -272,15 +278,31 @@ function PoptavkaContent() {
                 // Fallback to direct parsing
                 else {
                   parsedDate = new Date(dateStr);
+                  if (isNaN(parsedDate.getTime())) {
+                    parsedDate = minDate;
+                  }
                 }
                 
-                // Normalize to local midnight to avoid timezone issues
-                parsedDate.setHours(0, 0, 0, 0);
+                // Normalize to local noon to avoid timezone issues with Calendar component
+                // Calendar components can misinterpret midnight dates due to timezone shifts
+                parsedDate.setHours(12, 0, 0, 0);
                 
-                // Ensure date is at least 10 days from now
-                if (parsedDate < minDate) {
+                // Always ensure date is at least the minimum delay from now
+                // This ensures that even if hash contains old dates with wrong delay, we correct them
+                // Users can select any date in the future as long as it meets the minimum requirement
+                const now = new Date();
+                now.setHours(0, 0, 0, 0);
+                const daysUntilDate = Math.ceil((parsedDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
+                
+                // Enforce minimum delay: 1 day for hourly services, 10 days for regular services
+                // Only correct dates that are too early - allow any date in the future
+                const minDaysRequired = isHourlyService ? 1 : 10;
+                
+                if (parsedDate < minDate || daysUntilDate < minDaysRequired) {
+                  // Date is too early - correct to minimum date
                   parsedDate = minDate;
                 }
+                // Otherwise, keep the date as-is (user can select any future date)
                 
                 return parsedDate;
               })()
@@ -308,13 +330,39 @@ function PoptavkaContent() {
           };
           
           setFormData(safeFormData);
+        } else {
+          // No formData in hash, but we still need to set the correct default date based on service type
+          const orderData = orderStorage.get();
+          const existingData = (orderData?.poptavka || {}) as Record<string, unknown>;
+          const customerData = (orderData?.customer || {}) as Record<string, unknown>;
+          
+          setFormData({
+            firstName: String(customerData.firstName || ''),
+            lastName: String(customerData.lastName || ''),
+            email: String(customerData.email || ''),
+            phone: String(existingData.phone || ''),
+            propertyStreet: String(existingData.propertyStreet || ''),
+            propertyCity: String(existingData.propertyCity || ''),
+            propertyZipCode: String(existingData.propertyZipCode || ''),
+            isCompany: Boolean(existingData.isCompany || false),
+            companyName: String(existingData.companyName || ''),
+            companyIco: String(existingData.companyIco || ''),
+            companyDic: String(existingData.companyDic || ''),
+            companyStreet: String(existingData.companyStreet || ''),
+            companyCity: String(existingData.companyCity || ''),
+            companyZipCode: String(existingData.companyZipCode || ''),
+            serviceStartDate: minDate,
+            invoiceEmail: String(existingData.invoiceEmail || ''),
+            notes: String(existingData.notes || ''),
+          });
         }
       } else {
         // Invalid hash, redirect to home
         window.location.href = '/';
       }
     } else {
-      // No hash provided, redirect to home
+      // No hash provided - this is a new order, redirect to home
+      // Dates should never persist between orders, so always start fresh
       window.location.href = '/';
     }
   }, [searchParams]);
@@ -327,9 +375,10 @@ function PoptavkaContent() {
     
     if (Object.keys(formData).length > 0) {
       // Split form data into customer and poptavka parts
-      const { firstName, lastName, email, ...poptavkaData } = formData;
+      // Exclude serviceStartDate from persistence - it should only exist in hash or be calculated fresh for each order
+      const { firstName, lastName, email, serviceStartDate, ...poptavkaData } = formData;
       
-      // Save customer data and poptavka data separately
+      // Save customer data and poptavka data separately (without serviceStartDate)
       orderStorage.updateCustomerAndPoptavka(
         { firstName, lastName, email },
         poptavkaData
@@ -343,7 +392,16 @@ function PoptavkaContent() {
             ...(hashData.calculationData?.formData || {}),
             ...formData,
             serviceStartDate: formData.serviceStartDate
-              ? formatLocalDateYYYYMMDD(formData.serviceStartDate as Date)
+              ? (() => {
+                  // Ensure we format the exact calendar date the user selected
+                  // Extract local date components directly to avoid timezone shifts
+                  const date = formData.serviceStartDate as Date;
+                  const y = date.getFullYear();
+                  const m = String(date.getMonth() + 1).padStart(2, '0');
+                  const d = String(date.getDate()).padStart(2, '0');
+                  const formatted = `${y}-${m}-${d}`;
+                  return formatted;
+                })()
               : formData.serviceStartDate
           } as Record<string, unknown>;
 
@@ -351,11 +409,13 @@ function PoptavkaContent() {
             ...hashData,
             calculationData: {
               ...(hashData.calculationData || {}),
-                formData: {
-                  ...safeFormDataForHash,
-                  // Preserve original notes, don't overwrite with poptavka notes
-                  notes: (hashData.calculationData?.formData as unknown as Record<string, unknown>)?.notes || (formData as unknown as Record<string, unknown>).notes
-                },
+              // Preserve calculationDetails with appliedCoefficients
+              calculationDetails: hashData.calculationData?.calculationDetails,
+              formData: {
+                ...safeFormDataForHash,
+                // Preserve original notes, don't overwrite with poptavka notes
+                notes: (hashData.calculationData?.formData as unknown as Record<string, unknown>)?.notes || (formData as unknown as Record<string, unknown>).notes
+              },
               // Preserve the original order ID
               orderId: hashData.calculationData?.orderId
             } as CalculationData
@@ -445,8 +505,18 @@ function PoptavkaContent() {
         } : undefined,
         startDate: formData.serviceStartDate ? formData.serviceStartDate.toISOString().split('T')[0] : '',
         notes: formData.notes || '',
-        invoiceEmail: formData.invoiceEmail || ''
-      });
+        invoiceEmail: formData.invoiceEmail || '',
+        // Include original calculationResult and formConfig to preserve appliedCoefficients
+        calculationResult: calculationData as unknown as CalculationResult,
+        formConfig: formConfig as unknown as FormConfig,
+        serviceType: hashData.serviceType
+      } as any);
+      
+      // Include the hash from URL so PDF route doesn't regenerate it
+      const urlHash = searchParams.get('hash');
+      if (urlHash) {
+        offerData.poptavkaHash = urlHash;
+      }
       
       // Mark as poptavka submission for Google Drive folder
       offerData.isPoptavka = true;
@@ -533,11 +603,16 @@ function PoptavkaContent() {
     }
   };
 
-  // Normalize date to local midnight to avoid timezone issues
+  // Normalize date to local noon to avoid timezone issues with Calendar component
   const normalizeDate = (date: Date | null): Date | null => {
     if (!date) return null;
-    const normalized = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    normalized.setHours(0, 0, 0, 0);
+    // Extract local date components directly to avoid timezone shifts
+    // This ensures we get the actual calendar date the user selected
+    const localYear = date.getFullYear();
+    const localMonth = date.getMonth();
+    const localDay = date.getDate();
+    const normalized = new Date(localYear, localMonth, localDay);
+    normalized.setHours(12, 0, 0, 0); // Use noon to avoid timezone edge cases with Calendar
     return normalized;
   };
 
@@ -560,7 +635,7 @@ function PoptavkaContent() {
       const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
       const year = parseInt(parts[2], 10);
       const date = new Date(year, month, day);
-      date.setHours(0, 0, 0, 0);
+      date.setHours(12, 0, 0, 0); // Use noon to avoid timezone edge cases with Calendar
       return isNaN(date.getTime()) ? null : date;
     }
     return null;
@@ -568,6 +643,8 @@ function PoptavkaContent() {
 
   // Format a Date to local YYYY-MM-DD (no timezone shifts in JSON)
   const formatLocalDateYYYYMMDD = (date: Date): string => {
+    // Extract local date components directly to avoid timezone shifts
+    // This ensures we format the actual calendar date the user selected
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
@@ -1077,10 +1154,32 @@ function PoptavkaContent() {
                         <Calendar
                           mode="single"
                           defaultMonth={formData.serviceStartDate || undefined}
-                          selected={formData.serviceStartDate || undefined}
+                          selected={formData.serviceStartDate 
+                            ? (() => {
+                                // Ensure the Date object is properly normalized for the Calendar component
+                                // The Calendar component can be sensitive to timezone issues
+                                const date = formData.serviceStartDate;
+                                const normalized = new Date(
+                                  date.getFullYear(),
+                                  date.getMonth(),
+                                  date.getDate()
+                                );
+                                normalized.setHours(12, 0, 0, 0); // Use noon to avoid timezone edge cases
+                                return normalized;
+                              })()
+                            : undefined}
                           onSelect={(date) => {
                             if (date && isValidDate(date)) {
-                              const normalized = normalizeDate(date);
+                              // Ensure we preserve the exact calendar date the user selected
+                              // Extract local date components before normalization to avoid timezone shifts
+                              const localYear = date.getFullYear();
+                              const localMonth = date.getMonth();
+                              const localDay = date.getDate();
+                              
+                              // Create a new date in local timezone using the calendar date components
+                              const normalized = new Date(localYear, localMonth, localDay);
+                              normalized.setHours(12, 0, 0, 0); // Use noon to avoid timezone edge cases with Calendar
+                              
                               if (normalized) {
                                 handleInputChange("serviceStartDate", normalized);
                                 setDatePickerOpen(false);
@@ -1088,9 +1187,17 @@ function PoptavkaContent() {
                             }
                           }}
                           disabled={(date) => {
-                            const tenDaysFromNow = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
-                            tenDaysFromNow.setHours(0, 0, 0, 0);
-                            return date < tenDaysFromNow;
+                            // Determine minimum delay: 1 day for one-time cleaning and window washing, 10 days for regular services
+                            if (!hashData) {
+                              const defaultMinDate = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
+                              defaultMinDate.setHours(12, 0, 0, 0);
+                              return date < defaultMinDate;
+                            }
+                            const isHourlyService = hashData.serviceType === "one-time-cleaning" || hashData.serviceType === "handyman-services";
+                            const daysDelay = isHourlyService ? 1 : 10;
+                            const minDate = new Date(Date.now() + daysDelay * 24 * 60 * 60 * 1000);
+                            minDate.setHours(12, 0, 0, 0); // Use noon to avoid timezone edge cases
+                            return date < minDate;
                           }}
                           initialFocus
                         />

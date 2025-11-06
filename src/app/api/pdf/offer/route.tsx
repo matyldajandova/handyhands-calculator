@@ -31,7 +31,12 @@ export async function POST(req: NextRequest) {
       const customerAddress = data.customer?.address || '';
       const customerPhone = data.customer?.phone || '';
       
-      // Build form data for hash
+      // Determine service type from serviceTitle or use default
+      // Try to extract from customer data if available (e.g., from existing hash)
+      const serviceType = (data.customer as Record<string, unknown>)?.serviceType as string | undefined;
+      const isHourlyService = data.isHourlyService || serviceType === "one-time-cleaning" || serviceType === "handyman-services";
+      
+      // Build form data for hash - include all form fields from customer data
       const formData = {
         firstName: firstName,
         lastName: lastName,
@@ -44,29 +49,79 @@ export async function POST(req: NextRequest) {
           propertyZipCode: customerAddress.split(',')[2] || ''
         } : {}),
         // Include the start date from the PDF data to ensure consistency
-        serviceStartDate: data.startDate,
+        // Convert Czech date format (DD. MM. YYYY) to ISO format (YYYY-MM-DD) for hash
+        serviceStartDate: (() => {
+          const dateStr = data.startDate;
+          // Check if it's already in ISO format
+          if (dateStr.includes('-') && dateStr.length === 10) {
+            return dateStr;
+          }
+          // Parse Czech format (DD. MM. YYYY) and convert to ISO
+          const parts = dateStr.split('. ');
+          if (parts.length === 3) {
+            const day = parts[0].padStart(2, '0');
+            const month = parts[1].padStart(2, '0');
+            const year = parts[2];
+            return `${year}-${month}-${day}`;
+          }
+          return dateStr; // Fallback to original if parsing fails
+        })(),
         // Include any additional form data that might be in the customer object
-        // This will include company data, notes, etc. from the enhanced customer data
-        ...(data.customer as Record<string, unknown>)
+        // This will include company data, notes, serviceType, and most importantly:
+        // - cleaningSupplies, zipCode, ladders fields for extra services
+        // Exclude calculationResult and formConfig as they're handled separately
+        ...(Object.fromEntries(
+          Object.entries(data.customer as Record<string, unknown>).filter(
+            ([key]) => key !== 'calculationResult' && key !== 'formConfig'
+          )
+        ) as Record<string, unknown>)
       };
 
+      // Try to preserve original calculationResult from customer data if available
+      // This preserves appliedCoefficients for extra services display
+      const originalCalculationResult = (data.customer as Record<string, unknown>)?.calculationResult as import("@/types/form-types").CalculationResult | undefined;
+      
       const hashData = buildPoptavkaHashData({
         serviceTitle: data.serviceTitle || 'Ostatní služby',
         totalPrice: data.price,
-        calculationResult: {
+        serviceType: serviceType || (data.customer as Record<string, unknown>)?.serviceType as string | undefined,
+        calculationResult: originalCalculationResult || {
           regularCleaningPrice: 0,
-          generalCleaningPrice: 0,
+          generalCleaningPrice: data.generalCleaningPrice || 0,
+          generalCleaningFrequency: data.generalCleaningFrequency,
           totalMonthlyPrice: data.price,
+          hourlyRate: data.hourlyRate,
+          orderId: (data.customer as Record<string, unknown>)?.orderId as string | undefined || undefined,
           calculationDetails: {
             basePrice: 0,
-            appliedCoefficients: [],
+            appliedCoefficients: data.fixedAddons?.map(addon => ({
+              field: addon.label.toLowerCase().includes('doprava') ? 'zipCode' : 
+                     addon.label.toLowerCase().includes('úklidové náčiní') ? 'cleaningSupplies' : 'other',
+              label: addon.label,
+              coefficient: 1,
+              impact: addon.amount
+            })) || [],
             finalCoefficient: 1
           }
         },
-        formData
+        formData,
+        formConfig: (data.customer as Record<string, unknown>)?.formConfig as import("@/config/services").FormConfig | undefined
       });
       
-      data.poptavkaHash = hashService.generateHash(hashData);
+      // Generate hash and validate it can be decoded
+      try {
+        data.poptavkaHash = hashService.generateHash(hashData);
+        // Verify the hash can be decoded
+        const decoded = hashService.decodeHash(data.poptavkaHash);
+        if (!decoded) {
+          console.error('Failed to decode generated hash:', JSON.stringify(hashData, null, 2));
+          throw new Error('Generated hash cannot be decoded');
+        }
+      } catch (error) {
+        console.error('Error generating hash:', error);
+        console.error('Hash data:', JSON.stringify(hashData, null, 2));
+        throw error;
+      }
     }
     
     // Determine base URL for links - use environment variable or fallback to production URL
@@ -187,6 +242,8 @@ export async function POST(req: NextRequest) {
 
   return new NextResponse(pdf as BodyInit, { headers });
   } catch (error) {
+    console.error('PDF generation error:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.json(
       { error: "Failed to generate PDF", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

@@ -40,6 +40,10 @@
   .text-black-pdf {
     color: var(--black);
   }
+  .text-2xs {
+    font-size: 10px;
+    line-height: 1.2;
+  }
 }
 
 /* Page setup for A4 output with proper margins for header/footer */
@@ -71,7 +75,7 @@ html, body, * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 .hh-muted { color: var(--black); }
 .hh-small { font-size: 11px; }
-.hh-signature-block { margin-top: 14mm; }
+.hh-signature-block { margin-top: 8px; }
 .hh-signature-line { height: 1px; background: var(--signature-gray); margin-top: 14mm; }
 .hh-sign-name { font-weight: 600; margin-top: 6px; }
 .hh-note { font-size: 10px; color: var(--black); }
@@ -127,18 +131,18 @@ html, body, * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   border: 2px solid var(--primary-color);
   border-radius: 8px;
   background-color: #fffef8;
-  padding: 12px;
+  padding: 12px 8px;
 }
 .hh-pricing-top {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 8px;
 }
 .hh-pricing-separator {
   position: relative;
   border-top: 1px solid var(--primary-color);
-  margin: 16px -12px;
-  width: calc(100% + 24px);
+  margin: 16px -8px;
+  width: calc(100% + 16px);
   z-index: 1;
 }
 .hh-addon-plus {
@@ -166,8 +170,8 @@ html, body, * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .hh-addon-grid {
   display: grid;
   position: relative;
-  margin: 0 -12px;
-  padding: 0 12px;
+  margin: 0 -8px;
+  padding: 0 8px;
   margin-top: -16px;
   padding-top: 16px;
 }
@@ -177,7 +181,7 @@ html, body, * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 .hh-addon-grid-double {
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 8px;
 }
 .hh-addon-grid-double::before {
   content: '';
@@ -191,10 +195,10 @@ html, body, * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   z-index: 0;
 }
 .hh-addon-item-left {
-  padding-right: 22px;
+  padding-right: 8px;
 }
 .hh-addon-item-right {
-  padding-left: 22px;
+  padding-left: 8px;
 }
 .hh-signature-image {
   width: 256px;
@@ -211,6 +215,7 @@ html, body, * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   width: 40px;
   height: 40px;
   display: inline-block;
+  object-fit: contain;
 }
 .hh-features-box {
   border: 2px solid var(--primary-color);
@@ -234,6 +239,8 @@ html, body, * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   display: flex;
   align-items: center;
   justify-content: center;
+  height: 40px;
+  min-height: 40px;
 }
 .hh-feature-value {
   font-size: 24px;

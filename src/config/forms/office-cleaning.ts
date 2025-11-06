@@ -202,14 +202,9 @@ export const officeCleaningFormConfig: FormConfig = {
       "vynesení odpadků"
     ],
     generalCleaning: [
-      "otření prachu z výšky 2,0 m a výše",
-      "vysmýčení pavučin",
-      "otření osvětlení atd.",
-      "čištění nerezových a skleněných ploch",
-      "mytí skleněných příček a dveří"
-    ],
-    monthly: [],
-    biAnnual: []
+      "oboustranné / jednostranné mytí otevíravých částí oken včetně jejich rámů a parapetů",
+      "dezinfekce kuchyňských spotřebičů a mytí osvětlení zvenčí"
+    ]
   },
   sections: [
     {

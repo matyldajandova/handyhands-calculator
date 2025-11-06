@@ -206,17 +206,30 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
       const orderData = orderStorage.get();
       const existingPoptavkaData = orderData?.poptavka || {};
       
-      // Merge customer data with existing poptavka data
+      // IMPORTANT: Exclude serviceStartDate from both existingPoptavkaData and formData - dates should never persist between orders
+      // Also exclude startDate if it exists (from customerData)
+      const { serviceStartDate: _, startDate: ___, ...existingPoptavkaDataWithoutDate } = existingPoptavkaData;
+      const { serviceStartDate: __, ...formDataWithoutDate } = formData;
+      
+      // Merge customer data with existing poptavka data (without old dates)
       const enhancedCustomerData = {
-        ...existingPoptavkaData,
+        ...existingPoptavkaDataWithoutDate, // Preserve address, company info, etc. (without date)
         firstName: customerData.firstName,
         lastName: customerData.lastName,
-        email: customerData.email
+        email: customerData.email,
+        // Include calculationResult and formConfig to preserve appliedCoefficients and form data
+        calculationResult: calculationResult,
+        formConfig: formConfig,
+        serviceType: formConfig.id,
+        // Include original formData fields (cleaningSupplies, zipCode, etc.) for hash generation (without date)
+        ...formDataWithoutDate
+        // Note: serviceStartDate will be calculated fresh in convertFormDataToOfferData
       };
       
       // Convert form data to OfferData format with enhanced customer data
+      // IMPORTANT: Pass formDataWithoutDate to ensure no old dates are used
       const { convertFormDataToOfferData } = await import("@/utils/form-to-offer-data");
-      const offerData = convertFormDataToOfferData(formData, calculationResult, formConfig, enhancedCustomerData);
+      const offerData = convertFormDataToOfferData(formDataWithoutDate, calculationResult, formConfig, enhancedCustomerData);
       
       // Generate PDF via API
       const response = await fetch('/api/pdf/offer', {
@@ -534,10 +547,26 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
                   const orderData = orderStorage.get();
                   const existingPoptavkaData = orderData?.poptavka || {};
                   
+                  // Calculate start date (same logic as convertFormDataToOfferData)
+                  const isHourlyService = formConfig.id === "one-time-cleaning" || formConfig.id === "handyman-services";
+                  const daysDelay = isHourlyService ? 1 : 10;
+                  const minDate = new Date(Date.now() + daysDelay * 24 * 60 * 60 * 1000);
+                  minDate.setHours(0, 0, 0, 0);
+                  
+                  // Calculate start date in ISO format (YYYY-MM-DD) for hash - use local date to avoid timezone shifts
+                  const y = minDate.getFullYear();
+                  const m = String(minDate.getMonth() + 1).padStart(2, '0');
+                  const d = String(minDate.getDate()).padStart(2, '0');
+                  const startDateISO = `${y}-${m}-${d}`;
+                  
                   // Merge: existing poptavka data + calculation form data + updated customer data
+                  // IMPORTANT: Exclude serviceStartDate from both existingPoptavkaData and formData - dates should never persist between orders
+                  const { serviceStartDate: _, ...existingPoptavkaDataWithoutDate } = existingPoptavkaData;
+                  const { serviceStartDate: __, ...formDataWithoutDate } = formData;
                   const enhancedFormData = {
-                    ...existingPoptavkaData, // Preserve address, company info, etc.
-                    ...formData, // Original calculation form data
+                    ...existingPoptavkaDataWithoutDate, // Preserve address, company info, etc. (without date)
+                    ...formDataWithoutDate, // Original calculation form data (without date)
+                    serviceStartDate: startDateISO, // Always use freshly calculated start date
                     ...(currentCustomerData ? {
                       firstName: currentCustomerData.firstName || '',
                       lastName: currentCustomerData.lastName || '',

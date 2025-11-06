@@ -1,4 +1,4 @@
-import { FormSubmissionData, FormConfig, CalculationResult, FormField } from "@/types/form-types";
+import { FormSubmissionData, FormConfig, CalculationResult, FormField, CheckboxField } from "@/types/form-types";
 import { OfferData } from "@/pdf/templates/OfferPDF";
 
 // Helper function to get minimum hours for hourly services
@@ -83,6 +83,64 @@ function getGroupedAddonsForPDF(formData: FormSubmissionData, formConfig: FormCo
 }
 
 /**
+ * Extracts optional services from formData and formats them for commonServices
+ */
+function extractOptionalServices(formData: FormSubmissionData, formConfig: FormConfig): {
+  perCleaning?: string[];
+  monthly?: string[];
+  weekly?: string[];
+} {
+  const optionalServices: {
+    perCleaning?: string[];
+    monthly?: string[];
+    weekly?: string[];
+  } = {};
+
+  // Map form field IDs to commonServices keys
+  const fieldMapping: Record<string, keyof typeof optionalServices> = {
+    'optionalServicesPerCleaning': 'perCleaning',
+    'optionalServicesMonthly': 'monthly',
+    'optionalServicesWeekly': 'weekly',
+  };
+
+  // Find optional service fields in form config
+  for (const section of formConfig.sections || []) {
+    for (const field of section.fields || []) {
+      const targetKey = fieldMapping[field.id];
+      if (targetKey && field.type === 'checkbox') {
+        const selectedValues = formData[field.id] as string[] | undefined;
+        if (selectedValues && selectedValues.length > 0) {
+          const checkboxField = field as CheckboxField;
+          const serviceItems: string[] = [];
+          
+          selectedValues.forEach(value => {
+            const option = checkboxField.options?.find(opt => opt.value === value);
+            if (option && option.fixedAddon) {
+              const label = option.label || value;
+              // Format as "příplatkové služby: [service] (+[price] Kč / měsíc)"
+              // Most labels already include the price, so check and format accordingly
+              if (label.includes('(+') || label.includes('(+')) {
+                // Label already has price format, just add prefix
+                serviceItems.push(`příplatkové služby: ${label}`);
+              } else {
+                // Add price if not present
+                serviceItems.push(`příplatkové služby: ${label} (+${option.fixedAddon} Kč / měsíc)`);
+              }
+            }
+          });
+
+          if (serviceItems.length > 0) {
+            optionalServices[targetKey] = [...(optionalServices[targetKey] || []), ...serviceItems];
+          }
+        }
+      }
+    }
+  }
+
+  return optionalServices;
+}
+
+/**
  * Converts form data and calculation results to OfferData format for PDF generation
  * Uses the form's existing structure and labels instead of complex mappings
  */
@@ -116,9 +174,9 @@ export function convertFormDataToOfferData(
   // Generate Q&A pairs directly from form structure
   const summaryItems = generateSummaryItems(formData, formConfig);
   
-  // Use customer-specified start date if available, otherwise check formData, otherwise default to 10 days from now
-  // IMPORTANT: Always ensure the date is at least 10 days from now
-  const minDate = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
+  // Determine minimum delay: 1 day for one-time cleaning and window washing, 10 days for regular services
+  const daysDelay = isHourlyService ? 1 : 10;
+  const minDate = new Date(Date.now() + daysDelay * 24 * 60 * 60 * 1000);
   
   // Helper type to access serviceStartDate which may exist in formData
   type FormDataWithStartDate = FormSubmissionData & { serviceStartDate?: string | Date };
@@ -130,15 +188,15 @@ export function convertFormDataToOfferData(
         let parsedDate: Date;
         
         if (dateStr.includes('-') && !dateStr.includes('T')) {
-          // ISO date format (YYYY-MM-DD)
+          // ISO date format (YYYY-MM-DD) - use local date constructor to avoid timezone shifts
           const [year, month, day] = dateStr.split('-').map(Number);
-          parsedDate = new Date(Date.UTC(year, month - 1, day));
+          parsedDate = new Date(year, month - 1, day);
         } else {
           // Other formats, try to parse directly
           parsedDate = new Date(dateStr);
         }
         
-        // Ensure date is at least 10 days from now
+        // Ensure date is at least the minimum delay from now
         if (parsedDate < minDate) {
           parsedDate = minDate;
         }
@@ -155,9 +213,9 @@ export function convertFormDataToOfferData(
           parsedDate = dateValue;
         } else if (typeof dateValue === 'string') {
           if (dateValue.includes('-') && !dateValue.includes('T')) {
-            // ISO date format (YYYY-MM-DD)
+            // ISO date format (YYYY-MM-DD) - use local date constructor to avoid timezone shifts
             const [year, month, day] = dateValue.split('-').map(Number);
-            parsedDate = new Date(Date.UTC(year, month - 1, day));
+            parsedDate = new Date(year, month - 1, day);
           } else {
             // Other formats, try to parse directly
             parsedDate = new Date(dateValue);
@@ -166,7 +224,7 @@ export function convertFormDataToOfferData(
           parsedDate = minDate;
         }
         
-        // Ensure date is at least 10 days from now
+        // Ensure date is at least the minimum delay from now
         if (parsedDate < minDate) {
           parsedDate = minDate;
         }
@@ -180,6 +238,18 @@ export function convertFormDataToOfferData(
 
   // Get minimum hours for hourly services
   const minimumHours = isHourlyService ? getMinimumHours(formData) : undefined;
+
+  // Get cleaning frequency label for dynamic text
+  let cleaningFrequencyLabel = '';
+  if (formData.cleaningFrequency) {
+    const frequencyField = formConfig.sections
+      ?.flatMap(s => s.fields || [])
+      .find(f => f.id === 'cleaningFrequency');
+    if (frequencyField && frequencyField.type === 'radio' && 'options' in frequencyField) {
+      const option = frequencyField.options.find(opt => opt.value === formData.cleaningFrequency);
+      cleaningFrequencyLabel = option?.label || '';
+    }
+  }
 
   return {
     quoteDate: new Date().toLocaleDateString("cs-CZ"),
@@ -209,7 +279,27 @@ export function convertFormDataToOfferData(
     notes: typeof formData.notes === 'string' ? formData.notes : undefined, // Original note from calculation form
     poptavkaNotes: customerData?.notes || undefined, // Poptávka-specific note
     conditions: formConfig.conditions || [],
-    commonServices: formConfig.commonServices,
+    commonServices: (() => {
+      const baseServices = formConfig.commonServices || {};
+      const optionalServices = extractOptionalServices(formData, formConfig);
+      
+      // Merge optional services into commonServices
+      return {
+        ...baseServices,
+        perCleaning: [
+          ...(baseServices.perCleaning || []),
+          ...(optionalServices.perCleaning || [])
+        ],
+        monthly: [
+          ...(baseServices.monthly || []),
+          ...(optionalServices.monthly || [])
+        ],
+        weekly: [
+          ...(baseServices.weekly || []),
+          ...(optionalServices.weekly || [])
+        ]
+      };
+    })(),
     // Add general cleaning pricing (displayed separately from monthly price)
     generalCleaningPrice: calculationResult.generalCleaningPrice,
     generalCleaningFrequency: calculationResult.generalCleaningFrequency,
@@ -221,7 +311,9 @@ export function convertFormDataToOfferData(
     isHourlyService,
     hourlyRate: calculationResult.hourlyRate,
     fixedAddons,
-    minimumHours
+    minimumHours,
+    cleaningFrequency: formData.cleaningFrequency as string | undefined,
+    cleaningFrequencyLabel: cleaningFrequencyLabel || undefined
   };
 }
 
@@ -258,6 +350,12 @@ function generateSummaryItems(formData: FormSubmissionData, formConfig: FormConf
       
       // Skip notes field as it's handled separately
       if (field.id === "notes") return;
+      
+      // Skip optional service fields as they're handled in commonServices section
+      if (field.id === "optionalServicesPerCleaning" || 
+          field.id === "optionalServicesMonthly" || 
+          field.id === "optionalServicesWeekly" ||
+          field.id === "optionalServices") return;
       
       // Use the form's existing label, fallback to section title if empty
       const label = field.label || section.title || field.id;

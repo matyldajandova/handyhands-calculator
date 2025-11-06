@@ -40,6 +40,8 @@ export type OfferData = {
   hourlyRate?: number;
   fixedAddons?: Array<{ label: string; amount: number }>;
   minimumHours?: number;
+  cleaningFrequency?: string; // For mapping perCleaning to frequency category
+  cleaningFrequencyLabel?: string; // Human-readable frequency label for dynamic text
 };
 /**
  * Returns the HTML body markup for the Offer PDF using Tailwind classes.
@@ -54,7 +56,7 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
         ${renderCompleteQATable(data.tasks, data.summaryItems)}
         
         ${renderNotesSection(data.notes)}
-        ${renderCommonServicesSection(data.commonServices)}
+        ${renderCommonServicesSection(data.commonServices, data.cleaningFrequency)}
       </section>
 
       <section class="hh-section mt-8">
@@ -178,7 +180,7 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
                 <span class="text-base font-normal text-black"> / hod. / pracovník</span>
               </div>
               <!-- Description -->
-              <div class="text-left text-xs text-black-pdf leading-relaxed">
+              <div class="text-left text-xs text-black-pdf">
                 Hodinová sazba jednorázového úklidu - mytí oken apod. (minimální délka trvání prací jsou ${data.minimumHours || 2} hodiny)
               </div>
             </div>
@@ -196,7 +198,7 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
                 </div>
               </div>
               <!-- Description -->
-              <div class="text-center text-xs text-black-pdf leading-relaxed">
+              <div class="text-center text-xs text-black-pdf">
                 S úklidovými službami jsme schopni začít od tohoto dne
               </div>
             </div>
@@ -253,7 +255,7 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
           })()}
         </div>
       ` : `
-        <!-- Retail/regular services pricing box -->
+        <!-- Retail/regular services pricing box - merged with general cleaning and winter service -->
         <div class="mt-4 hh-pricing-box">
           <div class="hh-pricing-top">
             <!-- Left: Monthly price -->
@@ -265,7 +267,7 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
                 <span class="text-2xl font-bold text-primary-pdf">${Number(data.price).toLocaleString("cs-CZ")} Kč</span>
                 <span class="text-base font-normal text-black"> za měsíc</span>
               </div>
-              <div class="text-center text-xs text-black-pdf leading-relaxed">
+              <div class="text-center text-xs text-black-pdf">
                 Celková částka pravidelného úklidu prostor<br/>
                 (včetně níže popsaných náležitostí)
               </div>
@@ -278,12 +280,67 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
               <div class="text-center mb-2">
                 <div class="text-2xl font-bold text-primary-pdf leading-tight">${escapeHtml(data.startDate)}</div>
               </div>
-              <div class="text-center text-xs text-black-pdf leading-relaxed">
+              <div class="text-center text-xs text-black-pdf">
                 S úklidovými službami jsme schopni začít od tohoto dne
               </div>
             </div>
           </div>
+
+          <!-- Additional services - merged into same box -->
+          ${data.generalCleaningPrice || data.winterServiceFee ? `
+            <!-- Solid horizontal separator with plus circles -->
+            <div class="hh-pricing-separator">
+              ${(() => {
+                const hasBoth = data.generalCleaningPrice && data.winterServiceFee;
+                return hasBoth ? `
+                  <span class="hh-addon-plus hh-addon-plus-left">+</span>
+                  <span class="hh-addon-plus hh-addon-plus-right">+</span>
+                ` : (data.generalCleaningPrice || data.winterServiceFee) ? `
+                  <span class="hh-addon-plus" style="left: 50%;">+</span>
+                ` : '';
+              })()}
+            </div>
+            
+            <!-- Bottom section: Services in two columns (or one full width if only one) -->
+            ${(() => {
+              const hasBoth = data.generalCleaningPrice && data.winterServiceFee;
+              
+              return `
+              <div class="hh-addon-grid ${hasBoth ? 'hh-addon-grid-double' : 'hh-addon-grid-single'}">
+                ${data.generalCleaningPrice ? `
+                  <div class="${hasBoth ? 'hh-addon-item-left' : ''}">
+                    <div class="text-center">
+                      <div class="text-xs text-black-pdf">
+                        <div class="font-bold">Generální úklid domu</div>
+                        <div class="font-bold mt-1">${Math.round(data.generalCleaningPrice / 10) * 10} Kč,
+                          ${data.generalCleaningFrequency ? `${data.generalCleaningFrequency} za každý provedený úklid` : '2x ročně'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ` : ''}
+                
+                ${data.winterServiceFee ? `
+                  <div class="${hasBoth ? 'hh-addon-item-right' : ''}">
+                    <div class="text-center">
+                      <div class="text-xs text-black-pdf">
+                        <div class="font-bold">Zimní údržba</div>
+                        <div class="font-bold mt-1">
+                          ${data.winterServiceFee} Kč měsíčně${data.winterCalloutFee ? ` za pohotovost + ${data.winterCalloutFee} Kč za výjezd*` : ''}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ` : ''}
+              </div>
+              `;
+            })()}
+          ` : ''}
         </div>
+
+        ${data.winterServiceFee ? `
+          <p class="mt-2 text-2xs text-black-pdf">* pohotovost se drží v období od ${data.winterPeriod ? `${data.winterPeriod.start.day}. ${data.winterPeriod.start.month}.` : '15. 11.'} do ${data.winterPeriod ? `${data.winterPeriod.end.day}. ${data.winterPeriod.end.month}.` : '14. 3.'} a cena případného výjezdu je včetně posypového materiálu</p>
+        ` : ''}
 
         ${data.poptavkaHash ? `
           <div class="mt-4" style="text-align: right;">
@@ -295,79 +352,17 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
         ` : ''}
       `}
 
-      <!-- Additional services - compact horizontal layout -->
-      ${data.generalCleaningPrice || data.winterServiceFee ? `
-        <div class="mt-4" style="display: flex; gap: 12px; flex-wrap: wrap;">
-          ${data.generalCleaningPrice ? `
-            <div style="${data.winterServiceFee ? 'flex: 1; min-width: 200px;' : 'width: 100%;'} padding: 8px; background-color: #ffffff; border: 1px solid #D4D4D4; border-radius: 4px; position: relative;">
-              <div style="position: absolute; top: -8px; left: 50%; transform: translateX(-50%); background-color: #2e2e2e; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;">
-                <span style="color: #ffffff; font-size: 12px; font-weight: bold; line-height: 1;">+</span>
-              </div>
-              <div style="text-align: center; padding-top: 4px;">
-                <div style="font-size: 12px; font-weight: 600; color: #2e2e2e; margin-bottom: 4px;">
-                  ✨ Generální úklid domu
-                </div>
-                <div style="font-size: 16px; font-weight: bold; color: #2e2e2e;">${Math.round(data.generalCleaningPrice / 10) * 10} Kč</div>
-                <div style="font-size: 10px; color: #525252;">${data.generalCleaningFrequency || ''} za každý provedený úklid</div>
-              </div>
-            </div>
-          ` : ''}
-          
-          ${data.winterServiceFee ? `
-            <div style="${data.generalCleaningPrice ? 'flex: 1; min-width: 200px;' : 'width: 100%;'} padding: 8px; background-color: #ffffff; border: 1px solid #D4D4D4; border-radius: 4px; position: relative;">
-              <div style="position: absolute; top: -8px; left: 50%; transform: translateX(-50%); background-color: #2e2e2e; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;">
-                <span style="color: #ffffff; font-size: 12px; font-weight: bold; line-height: 1;">+</span>
-              </div>
-              <div style="text-align: center; padding-top: 4px;">
-                <div style="font-size: 12px; font-weight: 600; color: #2e2e2e; margin-bottom: 4px;">
-                  ❄️ Zimní údržba
-                </div>
-                ${data.generalCleaningPrice ? `
-                  <!-- Side-by-side layout when general cleaning is present -->
-                  <div style="font-size: 16px; font-weight: bold; color: #2e2e2e;">${data.winterServiceFee} Kč měsíčně</div>
-                  <div style="font-size: 10px; color: #525252;">
-                    Pohotovost ${data.winterPeriod ? `od ${data.winterPeriod.start.day}.${data.winterPeriod.start.month}. do ${data.winterPeriod.end.day}.${data.winterPeriod.end.month}.` : '(Nov 15 - Mar 14)'}
-                  </div>
-                  ${data.winterCalloutFee ? `
-                    <div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid #D4D4D4;">
-                      <div style="font-size: 14px; font-weight: bold; color: #2e2e2e;">${data.winterCalloutFee} Kč za výjezd</div>
-                      <div style="font-size: 10px; color: #525252;">Cena je včetně posypového materiálu</div>
-                    </div>
-                  ` : ''}
-                ` : `
-                  <!-- Column layout when only winter cleaning is present -->
-                  <div style="display: flex; gap: 12px;">
-                    <div style="flex: 1;">
-                      <div style="font-size: 16px; font-weight: bold; color: #2e2e2e;">${data.winterServiceFee} Kč měsíčně</div>
-                      <div style="font-size: 10px; color: #525252;">
-                        Pohotovost ${data.winterPeriod ? `od ${data.winterPeriod.start.day}.${data.winterPeriod.start.month}. do ${data.winterPeriod.end.day}.${data.winterPeriod.end.month}.` : '(Nov 15 - Mar 14)'}
-                      </div>
-                    </div>
-                    ${data.winterCalloutFee ? `
-                      <div style="flex: 1; border-left: 1px solid #D4D4D4; padding-left: 12px;">
-                        <div style="font-size: 16px; font-weight: bold; color: #2e2e2e;">${data.winterCalloutFee} Kč za výjezd</div>
-                        <div style="font-size: 10px; color: #525252;">Cena je včetně posypového materiálu</div>
-                      </div>
-                    ` : ''}
-                  </div>
-                `}
-              </div>
-            </div>
-          ` : ''}
-        </div>
-      ` : ''}
-
       
       ${renderConditionsSection(data.conditions)}
+      
       ${data.isHourlyService ? `
         <!-- Footer text for hourly services -->
         <div class="mt-6 flex items-start gap-6">
           <div class="flex-1">
             <p class="hh-muted hh-small mb-8 text-black-pdf">Cena obsahuje pojištění odpovědnosti do výše 5 mil. Kč.</p>
-            <p class="hh-muted text-sm mb-2 text-black-pdf"><strong>Nejsme plátci DPH</strong>, uvedené ceny jsou <strong>konečné</strong>.</p>
-            <p class="hh-muted text-sm mb-2 text-black-pdf">Úklidové práce provádějí vždy naši <strong>stálí</strong> pracovníci.</p>
-            <p class="hh-muted text-sm mb-2 text-black-pdf">V případě dotazů nebo nejasností se na nás neváhejte obrátit.</p>
-            <p class="hh-muted text-sm mt-4 text-black-pdf">V Praze, dne ${escapeHtml(data.quoteDate)}</p>
+            <p class="hh-muted text-xs text-black-pdf"><strong>Nejsme plátci DPH, uvedené ceny jsou konečné</strong>.</p>
+            <p class="hh-muted text-xs text-black-pdf">Úklidové práce provádějí vždy naši <strong>stálí</strong> pracovníci.</p>
+            <p class="hh-muted text-xs text-black-pdf">V případě dotazů nebo nejasností se na nás neváhejte obrátit.</p>
           </div>
           ${data.poptavkaHash ? `
             <div class="self-start">
@@ -380,11 +375,43 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
         </div>
         
         <!-- Signatures for hourly services -->
-        ${renderSignaturesSection(data.quoteDate, true)}
+        ${renderSignaturesSection(data.quoteDate)}
       ` : `
-        <!-- Footer text for regular (retail) services -->
-        <p class="mt-6 hh-small text-black-pdf">Cena obsahuje pravidelný úklid komerčních nebytových (retailových) prostor podle rozpisu níže, dopravu pracovníků na místo úklidových prací, <span class="hh-small text-black-pdf font-semibold">pojištění odpovědnosti do výše 5 mil. Kč.</span></p>
-        <p class="hh-small text-black-pdf">Ostatní práce nad rámec smlouvy (např. mimořádný úklid na vyžádání, po havárii apod.)꞉ 345 Kč / hod. za pracovníka.</p>
+        <!-- Footer text for regular services - dynamic based on cleaning frequency -->
+        ${(() => {
+          // Build dynamic frequency text - handle different form types
+          let frequencyPart = '';
+          
+          // For residential buildings and similar forms with cleaning frequency
+          if (data.cleaningFrequencyLabel) {
+            // Map frequency labels to text parts
+            const isWeekly = ['1x týdně', '2x týdně', '1x za 14 dní', 'Každý pracovní den', '3x týdně'].includes(data.cleaningFrequencyLabel);
+            const isMonthly = ['1x měsíčně', '1x za měsíc'].includes(data.cleaningFrequencyLabel);
+            
+            if (isWeekly) {
+              frequencyPart = 'pravidelný týdenní, měsíční a generální úklid';
+            } else if (isMonthly) {
+              frequencyPart = 'pravidelný měsíční a generální úklid';
+            } else {
+              frequencyPart = 'pravidelný úklid a generální úklid';
+            }
+          } else {
+            // Default for forms without frequency selection (like retail)
+            frequencyPart = 'pravidelný úklid komerčních nebytových (retailových) prostor';
+          }
+          
+          // Get general cleaning frequency (e.g., "2x ročně", "4x ročně")
+          const generalCleaningFreq = data.generalCleaningFrequency || '2x ročně';
+          
+          // Determine if we should include cleaning supplies text
+          const includeSupplies = !data.generalCleaningPrice && !data.winterServiceFee;
+          const suppliesText = includeSupplies ? ', běžné úklidové prostředky a vlastní úklidové náčiní' : '';
+          
+          return `<p class="mt-6 hh-small text-black-pdf">Cena obsahuje ${frequencyPart} ${generalCleaningFreq} podle rozpisu níže, dopravu pracovníků na místo úklidových prací, pojištění odpovědnosti do výše 5 mil. Kč${suppliesText}. Ostatní práce nad rámec smlouvy (např. úklid po řemeslnících, výjezd na vyžádání apod.): 345 Kč / hod. za pracovníka.</p>
+            <p class="hh-muted text-xs text-black-pdf mt-4"><strong>Nejsme plátci DPH, uvedené ceny jsou konečné</strong>.</p>
+            <p class="hh-muted text-xs text-black-pdf">Úklidové práce provádějí vždy naši <strong>stálí</strong> pracovníci.</p>
+            <p class="hh-muted text-xs text-black-pdf">V případě dotazů nebo nejasností se na nás neváhejte obrátit.</p>`;
+        })()}
       `}
 
       ${!data.isHourlyService ? `
@@ -401,10 +428,10 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
   `;
 }
 
-function renderSignaturesSection(quoteDate: string, addTopMargin: boolean = false): string {
+function renderSignaturesSection(quoteDate: string): string {
   return `
-    <div class="${addTopMargin ? 'mt-6' : ''}" style="page-break-inside: avoid;">
-      <p class="mt-4">V Praze, dne ${escapeHtml(quoteDate)}</p>
+    <div class="mt-4" style="page-break-inside: avoid;">
+      <p class="text-xs text-black-pdf">V Praze, dne ${escapeHtml(quoteDate)}</p>
       <div class="grid grid-cols-2 gap-12 hh-signature-block">
         <div class="hh-signature-content">
           <img src="signature-lenka.svg" alt="Podpis Lenka Krátká" class="hh-signature-image" />
@@ -421,7 +448,8 @@ function renderSignaturesSection(quoteDate: string, addTopMargin: boolean = fals
   `;
 }
 
-function escapeHtml(input: string): string {
+function escapeHtml(input: string | undefined | null): string {
+  if (!input) return '';
   return input
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
@@ -494,7 +522,7 @@ function renderNotesSection(notes?: string): string {
     <div class="mt-6" style="page-break-inside: avoid;">
       <div class="font-semibold mb-2 text-xs">Poznámka zákazníka:</div>
       <div class="bg-light-gray border border-gray-pdf rounded-lg p-4">
-        <p class="text-xs leading-relaxed">${escapeHtml(notes.trim())}</p>
+        <p class="text-xs">${escapeHtml(notes.trim())}</p>
       </div>
     </div>
   `;
@@ -504,16 +532,13 @@ function renderConditionsSection(conditions?: string[]): string {
   if (!conditions || conditions.length === 0) return "";
   
   const conditionsList = conditions
-    .map(condition => `<li class="text-sm" style="color: #2e2e2e;">${escapeHtml(condition)}</li>`)
+    .map(condition => `<li class="text-xs text-black-pdf">${escapeHtml(condition)}</li>`)
     .join("");
   
   return `
-    <div class="mt-4 p-2 rounded" style="background-color: #ffecd6; border: 1px solid rgba(246, 168, 90, 0.3);">
-      <div class="font-semibold mb-1" style="color: #2e2e2e; display: flex; align-items: center; gap: 6px; font-size: 13px;">
-        <span style="color: #f6a85a; font-size: 14px;">ℹ️</span>
-        Podmínky uvedené ceny:
-      </div>
-      <ul class="list-outside list-disc ml-4 space-y-0.5" style="list-style-type: disc;">
+    <div class="mt-1">
+      <div class="font-semibold mb-2 text-xs text-black-pdf">Podmínky uvedené ceny:</div>
+      <ul class="list-outside list-disc ml-6 space-y-1 marker:text-primary-pdf">
         ${conditionsList}
       </ul>
     </div>
@@ -526,21 +551,51 @@ function renderCommonServicesSection(commonServices?: {
   biAnnual?: string[];
   perCleaning?: string[];
   generalCleaning?: string[];
-}): string {
+}, cleaningFrequency?: string): string {
   if (!commonServices) return "";
+  
+  // Map cleaning frequency to commonServices key
+  // Weekly frequencies map to weekly, monthly to monthly
+  const frequencyMap: Record<string, 'weekly' | 'monthly'> = {
+    'weekly': 'weekly',
+    'twice-weekly': 'weekly',
+    'biweekly': 'weekly',
+    'daily': 'weekly',
+    '3x-weekly': 'weekly',
+    '2x-weekly': 'weekly',
+    'daily-basic-weekly': 'weekly',
+    'daily-basic-weekly-wc': 'weekly',
+    'daily-weekends-basic-weekly': 'weekly',
+    'daily-weekends-basic-weekly-wc': 'weekly',
+    'monthly': 'monthly'
+  };
+  
+  // Merge perCleaning into the appropriate frequency category
+  const mergedServices: typeof commonServices = { ...commonServices };
+  
+  if (cleaningFrequency && commonServices.perCleaning && commonServices.perCleaning.length > 0) {
+    const targetKey = frequencyMap[cleaningFrequency];
+    if (targetKey) {
+      // Merge perCleaning services into the frequency category
+      mergedServices[targetKey] = [
+        ...(mergedServices[targetKey] || []),
+        ...commonServices.perCleaning
+      ];
+      // Remove perCleaning since it's now merged
+      delete mergedServices.perCleaning;
+    }
+  }
   
   // Define service categories with their labels
   const serviceCategories = [
-    { key: 'perCleaning', label: 'Při každém úklidu' },
-    { key: 'generalCleaning', label: 'Generální úklid' },
-    { key: 'weekly', label: '1 x týdně' },
+    { key: 'weekly', label: 'Při každém úklidu' },
     { key: 'monthly', label: '1 x měsíčně' },
-    { key: 'biAnnual', label: '2 x ročně (generální úklid, placený zvlášť)' }
+    { key: 'generalCleaning', label: 'V rámci pravidelného generálního úklidu (pokud je zadán v poptávkovém formuláři)' }
   ];
   
   // Filter to only categories that have content
   const activeCategories = serviceCategories.filter(category => {
-    const services = commonServices[category.key as keyof typeof commonServices] as string[] | undefined;
+    const services = mergedServices[category.key as keyof typeof mergedServices] as string[] | undefined;
     return services && services.length > 0;
   });
   
@@ -553,16 +608,34 @@ function renderCommonServicesSection(commonServices?: {
   
   // Render each active category
   activeCategories.forEach(category => {
-    const services = commonServices[category.key as keyof typeof commonServices] as string[];
-    const servicesList = services
-      .map(service => `<li class="text-xs">${escapeHtml(service)}</li>`)
-      .join("");
+    const services = mergedServices[category.key as keyof typeof mergedServices] as string[];
+    // Separate standard services from optional services
+    const standardServices: string[] = [];
+    const optionalServices: string[] = [];
+    
+    services.forEach(service => {
+      if (service.startsWith('příplatkové služby:')) {
+        // Remove the prefix, it will be added as a header
+        const serviceName = service.replace(/^příplatkové služby:\s*/, '');
+        optionalServices.push(serviceName);
+      } else {
+        standardServices.push(service);
+      }
+    });
     
     html += `
       <div class="mb-3">
         <div class="font-medium mb-2 font-semibold text-xs">${category.label}</div>
         <ul class="list-outside list-disc ml-6 space-y-1 marker:text-primary-pdf">
-          ${servicesList}
+          ${standardServices.map(service => `<li class="text-xs">${escapeHtml(service)}</li>`).join("")}
+          ${optionalServices.length > 0 ? `
+            <li class="text-xs">
+              <span class="font-bold">příplatkové služby:</span>
+              <ul class="list-outside list-disc ml-4 mt-1 space-y-1 marker:text-primary-pdf">
+                ${optionalServices.map(service => `<li class="text-xs">${escapeHtml(service)}</li>`).join("")}
+              </ul>
+            </li>
+          ` : ''}
         </ul>
       </div>
     `;

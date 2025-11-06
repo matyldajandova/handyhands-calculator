@@ -233,24 +233,26 @@ export const residentialBuildingFormConfig: FormConfig = {
     "Uzamykatelná místnost nebo uzamykatelná část domu (místo) na úklidové náčiní a úklidovou chemii"
   ],
   commonServices: {
-    weekly: [
+    perCleaning: [
       "zametání a mytí schodů, podest a chodeb ve všech patrech domu včetně přízemí",
       "otírání madel zábradlí a okenních parapetů",
-      "schody do suterénu",
-      "hrubý úklid dvorku",
-      "oboustranné mytí skleněných vchodových dveří od otisků prstů a odstranění letáků"
+      "mytí podlahy výtahové kabiny včetně leštění zrcadla (pokud je výtah v domě)",
+      "čištění drážek v pojezdech výtahových dveří (pokud je výtah v domě)",
+      "oboustranné mytí vchodových dveří od otisků prstů a odstranění letáků",
+      "úklid a udržování čistoty v úklidové komoře"
     ],
     monthly: [
-      "odstranění reklam",
-      "vysmýčení pavučin"
+      "vysmýčení pavučin v běžně dostupných výškách",
+      "mytí poštovních schránek",
+      "odstranění prachu z hasících přístrojů a jejich mytí"
     ],
-    biAnnual: [
-      "zametení v suterénu domu",
-      "umytí všech otevíravých částí oken včetně rámů",
+    generalCleaning: [
+      "oboustranné mytí otevíravých částí oken včetně jejich rámů a parapetů ve společných prostorách domu",
       "očištění osvětlení zvenčí",
-      "mytí zábradlí",
-      "umytí nadsvětlíků u vchodových dveří",
-      "setření prachu z hydrantů, schránek, vypínačů a tech. rozvodů"
+      "důkladný úklid suterénu domu (pokud má dům suterén)",
+      "čištění celé konstrukce zábradlí",
+      "mytí prosklenných částí v přízemi domu",
+      "setření prachu z hydrantů, mytí omyvatelných částí revizních dvířek, vypínačů a tech. rozvodů"
     ]
   },
   sections: [
