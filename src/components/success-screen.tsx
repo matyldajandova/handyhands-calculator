@@ -204,11 +204,13 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
     try {
       // Get existing poptavka form data to include in PDF hash
       const orderData = orderStorage.get();
-      const existingPoptavkaData = orderData?.poptavka || {};
+      const existingPoptavkaData = (orderData?.poptavka || {}) as Record<string, unknown>;
       
       // IMPORTANT: Exclude serviceStartDate from both existingPoptavkaData and formData - dates should never persist between orders
       // Also exclude startDate if it exists (from customerData)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { serviceStartDate: _, startDate: ___, ...existingPoptavkaDataWithoutDate } = existingPoptavkaData;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { serviceStartDate: __, ...formDataWithoutDate } = formData;
       
       // Merge customer data with existing poptavka data (without old dates)
@@ -536,6 +538,8 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
 
               <Button 
                 onClick={() => {
+                  if (!formConfig) return; // Guard against null formConfig
+                  
                   // Get customer data from state or unified storage
                   let currentCustomerData = customerData;
                   if (!currentCustomerData) {
@@ -545,7 +549,7 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
                   
                   // Get existing poptavka form data to preserve address/company info
                   const orderData = orderStorage.get();
-                  const existingPoptavkaData = orderData?.poptavka || {};
+                  const existingPoptavkaData = (orderData?.poptavka || {}) as Record<string, unknown>;
                   
                   // Calculate start date (same logic as convertFormDataToOfferData)
                   const isHourlyService = formConfig.id === "one-time-cleaning" || formConfig.id === "handyman-services";
@@ -561,7 +565,9 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
                   
                   // Merge: existing poptavka data + calculation form data + updated customer data
                   // IMPORTANT: Exclude serviceStartDate from both existingPoptavkaData and formData - dates should never persist between orders
+                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
                   const { serviceStartDate: _, ...existingPoptavkaDataWithoutDate } = existingPoptavkaData;
+                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
                   const { serviceStartDate: __, ...formDataWithoutDate } = formData;
                   const enhancedFormData = {
                     ...existingPoptavkaDataWithoutDate, // Preserve address, company info, etc. (without date)

@@ -376,6 +376,7 @@ function PoptavkaContent() {
     if (Object.keys(formData).length > 0) {
       // Split form data into customer and poptavka parts
       // Exclude serviceStartDate from persistence - it should only exist in hash or be calculated fresh for each order
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { firstName, lastName, email, serviceStartDate, ...poptavkaData } = formData;
       
       // Save customer data and poptavka data separately (without serviceStartDate)
@@ -490,27 +491,52 @@ function PoptavkaContent() {
 
       // Convert form data to OfferData format and generate PDF with final poptavka data
       const { convertFormDataToOfferData } = await import("@/utils/form-to-offer-data");
-      const offerData = convertFormDataToOfferData(originalFormData, calculationData as unknown as CalculationResult, formConfig as unknown as FormConfig, {
-        firstName: formData.firstName || '',
-        lastName: formData.lastName || '',
-        email: formData.email || '',
-        // Add poptavka-specific data
-        phone: formData.phone || '',
-        address: `${formData.propertyStreet}, ${formData.propertyCity}, ${formData.propertyZipCode}`,
-        company: formData.isCompany ? {
-          name: formData.companyName || '',
-          ico: formData.companyIco || '',
-          dic: formData.companyDic || '',
-          address: `${formData.companyStreet}, ${formData.companyCity}, ${formData.companyZipCode}`
-        } : undefined,
-        startDate: formData.serviceStartDate ? formData.serviceStartDate.toISOString().split('T')[0] : '',
-        notes: formData.notes || '',
-        invoiceEmail: formData.invoiceEmail || '',
-        // Include original calculationResult and formConfig to preserve appliedCoefficients
-        calculationResult: calculationData as unknown as CalculationResult,
-        formConfig: formConfig as unknown as FormConfig,
-        serviceType: hashData.serviceType
-      } as any);
+      const offerData = convertFormDataToOfferData(
+        originalFormData,
+        calculationData as unknown as CalculationResult,
+        formConfig as unknown as FormConfig,
+        {
+          firstName: formData.firstName || '',
+          lastName: formData.lastName || '',
+          email: formData.email || '',
+          // Add poptavka-specific data
+          phone: formData.phone || '',
+          address: `${formData.propertyStreet}, ${formData.propertyCity}, ${formData.propertyZipCode}`,
+          company: formData.isCompany ? {
+            name: formData.companyName || '',
+            ico: formData.companyIco || '',
+            dic: formData.companyDic || '',
+            address: `${formData.companyStreet}, ${formData.companyCity}, ${formData.companyZipCode}`
+          } : undefined,
+          startDate: formData.serviceStartDate ? formData.serviceStartDate.toISOString().split('T')[0] : '',
+          notes: formData.notes || '',
+          invoiceEmail: formData.invoiceEmail || '',
+          // Include original calculationResult and formConfig to preserve appliedCoefficients
+          // These are passed as additional properties using type assertion
+          calculationResult: calculationData as unknown as CalculationResult,
+          formConfig: formConfig as unknown as FormConfig,
+          serviceType: hashData.serviceType
+        } as {
+          firstName: string;
+          lastName: string;
+          email: string;
+          phone?: string;
+          address?: string;
+          company?: {
+            name: string;
+            ico: string;
+            dic: string;
+            address: string;
+          };
+          startDate?: string;
+          notes?: string;
+          invoiceEmail?: string;
+        } & {
+          calculationResult?: CalculationResult;
+          formConfig?: FormConfig;
+          serviceType?: string;
+        }
+      );
       
       // Include the hash from URL so PDF route doesn't regenerate it
       const urlHash = searchParams.get('hash');
@@ -604,6 +630,7 @@ function PoptavkaContent() {
   };
 
   // Normalize date to local noon to avoid timezone issues with Calendar component
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const normalizeDate = (date: Date | null): Date | null => {
     if (!date) return null;
     // Extract local date components directly to avoid timezone shifts
@@ -642,6 +669,7 @@ function PoptavkaContent() {
   };
 
   // Format a Date to local YYYY-MM-DD (no timezone shifts in JSON)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const formatLocalDateYYYYMMDD = (date: Date): string => {
     // Extract local date components directly to avoid timezone shifts
     // This ensures we format the actual calendar date the user selected

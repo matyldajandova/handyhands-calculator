@@ -34,7 +34,6 @@ export async function POST(req: NextRequest) {
       // Determine service type from serviceTitle or use default
       // Try to extract from customer data if available (e.g., from existing hash)
       const serviceType = (data.customer as Record<string, unknown>)?.serviceType as string | undefined;
-      const isHourlyService = data.isHourlyService || serviceType === "one-time-cleaning" || serviceType === "handyman-services";
       
       // Build form data for hash - include all form fields from customer data
       const formData = {
@@ -105,7 +104,7 @@ export async function POST(req: NextRequest) {
           }
         },
         formData,
-        formConfig: (data.customer as Record<string, unknown>)?.formConfig as import("@/config/services").FormConfig | undefined
+        formConfig: (data.customer as Record<string, unknown>)?.formConfig as import("@/types/form-types").FormConfig | undefined
       });
       
       // Generate hash and validate it can be decoded
