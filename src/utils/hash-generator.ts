@@ -14,6 +14,96 @@ export interface CalculationData extends CalculationResult {
   serviceTitle?: string;
 }
 
+/**
+ * Abbreviate a camelCase or kebab-case key by taking the first letter of each word
+ * Examples:
+ *   "cleaningFrequency" -> "cf"
+ *   "optionalServicesWeekly" -> "osw"
+ *   "window-type" -> "wt"
+ *   "hasElevator" -> "he"
+ */
+function abbreviateKey(key: string): string {
+  // Handle camelCase: split on capital letters
+  // Handle kebab-case: split on hyphens
+  // Handle snake_case: split on underscores
+  const words = key
+    .replace(/([A-Z])/g, '-$1') // Insert hyphen before capital letters
+    .toLowerCase()
+    .split(/[-_\s]+/) // Split on hyphens, underscores, or spaces
+    .filter(word => word.length > 0);
+  
+  // Take first letter of each word
+  return words.map(word => word[0]).join('');
+}
+
+/**
+ * Cache for reverse mapping during encoding/decoding
+ * This is built dynamically as we process keys
+ */
+let keyReverseMapCache: Record<string, string> = {};
+
+/**
+ * Abbreviate a key and store the reverse mapping
+ */
+function abbreviateKeyWithCache(key: string): string {
+  const abbrev = abbreviateKey(key);
+  // Store reverse mapping (last one wins if there are conflicts, but that's rare)
+  keyReverseMapCache[abbrev] = key;
+  return abbrev;
+}
+
+/**
+ * Expand an abbreviation back to full key using cache
+ * Falls back to abbreviation if not found in cache
+ */
+function expandKey(abbrev: string): string {
+  return keyReverseMapCache[abbrev] || abbrev;
+}
+
+/**
+ * Abbreviate a value using the same algorithm as keys
+ * For kebab-case values like "hard-to-reach" -> "htr"
+ * For already short values (<= 3 chars), keep as-is
+ */
+function abbreviateValue(value: string): string {
+  // If already short, don't abbreviate (saves space for common values like "yes", "no")
+  if (value.length <= 3) {
+    return value;
+  }
+  
+  // Use same algorithm as keys
+  return abbreviateKey(value);
+}
+
+/**
+ * Cache for reverse mapping of values during encoding/decoding
+ */
+let valueReverseMapCache: Record<string, string> = {};
+
+/**
+ * Abbreviate a value and store the reverse mapping
+ */
+function abbreviateValueWithCache(value: string): string {
+  const abbrev = abbreviateValue(value);
+  valueReverseMapCache[abbrev] = value;
+  return abbrev;
+}
+
+/**
+ * Expand a value abbreviation back to full value using cache
+ */
+function expandValue(abbrev: string): string {
+  return valueReverseMapCache[abbrev] || abbrev;
+}
+
+/**
+ * Reset caches (call before encoding/decoding a new hash)
+ */
+function resetCaches(): void {
+  keyReverseMapCache = {};
+  valueReverseMapCache = {};
+}
+
 export interface PoptavkaHashData {
   serviceType: string;
   serviceTitle: string;
@@ -42,7 +132,9 @@ export interface MinimalPoptavkaHashData {
     wsf?: number; // winterServiceFee
     wcf?: number; // winterCalloutFee
     oid?: string; // orderId
-    fd?: Record<string, unknown>; // formData
+    fd?: Record<string, unknown>; // formData (with abbreviated keys/values)
+    km?: Record<string, string>; // keyMap: reverse mapping for abbreviated keys
+    vm?: Record<string, string>; // valueMap: reverse mapping for abbreviated values
     // Removed: calculationDetails (can be reconstructed)
     // Removed: winterPeriod (can be from formConfig)
     // Removed: timestamp (not critical)
@@ -52,12 +144,108 @@ export interface MinimalPoptavkaHashData {
 }
 
 /**
+ * Minify formData keys and values using algorithm
+ * Returns the minified data and the reverse mappings
+ */
+function minifyFormData(fd: Record<string, unknown>): {
+  minified: Record<string, unknown>;
+  keyMap: Record<string, string>;
+  valueMap: Record<string, string>;
+} {
+  resetCaches(); // Reset caches for new encoding
+  const minified: Record<string, unknown> = {};
+  
+  for (const [key, value] of Object.entries(fd)) {
+    // Abbreviate key using algorithm
+    const minKey = abbreviateKeyWithCache(key);
+    
+    // Minify value based on type
+    let minValue = value;
+    
+    if (typeof value === 'string') {
+      // Abbreviate value using algorithm
+      minValue = abbreviateValueWithCache(value);
+    } else if (Array.isArray(value)) {
+      // Abbreviate array values
+      minValue = value.map((item) => {
+        if (typeof item === 'string') {
+          return abbreviateValueWithCache(item);
+        }
+        return item;
+      });
+    }
+    
+    minified[minKey] = minValue;
+  }
+  
+  return {
+    minified,
+    keyMap: { ...keyReverseMapCache },
+    valueMap: { ...valueReverseMapCache },
+  };
+}
+
+/**
+ * Expand formData keys and values back to full names using reverse mappings
+ * If reverse mappings are not provided (old hash format), return data as-is
+ */
+function expandFormData(
+  fd: Record<string, unknown>,
+  keyMap?: Record<string, string>,
+  valueMap?: Record<string, string>
+): Record<string, unknown> {
+  // If no reverse mappings provided, assume old hash format - return as-is
+  if (!keyMap && !valueMap) {
+    return fd;
+  }
+  
+  // Load reverse mappings into cache
+  if (keyMap) {
+    keyReverseMapCache = { ...keyMap };
+  }
+  if (valueMap) {
+    valueReverseMapCache = { ...valueMap };
+  }
+  
+  const expanded: Record<string, unknown> = {};
+  
+  for (const [key, value] of Object.entries(fd)) {
+    // Expand key using cache (falls back to original if not in cache)
+    const expKey = expandKey(key);
+    
+    // Expand value based on type
+    let expValue = value;
+    
+    if (typeof value === 'string') {
+      // Expand value using cache (falls back to original if not in cache)
+      expValue = expandValue(value);
+    } else if (Array.isArray(value)) {
+      // Expand array values
+      expValue = value.map((item) => {
+        if (typeof item === 'string') {
+          return expandValue(item);
+        }
+        return item;
+      });
+    }
+    
+    expanded[expKey] = expValue;
+  }
+  
+  return expanded;
+}
+
+/**
  * Convert full hash data to minimal structure
  */
 function minifyHashData(data: PoptavkaHashData): MinimalPoptavkaHashData {
   // Helper: clean form data by removing empty/default/redundant fields
-  const cleanFormData = (fd?: Record<string, unknown>): Record<string, unknown> | undefined => {
-    if (!fd) return undefined;
+  const cleanAndMinifyFormData = (fd?: Record<string, unknown>): {
+    minified?: Record<string, unknown>;
+    keyMap?: Record<string, string>;
+    valueMap?: Record<string, string>;
+  } => {
+    if (!fd) return {};
     const cleaned: Record<string, unknown> = {};
     const email = typeof fd.email === 'string' ? (fd.email as string) : undefined;
     const isCompany = Boolean(fd.isCompany);
@@ -78,7 +266,12 @@ function minifyHashData(data: PoptavkaHashData): MinimalPoptavkaHashData {
       if (key === 'invoiceEmail' && typeof value === 'string' && email && value === email) continue;
       cleaned[key] = value;
     }
-    return cleaned;
+    // Minify the cleaned formData
+    if (Object.keys(cleaned).length > 0) {
+      const result = minifyFormData(cleaned);
+      return result;
+    }
+    return {};
   };
 
   const minimal: MinimalPoptavkaHashData = {
@@ -111,8 +304,17 @@ function minifyHashData(data: PoptavkaHashData): MinimalPoptavkaHashData {
     if (data.calculationData.orderId) {
       minimal.cd.oid = data.calculationData.orderId;
     }
-    const cleanedFD = cleanFormData(data.calculationData.formData as Record<string, unknown> | undefined);
-    if (cleanedFD) minimal.cd.fd = cleanedFD;
+    const formDataResult = cleanAndMinifyFormData(data.calculationData.formData as Record<string, unknown> | undefined);
+    if (formDataResult.minified) {
+      minimal.cd.fd = formDataResult.minified;
+      // Store reverse mappings if they exist
+      if (formDataResult.keyMap && Object.keys(formDataResult.keyMap).length > 0) {
+        minimal.cd.km = formDataResult.keyMap;
+      }
+      if (formDataResult.valueMap && Object.keys(formDataResult.valueMap).length > 0) {
+        minimal.cd.vm = formDataResult.valueMap;
+      }
+    }
   }
 
   return minimal;
@@ -131,10 +333,19 @@ function expandHashData(minimal: MinimalPoptavkaHashData): PoptavkaHashData {
   };
 
   if (minimal.cd) {
+    // Expand formData if it exists, using reverse mappings from hash
+    const expandedFormData = minimal.cd.fd 
+      ? expandFormData(
+          minimal.cd.fd as Record<string, unknown>,
+          minimal.cd.km,
+          minimal.cd.vm
+        )
+      : undefined;
+    
     data.calculationData = {
       regularCleaningPrice: minimal.cd.rcp ?? 0,
       totalMonthlyPrice: minimal.cd.tmp,
-      formData: minimal.cd.fd,
+      formData: expandedFormData,
       orderId: minimal.cd.oid,
       // calculationDetails will be reconstructed when needed
       // Provide empty structure for now to satisfy type requirements
