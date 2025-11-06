@@ -194,6 +194,9 @@ function expandFormData(
   keyMap?: Record<string, string>,
   valueMap?: Record<string, string>
 ): Record<string, unknown> {
+  // Always reset caches first to avoid stale data
+  resetCaches();
+  
   // If no reverse mappings provided, assume old hash format - return as-is
   if (!keyMap && !valueMap) {
     return fd;
@@ -212,6 +215,16 @@ function expandFormData(
   for (const [key, value] of Object.entries(fd)) {
     // Expand key using cache (falls back to original if not in cache)
     const expKey = expandKey(key);
+    
+    // Safety check: if keyMap was provided but key didn't expand, log a warning
+    // This helps catch mapping issues during development
+    if (keyMap && key !== expKey && !keyMap[key]) {
+      // Key didn't expand and wasn't in the map - this is expected for old hashes
+      // but shouldn't happen for new hashes with proper mappings
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`[HashGenerator] Key "${key}" not found in keyMap, keeping as-is. Available keys:`, Object.keys(keyMap));
+      }
+    }
     
     // Expand value based on type
     let expValue = value;

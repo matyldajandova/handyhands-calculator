@@ -184,13 +184,16 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
         
         // Exclude notes and serviceStartDate from existing poptavka data to prevent leakage between orders
         // CRITICAL: Only exclude poptavka notes from existingPoptavkaData, NOT form notes from formData!
+        // IMPORTANT: Also exclude firstName, lastName, email, phone to prevent hash expansion issues
+        // These should always come from newCustomerData (user input), not from existingPoptavkaData
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { notes: _oldNotes, serviceStartDate: _oldDate, ...existingPoptavkaDataClean } = existingPoptavkaData as Record<string, unknown>;
+        const { notes: _oldNotes, serviceStartDate: _oldDate, firstName: _oldFirstName, lastName: _oldLastName, email: _oldEmail, phone: _oldPhone, ...existingPoptavkaDataClean } = existingPoptavkaData as Record<string, unknown>;
         // DO NOT exclude notes from formData - form notes must be preserved in the hash!
 
         const enhancedFormData = {
           ...formData, // Keep form notes - they belong in the hash!
-          ...existingPoptavkaDataClean, // This excludes poptavka notes, which is correct
+          ...existingPoptavkaDataClean, // This excludes poptavka notes, firstName, lastName, email, phone, which is correct
+          // CRITICAL: Explicitly set firstName, lastName, email from newCustomerData to prevent hash expansion issues
           firstName: newCustomerData.firstName,
           lastName: newCustomerData.lastName,
           email: newCustomerData.email
@@ -225,8 +228,10 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
       
       // IMPORTANT: Exclude serviceStartDate and notes from existingPoptavkaData - they should never persist between orders
       // Notes are stored in hash only, never in localStorage
+      // IMPORTANT: Also exclude firstName, lastName, email, phone to prevent hash expansion issues
+      // These should always come from the current customerData, not from localStorage
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { serviceStartDate: _, startDate: ___, notes: __notes, ...existingPoptavkaDataClean } = existingPoptavkaData;
+      const { serviceStartDate: _, startDate: ___, notes: __notes, firstName: ___firstName, lastName: ___lastName, email: ___email, phone: ___phone, ...existingPoptavkaDataClean } = existingPoptavkaData;
       // Extract form notes and poptavkaNotes BEFORE excluding them
       const formNotes = typeof formData.notes === 'string' ? formData.notes : undefined;
       const poptavkaNotes = typeof (formData as Record<string, unknown>).poptavkaNotes === 'string' 
@@ -238,11 +243,14 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
       const serviceStartDateFromHash = (formData as Record<string, unknown>).serviceStartDate;
       
       // Exclude notes, poptavkaNotes, and serviceStartDate from formData (we'll add form notes back, poptavkaNotes goes to customerData, serviceStartDate goes to customerData)
+      // IMPORTANT: Also exclude firstName, lastName, email, phone to prevent hash expansion issues
+      // These should always come from the customerData parameter, not from formData
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { serviceStartDate: __, notes: _formNotes, poptavkaNotes: _poptavkaNotes, ...formDataWithoutDateAndNotes } = formData;
+      const { serviceStartDate: __, notes: _formNotes, poptavkaNotes: _poptavkaNotes, firstName: _firstName, lastName: _lastName, email: _email, phone: _phone, ...formDataWithoutDateAndNotes } = formData;
       
       // Merge customer data with existing poptavka data (without old dates and notes)
       // CRITICAL: Do NOT spread formData notes into enhancedCustomerData - that would make it a poptavka note!
+      // CRITICAL: firstName, lastName, email, phone are set FIRST to ensure they're never overwritten by hash data
       const enhancedCustomerData = {
         ...existingPoptavkaDataClean, // Preserve address, company info, etc. (without date and notes)
         firstName: customerData.firstName,
@@ -252,7 +260,7 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
         calculationResult: calculationResult,
         formConfig: formConfig,
         serviceType: formConfig.id,
-        // Include original formData fields (cleaningSupplies, zipCode, etc.) for hash generation (without date AND notes)
+        // Include original formData fields (cleaningSupplies, zipCode, etc.) for hash generation (without date, notes, firstName, lastName, email, phone)
         ...formDataWithoutDateAndNotes,
         // Pass poptavkaNotes if it exists in the hash
         ...(poptavkaNotes ? { notes: poptavkaNotes } : {}),

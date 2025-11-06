@@ -69,10 +69,19 @@ export async function POST(req: NextRequest) {
         // This will include company data, notes, serviceType, and most importantly:
         // - cleaningSupplies, zipCode, ladders fields for extra services
         // Exclude calculationResult and formConfig as they're handled separately
+        // IMPORTANT: Also exclude firstName, lastName, email, phone to prevent hash expansion issues
+        // These should always come from the parsed customer name/email, not from hash data
         // IMPORTANT: Extract notes and poptavkaNotes separately to preserve them correctly
         const customerDataFiltered = Object.fromEntries(
           Object.entries(data.customer as Record<string, unknown>).filter(
-            ([key]) => key !== 'calculationResult' && key !== 'formConfig' && key !== 'notes' && key !== 'poptavkaNotes'
+            ([key]) => key !== 'calculationResult' && 
+                       key !== 'formConfig' && 
+                       key !== 'notes' && 
+                       key !== 'poptavkaNotes' &&
+                       key !== 'firstName' &&
+                       key !== 'lastName' &&
+                       key !== 'email' &&
+                       key !== 'phone'
           )
         ) as Record<string, unknown>;
         
@@ -90,6 +99,8 @@ export async function POST(req: NextRequest) {
         const formNotes = typeof data.notes === 'string' ? data.notes : undefined;
         
         const formData = {
+          // Set firstName, lastName, email, phone FIRST from parsed customer data
+          // This ensures they're never overwritten by incorrectly expanded hash data
           firstName: firstName,
           lastName: lastName,
           email: customerEmail,
@@ -118,7 +129,7 @@ export async function POST(req: NextRequest) {
             }
             return dateStr; // Fallback to original if parsing fails
           })(),
-          // Include filtered customer data (without calculationResult, formConfig, notes, poptavkaNotes)
+          // Include filtered customer data (without calculationResult, formConfig, notes, poptavkaNotes, firstName, lastName, email, phone)
           ...customerDataFiltered,
           // Preserve notes and poptavkaNotes separately
           ...(formNotes ? { notes: formNotes } : {}),
