@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { User, Building, Check, ShieldCheck, CalendarIcon, ArrowLeftIcon } from "lucide-react";
-import { FormConfig, CalculationResult } from "@/types/form-types";
+import { FormConfig, CalculationResult, FormSubmissionData } from "@/types/form-types";
 import { cn } from "@/lib/utils";
 import { CalculationData } from "@/utils/hash-generator";
 
@@ -52,11 +52,20 @@ function getMinimumHours(formData: Record<string, unknown>): number {
 }
 
 // Helper function to get grouped addons for poptavka (matches success screen logic)
-function getGroupedAddonsForPoptavka(calculationData: CalculationData) {
+// Note: calculationDetails may need to be reconstructed if missing (for optimized hashes)
+function getGroupedAddonsForPoptavka(calculationData: CalculationData, calculationDetails?: CalculationResult['calculationDetails']) {
   const items: Array<{ label: string; amount: number }> = [];
   
+  // Use provided calculationDetails or fall back to calculationData's
+  const details = calculationDetails || calculationData.calculationDetails;
+  
+  // If no calculationDetails available, return empty array (will be reconstructed on demand)
+  if (!details?.appliedCoefficients || details.appliedCoefficients.length === 0) {
+    return items;
+  }
+  
   // Get fixed addons from applied coefficients
-  const fixedAddons = calculationData.calculationDetails?.appliedCoefficients
+  const fixedAddons = details.appliedCoefficients
     ?.filter(coeff => coeff.impact > 0 && coeff.coefficient === 1) || [];
   
   // Group addons by section
@@ -203,6 +212,7 @@ function PoptavkaContent() {
     currency: string;
     calculationData?: CalculationData;
   } | null>(null);
+  const [reconstructedDetails, setReconstructedDetails] = useState<CalculationResult['calculationDetails'] | null>(null);
 
   // Load hash data on component mount
   useEffect(() => {
@@ -222,6 +232,29 @@ function PoptavkaContent() {
         
         setHashData(decodedData);
         setIsLoading(false);
+        
+        // Reconstruct calculationDetails if missing (for optimized hashes)
+        if (!decodedData.calculationData?.calculationDetails?.appliedCoefficients || 
+            decodedData.calculationData.calculationDetails.appliedCoefficients.length === 0) {
+          // Reconstruct asynchronously
+          (async () => {
+            try {
+              const { getFormConfig } = await import("@/config/services");
+              const formConfig = getFormConfig(decodedData.serviceType);
+              if (formConfig && decodedData.calculationData?.formData) {
+                const { reconstructCalculationDetails } = await import("@/utils/calculation-reconstruction");
+                const details = reconstructCalculationDetails(
+                  decodedData.calculationData.formData as FormSubmissionData,
+                  formConfig,
+                  decodedData.calculationData
+                );
+                setReconstructedDetails(details);
+              }
+            } catch (error) {
+              console.error('Failed to reconstruct calculationDetails:', error);
+            }
+          })();
+        }
         
           // Determine minimum delay: 1 day for one-time cleaning and window washing, 10 days for regular services
           const isHourlyService = decodedData.serviceType === "one-time-cleaning" || decodedData.serviceType === "handyman-services";
@@ -410,8 +443,8 @@ function PoptavkaContent() {
             ...hashData,
             calculationData: {
               ...(hashData.calculationData || {}),
-              // Preserve calculationDetails with appliedCoefficients
-              calculationDetails: hashData.calculationData?.calculationDetails,
+              // Don't preserve calculationDetails - it will be reconstructed when needed
+              // This keeps the hash minimal
               formData: {
                 ...safeFormDataForHash,
                 // Preserve original notes, don't overwrite with poptavka notes
@@ -489,11 +522,18 @@ function PoptavkaContent() {
       // Get the original calculation form data from hash
       const originalFormData = calculationData.formData as Record<string, string | number | boolean | string[] | undefined>;
 
+      // Reconstruct calculationDetails if missing (for optimized hashes)
+      let finalCalculationData = calculationData as CalculationResult;
+      if (!calculationData.calculationDetails?.appliedCoefficients || calculationData.calculationDetails.appliedCoefficients.length === 0) {
+        const { ensureCalculationDetails } = await import("@/utils/calculation-reconstruction");
+        finalCalculationData = await ensureCalculationDetails(calculationData, formConfig as FormConfig);
+      }
+
       // Convert form data to OfferData format and generate PDF with final poptavka data
       const { convertFormDataToOfferData } = await import("@/utils/form-to-offer-data");
       const offerData = convertFormDataToOfferData(
         originalFormData,
-        calculationData as unknown as CalculationResult,
+        finalCalculationData,
         formConfig as unknown as FormConfig,
         {
           firstName: formData.firstName || '',
@@ -513,7 +553,7 @@ function PoptavkaContent() {
           invoiceEmail: formData.invoiceEmail || '',
           // Include original calculationResult and formConfig to preserve appliedCoefficients
           // These are passed as additional properties using type assertion
-          calculationResult: calculationData as unknown as CalculationResult,
+          calculationResult: finalCalculationData,
           formConfig: formConfig as unknown as FormConfig,
           serviceType: hashData.serviceType
         } as {
@@ -881,7 +921,10 @@ function PoptavkaContent() {
                     
                     {/* Extra položky line items for hourly services */}
                     {hashData.calculationData && (hashData.serviceType === "one-time-cleaning" || hashData.serviceType === "handyman-services") && 
-                      getGroupedAddonsForPoptavka(hashData.calculationData).map((item, index) => (
+                      getGroupedAddonsForPoptavka(
+                        hashData.calculationData,
+                        reconstructedDetails || hashData.calculationData.calculationDetails
+                      ).map((item, index) => (
                         <p key={index} className="text-sm text-muted-foreground mt-2">
                           + {item.label} ({item.amount} Kč)
                         </p>

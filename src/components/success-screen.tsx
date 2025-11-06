@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Building, Plus, Sparkles, Snowflake, Info } from "lucide-react";
 import { CalculationResult, FormConfig, FormSubmissionData } from "@/types/form-types";
 import { isWinterMaintenancePeriod } from "@/utils/date-utils";
+import { reconstructCalculationDetails } from "@/utils/calculation-reconstruction";
 import { IdentificationStep } from "@/components/identification-step";
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -71,8 +72,14 @@ function getIndividualAddons(formData: FormSubmissionData, formConfig: FormConfi
   
   const items: Array<{ label: string; amount: number }> = [];
   
+  // Reconstruct calculationDetails if missing (for optimized hashes)
+  let calculationDetails = calculationResult.calculationDetails;
+  if (!calculationDetails?.appliedCoefficients || calculationDetails.appliedCoefficients.length === 0) {
+    calculationDetails = reconstructCalculationDetails(formData, formConfig, calculationResult);
+  }
+  
   // Get fixed addons from applied coefficients
-  const fixedAddons = calculationResult.calculationDetails.appliedCoefficients
+  const fixedAddons = calculationDetails.appliedCoefficients
     .filter(coeff => coeff.impact > 0 && coeff.coefficient === 1);
   
   // Group addons by section

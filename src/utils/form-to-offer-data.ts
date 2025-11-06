@@ -1,5 +1,6 @@
 import { FormSubmissionData, FormConfig, CalculationResult, FormField, CheckboxField } from "@/types/form-types";
 import { OfferData } from "@/pdf/templates/OfferPDF";
+import { reconstructCalculationDetails } from "@/utils/calculation-reconstruction";
 
 // Helper function to get minimum hours for hourly services
 function getMinimumHours(formData: FormSubmissionData): number {
@@ -35,8 +36,14 @@ function getMinimumHours(formData: FormSubmissionData): number {
 function getGroupedAddonsForPDF(formData: FormSubmissionData, formConfig: FormConfig, calculationResult: CalculationResult) {
   const items: Array<{ label: string; amount: number }> = [];
   
+  // Reconstruct calculationDetails if missing (for optimized hashes)
+  let calculationDetails = calculationResult.calculationDetails;
+  if (!calculationDetails?.appliedCoefficients || calculationDetails.appliedCoefficients.length === 0) {
+    calculationDetails = reconstructCalculationDetails(formData, formConfig, calculationResult);
+  }
+  
   // Get fixed addons from applied coefficients
-  const fixedAddons = calculationResult.calculationDetails.appliedCoefficients
+  const fixedAddons = calculationDetails.appliedCoefficients
     .filter(coeff => coeff.impact > 0 && coeff.coefficient === 1);
   
   // Group addons by section
