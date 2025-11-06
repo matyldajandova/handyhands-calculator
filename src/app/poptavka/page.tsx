@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useRef } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -212,9 +212,17 @@ function PoptavkaContent() {
     currency: string;
     calculationData?: CalculationData;
   } | null>(null);
+  // Ref to store latest hashData to avoid dependency issues
+  const hashDataRef = useRef(hashData);
+  // Update ref when hashData changes
+  useEffect(() => {
+    hashDataRef.current = hashData;
+  }, [hashData]);
   const [reconstructedDetails, setReconstructedDetails] = useState<CalculationResult['calculationDetails'] | null>(null);
   // Store original form notes separately to preserve them across hash updates
   const [originalFormNotesFromHash, setOriginalFormNotesFromHash] = useState<string>('');
+  // Ref to track if we're updating hashData internally (to prevent effect loops that interfere with Chrome autofill)
+  const isUpdatingHashRef = useRef(false);
 
   // Load hash data on component mount
   useEffect(() => {
@@ -450,7 +458,7 @@ function PoptavkaContent() {
     // Don't save data if form is submitted
     if (isSubmitted) return;
     
-    if (Object.keys(formData).length > 0) {
+    if (Object.keys(formData).length > 0 && hashData) {
       // Split form data into customer and poptavka parts
       // Exclude serviceStartDate and notes from persistence - they should not carry between orders
       // Notes are stored in hash only, never in localStorage
@@ -464,14 +472,18 @@ function PoptavkaContent() {
       );
       
       // Update hash after delay to avoid excessive updates
+      // Skip if we're already updating hashData internally (prevents effect loops)
+      if (isUpdatingHashRef.current) return;
+      
       const timeoutId = setTimeout(() => {
-        if (hashData) {
+        const currentHashData = hashDataRef.current;
+        if (currentHashData) {
           // Get the poptavka note from the form (what user typed in the textarea)
           const poptavkaNote = (formData as unknown as Record<string, unknown>).notes || '';
           
           // Get the original form note (from results page) - preserve it
           // Try originalFormNotesFromHash first (preserved from initial load), then check existing hash data
-          const existingFormData = hashData.calculationData?.formData as Record<string, unknown> | undefined;
+          const existingFormData = currentHashData.calculationData?.formData as Record<string, unknown> | undefined;
           const formNoteFromHash = typeof existingFormData?.notes === 'string' ? existingFormData.notes as string : undefined;
           const formNote = originalFormNotesFromHash || formNoteFromHash || '';
           
@@ -498,15 +510,15 @@ function PoptavkaContent() {
           } as Record<string, unknown>;
 
           const enhancedHashData = {
-            ...hashData,
+            ...currentHashData,
             calculationData: {
-              ...(hashData.calculationData || {}),
+              ...(currentHashData.calculationData || {}),
               formData: {
                 ...safeFormDataForHash,
                 notes: formNote, // Original form note from results page (preserve from hash if originalFormNotesFromHash is empty)
                 poptavkaNotes: typeof poptavkaNote === 'string' ? poptavkaNote : '' // Poptavka page note
               },
-              orderId: hashData.calculationData?.orderId
+              orderId: currentHashData.calculationData?.orderId
             } as CalculationData
           };
           
@@ -515,13 +527,19 @@ function PoptavkaContent() {
           window.history.replaceState({}, '', newUrl);
           
           // IMPORTANT: Update hashData state so future updates use the new hash structure
+          // Use ref to prevent effect loop
+          isUpdatingHashRef.current = true;
           setHashData(enhancedHashData);
+          // Reset ref after state update completes
+          setTimeout(() => {
+            isUpdatingHashRef.current = false;
+          }, 0);
         }
       }, 1000); // 1 second delay
       
       return () => clearTimeout(timeoutId);
     }
-  }, [formData, hashData, isSubmitted, originalFormNotesFromHash]);
+  }, [formData, isSubmitted, originalFormNotesFromHash]); // Removed hashData from dependencies to prevent effect loops that interfere with Chrome autofill
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
