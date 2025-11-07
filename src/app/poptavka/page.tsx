@@ -717,7 +717,19 @@ function PoptavkaContent() {
       }
 
       // Store customer data in Ecomail with Poptávka label
-      const poptavkaUrl = urlHash ? `${window.location.origin}/poptavka?hash=${urlHash}` : '';
+      const poptavkaUrl = (() => {
+        if (typeof window === 'undefined') return '';
+        const origin = window.location.origin;
+        const hashFromUrl = searchParams.get('hash');
+        if (hashFromUrl) {
+          return hashService.createPoptavkaUrl(hashFromUrl, origin);
+        }
+        const hashFromData = (hashData as Record<string, unknown>).hash || (hashData as Record<string, unknown>).poptavkaHash;
+        if (typeof hashFromData === 'string' && hashFromData) {
+          return hashService.createPoptavkaUrl(hashFromData, origin);
+        }
+        return '';
+      })();
       
       const ecomailResponse = await fetch('/api/ecomail/subscribe', {
         method: 'POST',

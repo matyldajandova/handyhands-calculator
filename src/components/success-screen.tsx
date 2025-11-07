@@ -346,7 +346,20 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
           },
           body: JSON.stringify({
             ...enhancedCustomerData,
-            pdfUrl: googleDriveUrl // Store the Google Drive URL for reference
+            pdfUrl: googleDriveUrl, // Store the Google Drive URL for reference
+            poptavkaUrl: (() => {
+              if (typeof window === 'undefined') return '';
+              const origin = window.location.origin;
+              const hashFromUrl = searchParams.get('hash');
+              if (hashFromUrl) {
+                return hashService.createPoptavkaUrl(hashFromUrl, origin);
+              }
+              const poptavkaHash = (enhancedCustomerData as Record<string, unknown>).poptavkaHash;
+              if (typeof poptavkaHash === 'string' && poptavkaHash) {
+                return hashService.createPoptavkaUrl(poptavkaHash, origin);
+              }
+              return '';
+            })()
           }),
         });
       } catch (error) {
