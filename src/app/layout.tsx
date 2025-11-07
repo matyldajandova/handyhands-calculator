@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { GoogleTagManager } from "@next/third-parties/google";
 import { Raleway, Open_Sans } from "next/font/google";
 import "./globals.css";
 
@@ -59,6 +60,7 @@ export default function RootLayout({
   return (
     <html lang="cs" suppressHydrationWarning>
       <body className={`${openSans.variable} ${raleway.variable} font-sans antialiased`}>
+        <GoogleTagManager gtmId="GTM-WSJ9JPZG" />
         {children}
       </body>
     </html>
