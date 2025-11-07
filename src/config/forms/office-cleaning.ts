@@ -52,7 +52,6 @@ const officeCleaningSchema = z.object({
   dishwashing: z.string().min(1, "Vyberte požadavek na pravidelné mytí nádobí"),
   toiletCleaning: z.string().min(1, "Vyberte, zda je součástí úklidu i úklid WC"),
   afterHours: z.string().min(1, "Vyberte, zda úklid probíhá mimo pracovní dobu"),
-  preferredTimeType: z.string().optional(),
   preferredHourMorning: z.string().optional(),
   preferredHourEvening: z.string().optional(),
   cleaningChemicals: z.string().min(1, "Vyberte způsob dodávání úklidové chemie"),
@@ -154,26 +153,13 @@ const officeCleaningSchema = z.object({
   }
 
   // Validate preferred time details when after hours is "yes"
+  // At least one time (morning or evening) must be selected
   if (data.afterHours === "yes") {
-    if (!data.preferredTimeType) {
+    if (!data.preferredHourMorning && !data.preferredHourEvening) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Vyberte preferovaný čas úklidu",
-        path: ["preferredTimeType"]
-      });
-    }
-    if (data.preferredTimeType === "morning" && !data.preferredHourMorning) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Vyberte čas",
+        message: "Vyberte alespoň jeden preferovaný čas úklidu",
         path: ["preferredHourMorning"]
-      });
-    }
-    if (data.preferredTimeType === "evening" && !data.preferredHourEvening) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Vyberte čas",
-        path: ["preferredHourEvening"]
       });
     }
   }
@@ -541,29 +527,17 @@ export const officeCleaningFormConfig: FormConfig = {
           condition: { field: "afterHours", value: "yes" },
           fields: [
             {
-              id: "preferredTimeType",
-              type: "radio",
-              label: "Preferovaný čas úklidu:",
-              required: false,
-              layout: "vertical",
-              options: [
-                { value: "morning", label: "Nejpozději ráno má být uklizeno v" },
-                { value: "evening", label: "Nejdříve se může večer začít v" }
-              ]
-            },
-            {
               id: "preferredHourMorning",
               type: "select",
-              label: "",
+              label: "Nejpozději ráno má být uklizeno v",
               required: false,
-              condition: { field: "preferredTimeType", value: "morning", operator: "equals" },
               options: [
                 { value: "3", label: "3:00" },
                 { value: "4", label: "4:00" },
                 { value: "5", label: "5:00" },
                 { value: "6", label: "6:00" },
                 { value: "7", label: "7:00" },
-                { value: "8", label: "8:00", default: true },
+                { value: "8", label: "8:00" },
                 { value: "9", label: "9:00" },
                 { value: "10", label: "10:00" }
               ]
@@ -571,12 +545,11 @@ export const officeCleaningFormConfig: FormConfig = {
             {
               id: "preferredHourEvening",
               type: "select",
-              label: "",
+              label: "Nejdříve se může večer začít v",
               required: false,
-              condition: { field: "preferredTimeType", value: "evening", operator: "equals" },
               options: [
                 { value: "16", label: "16:00" },
-                { value: "17", label: "17:00", default: true },
+                { value: "17", label: "17:00" },
                 { value: "18", label: "18:00" },
                 { value: "19", label: "19:00" },
                 { value: "20", label: "20:00" },

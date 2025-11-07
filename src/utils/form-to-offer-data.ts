@@ -398,36 +398,8 @@ function generateSummaryItems(formData: FormSubmissionData, formConfig: FormConf
         field.id === "optionalServicesWeekly" ||
         field.id === "optionalServices") return;
     
-    // Special handling for preferred time fields - combine preferredTimeType with hour
-    if (field.id === "preferredHourMorning" || field.id === "preferredHourEvening") {
-      const timeType = formData.preferredTimeType as string | undefined;
-      // Find the preferredTimeType field in the form config
-      let timeTypeField: FormField | undefined;
-      for (const section of formConfig.sections) {
-        for (const f of section.fields) {
-          if (f.type === 'conditional' && 'fields' in f) {
-            timeTypeField = f.fields?.find(subF => subF.id === 'preferredTimeType');
-            if (timeTypeField) break;
-          }
-        }
-        if (timeTypeField) break;
-      }
-      
-      if (timeType && timeTypeField && 'options' in timeTypeField) {
-        const timeTypeOption = timeTypeField.options.find(opt => opt.value === timeType);
-        const timeTypeLabel = timeTypeOption?.label || '';
-        const hourValue = getFieldDisplayValue(field, value);
-        if (timeTypeLabel && hourValue) {
-          items.push({ label: timeTypeLabel, value: hourValue });
-          return;
-        }
-      }
-    }
-    
-    // Skip preferredTimeType as it's combined with the hour fields above
-    if (field.id === "preferredTimeType") {
-      return;
-    }
+    // Handle preferred time fields - they now have their own labels
+    // No special handling needed, they will be processed normally with their labels
     
     // Use the form's existing label, fallback to section title if empty
     const label = field.label || sectionTitle || field.id;

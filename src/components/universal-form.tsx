@@ -363,13 +363,32 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
 
     case "select":
       const selectField = field as SelectField;
+      // Filter out empty string values as Select component doesn't allow them
+      const validOptions = selectField.options.filter((option: { value: string; label: string }) => option.value !== "");
+      // Use special sentinel value for empty state since Select doesn't allow empty strings
+      const CLEAR_VALUE = "__none__";
+      const currentValue = formField.value?.toString() || "";
+      const displayValue = currentValue === "" ? CLEAR_VALUE : currentValue;
+      
       return (
-        <Select value={formField.value?.toString() || ""} onValueChange={formField.onChange}>
+        <Select 
+          value={displayValue} 
+          onValueChange={(value) => {
+            // Convert clear value back to empty string
+            formField.onChange(value === CLEAR_VALUE ? "" : value);
+          }}
+        >
           <SelectTrigger>
             <SelectValue placeholder={placeholder || "Vyberte možnost"} />
           </SelectTrigger>
           <SelectContent>
-            {selectField.options.map((option: { value: string; label: string; note?: string }) => (
+            {/* Add clear option for optional fields (always available to clear selection) */}
+            {!field.required && (
+              <SelectItem key={CLEAR_VALUE} value={CLEAR_VALUE}>
+                <span className="text-muted-foreground italic">Bez preference</span>
+              </SelectItem>
+            )}
+            {validOptions.map((option: { value: string; label: string; note?: string }) => (
               <SelectItem key={option.value} value={option.value}>
                 <div className="flex items-center justify-between w-full">
                   <span>{option.label}</span>
