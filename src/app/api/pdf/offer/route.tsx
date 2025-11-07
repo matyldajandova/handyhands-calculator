@@ -395,6 +395,51 @@ export async function POST(req: NextRequest) {
       
       uploadedPdfUrl = `https://drive.google.com/file/d/${result.fileId}/view`;
       console.log('PDF uploaded successfully to Google Drive:', uploadedPdfUrl);
+      
+      // Send transactional email with PDF attachment
+      if (data.customer?.email) {
+        try {
+          console.log('Sending transactional email with PDF attachment...');
+          const { sendTransactionalEmail, createPdfAttachment } = await import('@/utils/ecomail-transactional');
+          
+          // Use different template IDs: 2 for poptavka, 3 for regular PDF download
+          const templateId = isPoptavka ? 2 : 3;
+          
+          // Set subject based on template/context
+          const emailSubject = isPoptavka 
+            ? 'Návrh smlouvy a zahájení spolupráce s Handy Hands'  // Template 2: Poptávka
+            : 'Vaše kalkulace úklidových služeb Handy Hands';       // Template 3: Regular PDF
+          
+          const emailResult = await sendTransactionalEmail({
+            to: [{
+              email: data.customer.email,
+              name: data.customer.name || undefined,
+            }],
+            subject: emailSubject,
+            fromName: 'Handy Hands',
+            fromEmail: process.env.ECOMAIL_FROM_EMAIL || 'info@handyhands.cz',
+            templateId,
+            attachments: [
+              createPdfAttachment(pdf, `${filename}.pdf`)
+            ],
+            /*globalMergeVars: [
+              { name: 'customer_name', content: data.customer.name || 'Zákazníku' },
+              { name: 'pdf_url', content: uploadedPdfUrl },
+              { name: 'service_title', content: serviceTitle },
+            ],*/
+          });
+          
+          if (emailResult.success) {
+            console.log(`Transactional email sent successfully (template ${templateId}):`, emailResult.messageId);
+          } else {
+            console.error('Failed to send transactional email:', emailResult.error);
+            // Don't fail the request if email fails, but log it
+          }
+        } catch (emailError) {
+          console.error('Error sending transactional email:', emailError);
+          // Don't fail the request if email fails
+        }
+      }
     } catch (err) {
       uploadError = err instanceof Error ? err : new Error(String(err));
       console.error('Failed to upload to Google Drive:', uploadError);

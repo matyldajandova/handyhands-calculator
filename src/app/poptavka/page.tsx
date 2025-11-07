@@ -714,6 +714,8 @@ function PoptavkaContent() {
       }
 
       // Store customer data in Ecomail with Poptávka label
+      const poptavkaUrl = urlHash ? `${window.location.origin}/poptavka?hash=${urlHash}` : '';
+      
       const ecomailResponse = await fetch('/api/ecomail/subscribe', {
         method: 'POST',
         headers: {
@@ -722,6 +724,7 @@ function PoptavkaContent() {
         body: JSON.stringify({
           ...formData,
           pdfUrl,
+          poptavkaUrl,
           serviceType: hashData.serviceType,
           serviceTitle: hashData.serviceTitle || serviceType
         }),
@@ -1388,8 +1391,8 @@ function PoptavkaContent() {
                               minDate = new Date(today);
                               minDate.setDate(today.getDate() + 10);
                             } else {
-                              const isHourlyService = hashData.serviceType === "one-time-cleaning" || hashData.serviceType === "handyman-services";
-                              const daysDelay = isHourlyService ? 1 : 10;
+                            const isHourlyService = hashData.serviceType === "one-time-cleaning" || hashData.serviceType === "handyman-services";
+                            const daysDelay = isHourlyService ? 1 : 10;
                               minDate = new Date(today);
                               minDate.setDate(today.getDate() + daysDelay);
                             }

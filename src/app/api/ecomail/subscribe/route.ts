@@ -12,6 +12,7 @@ interface CustomerData {
   invoiceEmail?: string;
   notes?: string;
   pdfUrl?: string;
+  poptavkaUrl?: string; // URL to poptavka page with hash
   serviceType?: string; // Service type ID (e.g., "office-cleaning", "panel-building")
   serviceTitle?: string; // Service type title for reference
   // Company data
@@ -42,6 +43,8 @@ export async function POST(request: NextRequest) {
       hasServiceStartDate: !!customerData.serviceStartDate,
       hasPdfUrl: !!customerData.pdfUrl,
       pdfUrl: customerData.pdfUrl || 'NOT PROVIDED',
+      hasPoptavkaUrl: !!customerData.poptavkaUrl,
+      poptavkaUrl: customerData.poptavkaUrl || 'NOT PROVIDED',
       serviceType: customerData.serviceType || 'NOT PROVIDED'
     });
 
@@ -74,7 +77,7 @@ export async function POST(request: NextRequest) {
     // Determine label based on the request source
     // If serviceStartDate is present, it's from poptavka submission
     // Otherwise, it's from PDF download
-    const label = customerData.serviceStartDate ? 'Poptávka' : 'PDF';
+    const label = customerData.serviceStartDate ? 'Kalkulátor nabídka' : 'PDF';
     
     // Map service type IDs to tags for segmentation
     const getServiceTag = (serviceType: string): string | null => {
@@ -95,10 +98,7 @@ export async function POST(request: NextRequest) {
     const tags: string[] = [label];
     
     // For poptavka submissions, add additional tags
-    if (customerData.serviceStartDate) {
-      // Add "Kalkulátor nabídka" tag for poptavka submissions
-      tags.push('Kalkulátor nabídka');
-      
+    if (customerData.serviceStartDate) {      
       // Add service type tag if available (use serviceType ID for accurate mapping)
       if (customerData.serviceType) {
         const serviceTag = getServiceTag(customerData.serviceType);
@@ -144,6 +144,10 @@ export async function POST(request: NextRequest) {
       'FAKTURACNI_ADRESA': {
         value: customerData.companyStreet || customerData.propertyStreet || '',
         type: 'string'
+      },
+      'POPTAVKA_URL': {
+        value: customerData.poptavkaUrl || '',
+        type: 'url'
       }
     };
 
