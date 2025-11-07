@@ -257,7 +257,7 @@ export async function POST(req: NextRequest) {
     }
     
     // Determine base URL for links - use environment variable or fallback to production URL
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://handyhands-calculator.vercel.app';
     const htmlBody = renderOfferPdfBody(data, baseUrl);
 
   const cssPath = path.join(process.cwd(), "dist", "pdf.css");
@@ -409,6 +409,10 @@ export async function POST(req: NextRequest) {
           const emailSubject = isPoptavka 
             ? 'Návrh smlouvy a zahájení spolupráce s Handy Hands'  // Template 2: Poptávka
             : 'Vaše kalkulace úklidových služeb Handy Hands';       // Template 3: Regular PDF
+
+          const poptavkaUrl = data.poptavkaHash
+            ? hashService.createPoptavkaUrl(data.poptavkaHash, baseUrl)
+            : '';
           
           const emailResult = await sendTransactionalEmail({
             to: [{
@@ -422,11 +426,10 @@ export async function POST(req: NextRequest) {
             attachments: [
               createPdfAttachment(pdf, `${filename}.pdf`)
             ],
-            /*globalMergeVars: [
-              { name: 'customer_name', content: data.customer.name || 'Zákazníku' },
-              { name: 'pdf_url', content: uploadedPdfUrl },
-              { name: 'service_title', content: serviceTitle },
-            ],*/
+            globalMergeVars: [
+              { name: 'POPTAVKA_URL', content: poptavkaUrl },
+              { name: 'PDF_OBJEDNAVKA', content: uploadedPdfUrl || '' },
+            ],
           });
           
           if (emailResult.success) {
