@@ -135,7 +135,7 @@ async function testFullFlow({ formNote, poptavkaNote, previousPoptavkaNote }: {
   };
   
   // Convert to OfferData
-  const offerData = convertFormDataToOfferData(
+  const offerData = await convertFormDataToOfferData(
     formDataWithNotes,
     calc,
     formConfig,

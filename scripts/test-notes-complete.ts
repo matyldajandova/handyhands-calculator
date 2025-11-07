@@ -41,7 +41,7 @@ function expectNotContains(html: string, needle: string, message: string) {
   }
 }
 
-function testPdfRendering(formNote?: string, poptavkaNote?: string) {
+async function testPdfRendering(formNote?: string, poptavkaNote?: string) {
   const formConfig = createMockFormConfig();
   const calc = createMockCalculationResult();
 
@@ -53,7 +53,7 @@ function testPdfRendering(formNote?: string, poptavkaNote?: string) {
     ...(poptavkaNote ? { notes: poptavkaNote } : {}),
   };
 
-  const offer = convertFormDataToOfferData(formData, calc, formConfig, customerData);
+  const offer = await convertFormDataToOfferData(formData, calc, formConfig, customerData);
   const html = renderOfferPdfBody(offer, "http://localhost:3000");
   
   return { html, offer };
@@ -68,7 +68,7 @@ async function run() {
   // Case 1: No notes
   {
     console.log("Case 1: No notes");
-    const { html } = testPdfRendering();
+    const { html } = await testPdfRendering();
     expectNotContains(html, LABEL_POPTAVKA, "Poptavka note should not appear");
     expectNotContains(html, LABEL_ZAKAZNIK, "Form note should not appear");
     console.log("✓ Passed\n");
@@ -77,7 +77,7 @@ async function run() {
   // Case 2: Form note only -> Section 3
   {
     console.log("Case 2: Form note only -> should be in Section 3");
-    const { html } = testPdfRendering("FORM_NOTE", undefined);
+    const { html } = await testPdfRendering("FORM_NOTE", undefined);
     expectNotContains(html, LABEL_POPTAVKA, "Poptavka note should not appear");
     expectContains(html, LABEL_ZAKAZNIK, "Form note label should appear");
     expectContains(html, "FORM_NOTE", "Form note text should appear");
@@ -93,7 +93,7 @@ async function run() {
   // Case 3: Poptavka note only -> Section 1
   {
     console.log("Case 3: Poptavka note only -> should be in Section 1");
-    const { html } = testPdfRendering(undefined, "POPT_NOTE");
+    const { html } = await testPdfRendering(undefined, "POPT_NOTE");
     expectContains(html, LABEL_POPTAVKA, "Poptavka note label should appear");
     expectContains(html, "POPT_NOTE", "Poptavka note text should appear");
     expectNotContains(html, LABEL_ZAKAZNIK, "Form note should not appear");
@@ -109,7 +109,7 @@ async function run() {
   // Case 4: Both notes -> Form in Section 3, Poptavka in Section 1
   {
     console.log("Case 4: Both notes -> Form in Section 3, Poptavka in Section 1");
-    const { html } = testPdfRendering("FORM_NOTE", "POPT_NOTE");
+    const { html } = await testPdfRendering("FORM_NOTE", "POPT_NOTE");
     expectContains(html, LABEL_POPTAVKA, "Poptavka note label should appear");
     expectContains(html, "POPT_NOTE", "Poptavka note text should appear");
     expectContains(html, LABEL_ZAKAZNIK, "Form note label should appear");

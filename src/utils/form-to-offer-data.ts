@@ -171,7 +171,7 @@ export async function convertFormDataToOfferData(
     notes?: string;
     invoiceEmail?: string;
   }
-): OfferData {
+): Promise<OfferData> {
   // Round prices appropriately based on service type
   const isHourlyService = formConfig.id === "one-time-cleaning" || formConfig.id === "handyman-services";
   const roundedPrice = isHourlyService 

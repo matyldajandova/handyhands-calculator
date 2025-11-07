@@ -140,10 +140,11 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
       setCustomerData(orderData.customer);
     }
     // Clear poptavka notes if this is a new order
-    if (calculationResult?.orderId) {
-      orderStorage.checkAndClearNotesForNewOrder(calculationResult.orderId);
+    const orderId = calculationResult?.orderId;
+    if (orderId) {
+      orderStorage.checkAndClearNotesForNewOrder(orderId);
     }
-  }, [calculationResult?.orderId ?? null]);
+  }, [calculationResult?.orderId]);
 
   // Compute individual addons asynchronously
   useEffect(() => {
@@ -644,10 +645,11 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
                   const poptavkaNotesFromHash = typeof (formData as Record<string, unknown>).poptavkaNotes === 'string' 
                     ? (formData as Record<string, unknown>).poptavkaNotes as string 
                     : undefined;
-                  // Try to get form notes from formData first (from hash), then from calculationResult.formData (original)
+                  // Try to get form notes from formData first (from hash), then from calculationResult if it has formData
                   const formNotesFromHash = typeof formData.notes === 'string' ? formData.notes : undefined;
-                  const formNotesFromCalculation = typeof (calculationResult.formData as Record<string, unknown> | undefined)?.notes === 'string'
-                    ? (calculationResult.formData as Record<string, unknown>).notes as string
+                  const calculationResultWithFormData = calculationResult as CalculationResult & { formData?: Record<string, unknown> };
+                  const formNotesFromCalculation = typeof calculationResultWithFormData.formData?.notes === 'string'
+                    ? calculationResultWithFormData.formData.notes as string
                     : undefined;
                   const formNotes = formNotesFromHash || formNotesFromCalculation;
                   

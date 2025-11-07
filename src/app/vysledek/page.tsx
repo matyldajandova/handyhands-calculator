@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import * as Icons from "lucide-react";
 import Image from "next/image";
 import { getFormConfig } from "@/config/services";
-import { CalculationResult } from "@/types/form-types";
+import { CalculationResult, FormSubmissionData } from "@/types/form-types";
 import { CalculationData } from "@/utils/hash-generator";
 
 function VysledekContent() {
@@ -80,14 +80,19 @@ function VysledekContent() {
         if (!decodedData.calculationData) {
           try {
             const cfg = getFormConfig(decodedData.serviceType || decodedData.serviceTitle);
-            const fd = (decodedData as any)?.calculationData?.formData || (decodedData as any)?.cd?.fd; // compatibility
+            // Type-safe access to formData from different hash formats
+            const decodedAsRecord = decodedData as unknown as Record<string, unknown>;
+            const calculationData = decodedAsRecord.calculationData as Record<string, unknown> | undefined;
+            const cd = decodedAsRecord.cd as Record<string, unknown> | undefined;
+            const fd = calculationData?.formData || cd?.fd;
+            
             if (cfg && fd) {
               const { calculatePrice } = await import("@/utils/calculation");
-              const calc = await calculatePrice(fd as any, cfg);
+              const calc = await calculatePrice(fd as FormSubmissionData, cfg);
               decodedData.calculationData = {
                 ...calc,
                 formData: fd,
-                orderId: (decodedData as any)?.calculationData?.orderId || (decodedData as any)?.cd?.oid
+                orderId: calculationData?.orderId || cd?.oid
               } as unknown as CalculationData;
             }
           } catch {}

@@ -319,6 +319,7 @@ function PoptavkaContent() {
           
           // Remove poptavkaNotes from hashFormData before merging to prevent old notes from carrying over
           // We'll set it explicitly from poptavkaNotesFromHash instead
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { poptavkaNotes: _oldPoptavkaNotes, ...hashFormDataWithoutPoptavkaNotes } = hashFormData;
           
           const mergedData = {
@@ -548,7 +549,8 @@ function PoptavkaContent() {
       
       return () => clearTimeout(timeoutId);
     }
-  }, [formData, isSubmitted, originalFormNotesFromHash]); // Removed hashData from dependencies to prevent effect loops that interfere with Chrome autofill
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData, isSubmitted, originalFormNotesFromHash]); // Intentionally exclude hashData to prevent effect loops that interfere with Chrome autofill
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -625,6 +627,7 @@ function PoptavkaContent() {
       const { convertFormDataToOfferData } = await import("@/utils/form-to-offer-data");
       // Ensure originalFormData has ONLY the original form notes (not poptavka notes)
       // Remove poptavkaNotes from formData to prevent any confusion
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { poptavkaNotes: _, ...formDataWithoutPoptavkaNotes } = originalFormData;
       const formDataForConversion = {
         ...formDataWithoutPoptavkaNotes,

@@ -80,6 +80,7 @@ export const orderStorage = {
   updatePoptavka(poptavka: Partial<OrderData['poptavka']>): void {
     const currentData = this.get() || {};
     // Exclude notes from poptavka data - they're stored in hash only
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { notes: _, ...poptavkaWithoutNotes } = poptavka as Record<string, unknown>;
     this.set({
       ...currentData,
@@ -107,8 +108,10 @@ export const orderStorage = {
   updateCustomerAndPoptavka(customer: { firstName: string; lastName: string; email: string }, poptavkaData?: Partial<OrderData['poptavka']>): void {
     const currentData = this.get() || {};
     // Exclude notes from poptavka data - they're stored in hash only
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { notes: _, ...poptavkaDataWithoutNotes } = (poptavkaData || {}) as Record<string, unknown>;
     // Also exclude notes from current poptavka data
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { notes: __, ...currentPoptavkaWithoutNotes } = (currentData.poptavka || {}) as Record<string, unknown>;
     this.set({
       ...currentData,

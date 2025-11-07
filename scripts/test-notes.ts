@@ -29,7 +29,7 @@ function createMockCalculationResult(): CalculationResult {
   };
 }
 
-function renderPdf({ formNote, poptavkaNote }: { formNote?: string; poptavkaNote?: string }) {
+async function renderPdf({ formNote, poptavkaNote }: { formNote?: string; poptavkaNote?: string }) {
   const formConfig = createMockFormConfig();
   const calc = createMockCalculationResult();
 
@@ -41,7 +41,7 @@ function renderPdf({ formNote, poptavkaNote }: { formNote?: string; poptavkaNote
     ...(poptavkaNote ? { notes: poptavkaNote } : {}),
   };
 
-  const offer = convertFormDataToOfferData(formData, calc, formConfig, customerData);
+  const offer = await convertFormDataToOfferData(formData, calc, formConfig, customerData);
   const html = renderOfferPdfBody(offer, "http://localhost:3000");
   return html;
 }
@@ -64,14 +64,14 @@ async function run() {
 
   // Case 1: No note in form AND no note in /poptavka -> neither shown
   {
-    const html = renderPdf({});
+    const html = await renderPdf({});
     expectNotContains(html, LABEL_POPTAVKA, "Case 1: poptavka note should not be shown");
     expectNotContains(html, LABEL_ZAKAZNIK, "Case 1: form note should not be shown");
   }
 
   // Case 2: Note in form ONLY -> shown under services table; not under address
   {
-    const html = renderPdf({ formNote: "FORM_NOTE" });
+    const html = await renderPdf({ formNote: "FORM_NOTE" });
     expectNotContains(html, LABEL_POPTAVKA, "Case 2: poptavka note should not be shown");
     expectContains(html, LABEL_ZAKAZNIK, "Case 2: form note label should be shown");
     expectContains(html, "FORM_NOTE", "Case 2: form note text should be present");
@@ -79,7 +79,7 @@ async function run() {
 
   // Case 3: Note in /poptavka ONLY -> shown under address; not under services table
   {
-    const html = renderPdf({ poptavkaNote: "POPT_NOTE" });
+    const html = await renderPdf({ poptavkaNote: "POPT_NOTE" });
     expectContains(html, LABEL_POPTAVKA, "Case 3: poptavka note label should be shown");
     expectContains(html, "POPT_NOTE", "Case 3: poptavka note text should be present");
     expectNotContains(html, LABEL_ZAKAZNIK, "Case 3: form note should not be shown");
@@ -87,7 +87,7 @@ async function run() {
 
   // Case 4: Both notes -> both shown in their correct places
   {
-    const html = renderPdf({ formNote: "FORM_NOTE", poptavkaNote: "POPT_NOTE" });
+    const html = await renderPdf({ formNote: "FORM_NOTE", poptavkaNote: "POPT_NOTE" });
     expectContains(html, LABEL_POPTAVKA, "Case 4: poptavka note label should be shown");
     expectContains(html, "POPT_NOTE", "Case 4: poptavka note text should be present");
     expectContains(html, LABEL_ZAKAZNIK, "Case 4: form note label should be shown");

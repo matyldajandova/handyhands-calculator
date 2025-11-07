@@ -1,7 +1,9 @@
 import { generatePoptavkaHash, decodePoptavkaHash, PoptavkaHashData } from './hash-generator';
 
 // Simple test runner
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let testsPassed = 0;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let testsFailed = 0;
 const failures: string[] = [];
 

@@ -183,6 +183,7 @@ function minifyFormData(fd: Record<string, unknown>): {
   // Handle key conflicts: if multiple keys map to the same abbreviation, keep the full key name
   // This ensures data integrity - we'd rather have a longer hash than corrupted data
   const conflictKeys = new Set<string>();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   for (const [abbrev, keys] of Object.entries(abbreviationToKeys)) {
     if (keys.length > 1) {
       // Multiple keys map to the same abbreviation - mark all as conflicts
@@ -218,6 +219,7 @@ function minifyFormData(fd: Record<string, unknown>): {
   }
   
   const conflictValues = new Set<string>();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   for (const [abbrev, values] of Object.entries(abbreviationToValues)) {
     if (values.length > 1) {
       // Multiple values map to the same abbreviation - mark all as conflicts
