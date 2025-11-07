@@ -70,16 +70,22 @@ export function ServiceTypeSelector({ onServiceTypeSelect }: ServiceTypeSelector
       className="max-w-6xl mx-auto"
     >
       <div className="mb-12">
-        {/* Brand Logo */}
+        {/* Brand Logo - Clickable link to landing page */}
         <div className="flex justify-start mb-8">
-          <Image 
-            src="/handyhands_horizontal.svg" 
-            alt="HandyHands Logo" 
-            width={240}
-            height={96}
-            className="h-10 md:h-12 lg:h-16 w-auto"
-            priority
-          />
+          <a 
+            href={process.env.NEXT_PUBLIC_WEB_URL || ''} 
+            className="inline-block transition-opacity hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 rounded"
+            aria-label="Zpět na hlavní stránku Handy Hands"
+          >
+            <Image 
+              src="/handyhands_horizontal.svg" 
+              alt="HandyHands Logo" 
+              width={240}
+              height={96}
+              className="h-10 md:h-12 lg:h-16 w-auto"
+              priority
+            />
+          </a>
         </div>
         
         <h1 className="text-4xl font-bold text-foreground font-heading mb-4">
