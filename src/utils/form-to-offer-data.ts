@@ -391,12 +391,37 @@ function generateSummaryItems(formData: FormSubmissionData, formConfig: FormConf
     
     // Skip notes field as it's handled separately
     if (field.id === "notes") return;
-    
-    // Skip optional service fields as they're handled in commonServices section
-    if (field.id === "optionalServicesPerCleaning" || 
-        field.id === "optionalServicesMonthly" || 
-        field.id === "optionalServicesWeekly" ||
-        field.id === "optionalServices") return;
+
+    // Special handling for checkbox fields
+    if (field.type === 'checkbox' && 'options' in field) {
+      const selectedValues = Array.isArray(value) ? value : [];
+      if (selectedValues.length === 0) return;
+
+      const pricedSelections: string[] = [];
+
+      selectedValues.forEach(selectedValue => {
+        const option = field.options?.find(opt => opt.value === selectedValue);
+        const optionLabel = option?.label || field.label || sectionTitle || field.id;
+
+        if (option?.fixedAddon !== undefined) {
+          pricedSelections.push(optionLabel);
+        } else {
+          items.push({
+            label: optionLabel,
+            value: "Ano"
+          });
+        }
+      });
+
+      if (pricedSelections.length > 0) {
+        const label = field.label || sectionTitle || field.id;
+        const displayValue = getFieldDisplayValue(field, pricedSelections);
+        if (displayValue) {
+          items.push({ label, value: displayValue });
+        }
+      }
+      return;
+    }
     
     // Handle preferred time fields - they now have their own labels
     // No special handling needed, they will be processed normally with their labels
