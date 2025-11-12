@@ -60,7 +60,7 @@ export default function RootLayout({
   return (
     <html lang="cs" suppressHydrationWarning>
       <body className={`${openSans.variable} ${raleway.variable} font-sans antialiased`}>
-        <GoogleTagManager gtmId="GTM-WSJ9JPZG" />
+        <GoogleTagManager gtmId="GTM-58FFPMBH" />
         {children}
       </body>
     </html>
