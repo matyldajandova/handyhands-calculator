@@ -46,6 +46,7 @@ export const handymanServicesFormConfig: FormConfig = {
   id: "handyman-services",
   title: "Mytí oken a ostatní služby",
   description: `Vyplňte údaje pro výpočet ceny mytí oken a ostatních služeb.`,
+  tooltip: "Kalkulátor pro výpočet ceny ostatních služeb bude brzo přidán",
   validationSchema: handymanServicesSchema,
   basePrice: CURRENT_PRICES.hourlyRate,
   conditions: [],
@@ -100,8 +101,8 @@ export const handymanServicesFormConfig: FormConfig = {
           required: false,
           layout: "vertical",
           options: [
-            { value: "cleaning-supplies", label: "Úklidové náčiní včetně spotřebního zboží (hadry, utěrky atd.)", note: "recommended", fixedAddon: 400 },
-            { value: "ladders", label: "K mytí oken jsou potřeba také štafle nebo schůdky", fixedAddon: 250 }
+            { value: "cleaning-supplies", label: "Úklidové náčiní včetně spotřebního zboží (hadry, utěrky atd.) přiveze pracovník úklidu", note: "recommended", fixedAddon: 400 },
+            { value: "ladders", label: "K mytí oken jsou potřeba také přivest vlastní štafle nebo schůdky", fixedAddon: 250 }
           ]
         }
       ]

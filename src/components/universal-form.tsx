@@ -820,6 +820,13 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
         </h1>
         <p className="text-muted-foreground text-xl leading-7 font-sans max-w-2xl">
           {config.description}
+          {config.tooltip && (
+            <MobileTooltip content={config.tooltip}>
+              <button type="button" className="inline-flex align-middle ml-1.5">
+                <Icons.Info className="h-5 w-5 text-muted-foreground cursor-help hover:text-accent transition-colors" />
+              </button>
+            </MobileTooltip>
+          )}
         </p>
       </div>
 

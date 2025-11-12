@@ -45,6 +45,23 @@ export type OfferData = {
   serviceType?: string; // Service type ID (e.g., "one-time-cleaning", "handyman-services")
 };
 /**
+ * Helper function to format Czech text for minimum hours with correct grammar
+ * 1 hodina → "je 1 hodina"
+ * 2, 3, 4 hodiny → "jsou 2/3/4 hodiny"
+ * 5+ hodin → "je 5/6/20 hodin"
+ */
+function formatMinimumHoursText(hours: number): string {
+  const hoursNum = Math.floor(hours);
+  if (hoursNum === 1) {
+    return `je ${hoursNum} hodina`;
+  } else if (hoursNum >= 2 && hoursNum <= 4) {
+    return `jsou ${hoursNum} hodiny`;
+  } else {
+    return `je ${hoursNum} hodin`;
+  }
+}
+
+/**
  * Returns the HTML body markup for the Offer PDF using Tailwind classes.
  * We avoid JSX/react-dom usage so this can be safely called from a Route Handler.
  */
@@ -94,11 +111,11 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
           </div>
           <div class="hh-benefit-item" style="page-break-inside: avoid;">
             <div class="hh-benefit-title text-xs">Garance kvality a spolehlivosti</div>
-            <div class="hh-benefit-text">Dbáme na nejvyšší standardy úklidu, používáme kvalitní čisticí prostředky a moderní vybavení. Váš prostor bude vždy čistý, upravený a voňavý. Také Vaše zpětná vazba je pro nás velmi důležitá.</div>
+            <div class="hh-benefit-text">Dbáme na nejvyšší standardy úklidu, používáme kvalitní čisticí prostředky a moderní vybavení. Váš prostor bude vždy čistý, upravený a voňavý. Také vaše zpětná vazba je pro nás velmi důležitá.</div>
           </div>
           <div class="hh-benefit-item" style="page-break-inside: avoid;">
             <div class="hh-benefit-title text-xs">Flexibilita a individuální přístup</div>
-            <div class="hh-benefit-text">Chápeme, že každý klient má jiné požadavky. Nabízíme pravidelné či nepravidelné úklidy, přizpůsobíme se Vám podle rozvrhu a potřeb. Můžete si vybrat termíny i rozsah služeb, jak Vám to nejvíce vyhovuje.</div>
+            <div class="hh-benefit-text">Chápeme, že každý klient má jiné požadavky. Nabízíme pravidelné či nepravidelné úklidy, přizpůsobíme se vám podle rozvrhu a potřeb. Můžete si vybrat termíny i rozsah služeb, jak vám to nejvíce vyhovuje.</div>
           </div>
           <div class="hh-benefit-item" style="page-break-inside: avoid;">
             <div class="hh-benefit-title text-xs">Pojištění do výše 5 mil. Kč a jistota</div>
@@ -123,7 +140,7 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
       <div class="hh-divider mt-2"></div>
       <div class="grid grid-cols-2 gap-6 mt-4">
         <div class="text-xs">
-          <div class="font-semibold">Údaje o Vás:</div>
+          <div class="font-semibold">Údaje o vás:</div>
           <div>${escapeHtml(data.customer.name)}</div>
           ${data.customer.address ? `<div>${escapeHtml(data.customer.address)}</div>` : ""}
           ${data.customer.email ? `<div>${escapeHtml(data.customer.email)}</div>` : ""}
@@ -151,9 +168,9 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
         </div>
         <div class="text-xs">
           <div class="font-semibold">Údaje o nás:</div>
-          <div>Topclassservice, s.r.o.</div>
-          <div>Hvězdova 1566/21, Praha 4 – Nusle, 140 00</div>
-          <div>IČO: 22230092</div>
+          <div>Handy Hands CZ, s.r.o.</div>
+          <div>Můžíkova 1759/2, Nusle, 140 00 Praha 4</div>
+          <div>IČO: 23952580</div>
         </div>
       </div>
       ${data.poptavkaNotes ? `
@@ -198,7 +215,7 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
               </div>
               <!-- Description -->
               <div class="text-left text-xs text-black-pdf">
-                Hodinová sazba jednorázového úklidu - mytí oken apod. (minimální délka trvání prací jsou ${data.minimumHours || 2} hodiny)
+                Hodinová sazba jednorázového úklidu - mytí oken apod. (minimální délka trvání prací ${formatMinimumHoursText(data.minimumHours || 2)})
               </div>
             </div>
             
@@ -496,7 +513,7 @@ function renderSignaturesSection(quoteDate: string): string {
         <div class="hh-signature-content">
           <img src="signature-jana.svg" alt="Podpis Petr Jančálek" class="hh-signature-image" />
           <div class="hh-sign-name">Petr Jančálek</div>
-          <div class="hh-small hh-muted">Jednatel Topclassservice, s.r.o.</div>
+          <div class="hh-small hh-muted">Jednatel Handy Hands CZ, s.r.o.</div>
         </div>
       </div>
     </div>

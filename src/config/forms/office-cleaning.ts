@@ -472,7 +472,7 @@ export const officeCleaningFormConfig: FormConfig = {
           options: [
             { value: "yes", label: "Ano", coefficient: 1.02 },
             { value: "no", label: "Ne", coefficient: 0.97 },
-            { value: "dishwasher-only", label: "Ano, ale pouze vložení nádobí do myčky", coefficient: 1.01 }
+            { value: "dishwasher-only", label: "Ano, ale pouze vložení nádobí do myčky a její zapnutí", coefficient: 1.01 }
           ]
         }
       ]
@@ -532,14 +532,14 @@ export const officeCleaningFormConfig: FormConfig = {
               label: "Nejpozději ráno má být uklizeno v",
               required: false,
               options: [
-                { value: "3", label: "3:00" },
-                { value: "4", label: "4:00" },
                 { value: "5", label: "5:00" },
                 { value: "6", label: "6:00" },
                 { value: "7", label: "7:00" },
                 { value: "8", label: "8:00" },
                 { value: "9", label: "9:00" },
-                { value: "10", label: "10:00" }
+                { value: "10", label: "10:00" },
+                { value: "11", label: "11:00" },
+                { value: "12", label: "12:00" }
               ]
             },
             {
@@ -548,14 +548,14 @@ export const officeCleaningFormConfig: FormConfig = {
               label: "Nejdříve se může večer začít v",
               required: false,
               options: [
+                { value: "15", label: "15:00" },
                 { value: "16", label: "16:00" },
                 { value: "17", label: "17:00" },
                 { value: "18", label: "18:00" },
                 { value: "19", label: "19:00" },
                 { value: "20", label: "20:00" },
                 { value: "21", label: "21:00" },
-                { value: "22", label: "22:00" },
-                { value: "23", label: "23:00" }
+                { value: "22", label: "22:00" }
               ]
             }
           ]
@@ -620,7 +620,7 @@ export const officeCleaningFormConfig: FormConfig = {
           label: "Při každém úklidu",
           required: false,
           options: [
-            { value: "clean-coffee-machine", label: "Kontrola a čištění kávovaru (+200 Kč/měsíc)", fixedAddon: 200 },
+            { value: "clean-coffee-machine", label: "Kontrola a čištění kávovarů (+200 Kč/měsíc)", fixedAddon: 200 },
             { value: "hand-wash-dishes", label: "Ruční domytí nádobí z myčky a jeho otření do sucha (+300 Kč/měsíc)", fixedAddon: 300 },
             { value: "water-plants", label: "Zalévání pokojových květin (+250 Kč/měsíc)", fixedAddon: 250 },
             { value: "elevator-maintenance", label: "Olejování nerezových stěn interiéru výtahu včetně jejich údržby (+350 Kč/měsíc)", fixedAddon: 350, hidden: true },
@@ -638,10 +638,10 @@ export const officeCleaningFormConfig: FormConfig = {
           required: false,
           options: [
             { value: "dust-high-furniture", label: "Otírání prachu z nábytku z výšek více než 2,2 m (+100 Kč/měsíc)", fixedAddon: 100 },
-            { value: "clean-coffee-machine-monthly", label: "Kontrola a čištění kávovaru (+150 Kč/měsíc)", fixedAddon: 150 },
+            { value: "clean-coffee-machine-monthly", label: "Kontrola a čištění kávovarů (+150 Kč/měsíc)", fixedAddon: 150 },
             { value: "elevator-maintenance-monthly", label: "Olejování nerezových stěn interiéru výtahu včetně jejich údržby (+140 Kč/měsíc)", fixedAddon: 140 },
             { value: "disinfect-bins", label: "Vymytí a dezinfekce odpadkových košů (+120 Kč/měsíc)", fixedAddon: 120, hidden: true },
-            { value: "vacuum-upholstery", label: "Vysátí čalouněného nábytku (+300 Kč/měsíc)", fixedAddon: 300, hidden: true },
+            { value: "vacuum-upholstery", label: "Vysávání čalouněného nábytku (+300 Kč/měsíc)", fixedAddon: 300, hidden: true },
             { value: "clean-chair-wheels", label: "Čištění podnoží kancelářských židli včetně koleček (+200 Kč/měsíc)", fixedAddon: 200, hidden: true },
             { value: "clean-tiles-bathrooms", label: "Mytí celé plochy omyvatelných obkladů na sociálních zařízeních (+200 Kč/měsíc)", fixedAddon: 200, hidden: true },
             { value: "wash-towels-internal", label: "Praní špinavých utěrek a hadrů v pračce, která je součástí prostor kanceláří (+200 Kč/měsíc)", fixedAddon: 200, hidden: true },

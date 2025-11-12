@@ -38,21 +38,11 @@ const oneTimeCleaningSchema = z.object({
   cleaningType: z.string().min(1, "Vyberte typ jednorázového úklidu"),
   spaceArea: z.string().min(1, "Vyberte orientační plochu prostor určených k úklidu"),
   windowCleaning: z.string().min(1, "Vyberte, zda chcete umýt okna"),
-  windowCleaningArea: z.string().optional(),
   cleaningSupplies: z.array(z.string()).min(1, "Vyberte úklidové náčiní a úklidovou chemii"),
   domesticAnimals: z.string().min(1, "Vyberte, zda máte domácí zvířata"),
   optionalServices: z.array(z.string()).optional(),
   zipCode: z.string().min(1, "Zadejte PSČ").regex(/^\d{5}$/, "PSČ musí mít přesně 5 čísel"),
   notes: z.string().optional(),
-}).refine((data) => {
-  // If window cleaning is "yes", then windowCleaningArea is required
-  if (data.windowCleaning === "yes" && !data.windowCleaningArea) {
-    return false;
-  }
-  return true;
-}, {
-  message: "Vyberte orientační plochu pro umývání oken",
-  path: ["windowCleaningArea"],
 }).refine((data) => {
   // Validate cleaning supplies exclusive selection
   const hasOwnSupplies = data.cleaningSupplies.includes("own-supplies");
@@ -133,31 +123,6 @@ export const oneTimeCleaningFormConfig: FormConfig = {
             { value: "yes", label: "Ano" },
             { value: "no", label: "Ne" }
           ]
-        },
-        {
-          id: "window-cleaning-area",
-          type: "conditional",
-          label: "",
-          required: false,
-          condition: { field: "windowCleaning", value: "yes" },
-          fields: [
-            {
-              id: "windowCleaningArea",
-              type: "radio",
-              label: "Orientační plocha oken určených k umytí",
-              required: true,
-              layout: "vertical",
-              options: [
-                { value: "up-to-30", label: "Do 30 m² (celkový čas úklidu min. 4 hod. práce)", coefficient: 4.0},
-                { value: "up-to-50", label: "Do 50 m² (celkový čas úklidu min. 4 hod. práce)", coefficient: 4.0},
-                { value: "50-75", label: "Od 50 do 75 m² (celkový čas úklidu min. 5 hod. práce)", coefficient: 5.0},
-                { value: "75-100", label: "Od 75 do 100 m² (celkový čas úklidu min. 5 hod. práce)", coefficient: 5.0},
-                { value: "100-125", label: "Od 100 do 125 m² (celkový čas úklidu min. 6 hod. práce)", coefficient: 6.0},
-                { value: "125-200", label: "Od 125 do 200 m² (celkový čas úklidu min. 6 hod. práce)", coefficient: 6.0},
-                { value: "200-plus", label: "Od 200 a více m² (celkový čas úklidu min. 6 hod. práce)", coefficient: 6.0}
-              ]
-            }
-          ]
         }
       ]
     },
@@ -175,8 +140,8 @@ export const oneTimeCleaningFormConfig: FormConfig = {
           layout: "vertical",
           options: [
             { value: "worker-brings", label: "Přiveze pracovník úklidu", fixedAddon: 400, note: "recommended" },
-            { value: "own-vacuum", label: "K úklidu je potřeba vlastní vysavač", fixedAddon: 250 },
-            { value: "own-ladders", label: "K úklidu jsou potřeba štafle nebo schůdky", fixedAddon: 250 },
+            { value: "own-vacuum", label: "K úklidu je také potřeba přivést vlastní vysavač", fixedAddon: 250 },
+            { value: "own-ladders", label: "K úklidu jsou také potřeba přivést vlastní štafle nebo schůdky", fixedAddon: 250 },
             { 
               value: "own-supplies", 
               label: "Mám vlastní odpovídající úklidové náčiní a úklidovou chemii", 

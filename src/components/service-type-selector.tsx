@@ -74,7 +74,7 @@ export function ServiceTypeSelector({ onServiceTypeSelect }: ServiceTypeSelector
         <div className="flex justify-start mb-8">
           <a 
             href={process.env.NEXT_PUBLIC_WEB_URL || ''} 
-            className="inline-block transition-opacity hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 rounded"
+            className="inline-block transition-opacity hover:opacity-80 focus:outline-none"
             aria-label="Zpět na hlavní stránku Handy Hands"
           >
             <Image 

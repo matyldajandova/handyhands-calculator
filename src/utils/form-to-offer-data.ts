@@ -6,7 +6,7 @@ import { reconstructCalculationDetails } from "@/utils/calculation-reconstructio
 function getMinimumHours(formData: FormSubmissionData): number {
   // For one-time cleaning
   if (formData.spaceArea) {
-    const areaHours: Record<string, number> = {
+    const baseAreaHours: Record<string, number> = {
       "up-to-30": 3,
       "up-to-50": 3.5,
       "50-75": 4,
@@ -15,7 +15,22 @@ function getMinimumHours(formData: FormSubmissionData): number {
       "125-200": 4,
       "200-plus": 4
     };
-    return areaHours[formData.spaceArea as string] || 4;
+    
+    // If window cleaning is selected, override minimum hours
+    if (formData.windowCleaning === "yes") {
+      const windowCleaningHours: Record<string, number> = {
+        "up-to-30": 4,
+        "up-to-50": 4,
+        "50-75": 5,
+        "75-100": 5,
+        "100-125": 6,
+        "125-200": 6,
+        "200-plus": 6
+      };
+      return windowCleaningHours[formData.spaceArea as string] || 6;
+    }
+    
+    return baseAreaHours[formData.spaceArea as string] || 4;
   }
   
   // For handyman services (window cleaning)
@@ -427,8 +442,12 @@ function generateSummaryItems(formData: FormSubmissionData, formConfig: FormConf
     // No special handling needed, they will be processed normally with their labels
     
     // Use the form's existing label, fallback to section title if empty
-    const label = field.label || sectionTitle || field.id;
-    const displayValue = getFieldDisplayValue(field, value);
+    // Special handling for zipCode: use custom label for PDF
+    let label = field.label || sectionTitle || field.id;
+    if (field.id === 'zipCode') {
+      label = 'Lokalita úklidových prací podle PSČ';
+    }
+    const displayValue = getFieldDisplayValue(field, value, formData);
     
     if (displayValue) {
       items.push({ label, value: displayValue });
@@ -452,8 +471,9 @@ function generateSummaryItems(formData: FormSubmissionData, formConfig: FormConf
 
 /**
  * Gets display value for a field using its existing options or simple formatting
+ * For spaceArea field, adjusts minimum hours when window cleaning is enabled
  */
-function getFieldDisplayValue(field: FormField, value: unknown): string {
+function getFieldDisplayValue(field: FormField, value: unknown, formData?: FormSubmissionData): string {
   if (typeof value === 'boolean') {
     return value ? "ano" : "ne";
   }
@@ -466,7 +486,29 @@ function getFieldDisplayValue(field: FormField, value: unknown): string {
     // For radio/select fields, try to find the option label
     if (field.type === 'radio' && 'options' in field) {
       const option = field.options.find(opt => opt.value === value);
-      return option ? option.label : value;
+      if (option) {
+        let label = option.label;
+        
+        // Special handling for spaceArea: update minimum hours if window cleaning is enabled
+        if (field.id === 'spaceArea' && formData?.windowCleaning === 'yes') {
+          const windowCleaningHours: Record<string, number> = {
+            "up-to-30": 4,
+            "up-to-50": 4,
+            "50-75": 5,
+            "75-100": 5,
+            "100-125": 6,
+            "125-200": 6,
+            "200-plus": 6
+          };
+          const correctHours = windowCleaningHours[value] || 6;
+          
+          // Replace the minimum hours in the label (format: "min. X hod. práce" or "min. X,5 hod. práce")
+          label = label.replace(/\(min\.\s*\d+[,.]?\d*\s*hod\.\s*práce\)/i, `(min. ${correctHours} hod. práce)`);
+        }
+        
+        return label;
+      }
+      return value;
     }
     
     if (field.type === 'select' && 'options' in field) {

@@ -25,7 +25,7 @@ import { CalculationData } from "@/utils/hash-generator";
 function getMinimumHours(formData: Record<string, unknown>): number {
   // For one-time cleaning
   if (formData.spaceArea) {
-    const areaHours: Record<string, number> = {
+    const baseAreaHours: Record<string, number> = {
       "up-to-30": 3,
       "up-to-50": 3.5,
       "50-75": 4,
@@ -34,7 +34,22 @@ function getMinimumHours(formData: Record<string, unknown>): number {
       "125-200": 4,
       "200-plus": 4
     };
-    return areaHours[formData.spaceArea as string] || 4;
+    
+    // If window cleaning is selected, override minimum hours
+    if (formData.windowCleaning === "yes") {
+      const windowCleaningHours: Record<string, number> = {
+        "up-to-30": 4,
+        "up-to-50": 4,
+        "50-75": 5,
+        "75-100": 5,
+        "100-125": 6,
+        "125-200": 6,
+        "200-plus": 6
+      };
+      return windowCleaningHours[formData.spaceArea as string] || 6;
+    }
+    
+    return baseAreaHours[formData.spaceArea as string] || 4;
   }
   
   // For handyman services (window cleaning)
@@ -888,7 +903,7 @@ function PoptavkaContent() {
             <div className="flex justify-center mb-8">
               <button 
                 onClick={() => router.push('/')}
-                className="cursor-pointer hover:opacity-80 transition-opacity"
+                className="cursor-pointer transition-opacity hover:opacity-80 focus:outline-none"
               >
                 <Image 
                   src="/handyhands_horizontal.svg" 
@@ -927,7 +942,7 @@ function PoptavkaContent() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.4 }}
                 >
-                  Děkujeme za Vaši poptávku. Brzy vás budeme kontaktovat s dalšími informacemi.
+                  Děkujeme za vaši poptávku. Brzy vás budeme kontaktovat s dalšími informacemi.
                 </motion.p>
                 <motion.div 
                   className="flex flex-col gap-4 justify-center"
@@ -966,7 +981,7 @@ function PoptavkaContent() {
         >
           <button 
             onClick={() => router.push('/')}
-            className="cursor-pointer hover:opacity-80 transition-opacity"
+            className="cursor-pointer transition-opacity hover:opacity-80 active:opacity-70 focus:outline-none"
           >
             <Image 
               src="/handyhands_horizontal.svg" 
@@ -987,7 +1002,7 @@ function PoptavkaContent() {
         >
           <h1 className="text-3xl font-bold text-foreground mb-2">Poptávka úklidových služeb</h1>
           <p className="text-muted-foreground text-lg max-w-lg">
-            Abychom Vám mohli zaslat návrh smlouvy, budeme potřebovat od Vás několik údajů.
+            Abychom vám mohli zaslat návrh smlouvy, budeme potřebovat od vás několik údajů.
           </p>
         </motion.div>
 
@@ -1173,7 +1188,7 @@ function PoptavkaContent() {
                             id="companyName"
                             value={formData.companyName || ''}
                             onChange={(e) => handleInputChange("companyName", e.target.value)}
-                            placeholder="Název vaší společnosti"
+                            placeholder="Název společnosti"
                             className={errors.companyName ? "border-destructive" : ""}
                           />
                           {errors.companyName && (
@@ -1209,7 +1224,7 @@ function PoptavkaContent() {
                       {/* Company Address */}
                       <div className="space-y-4">
                         <div className="flex items-center gap-2">
-                          <h3 className="font-semibold">Adresa společnosti</h3>
+                          <h3 className="font-semibold">Adresa sídla společnosti</h3>
                         </div>
                         <div className="space-y-4">
                           <div className="space-y-2">
@@ -1456,7 +1471,7 @@ function PoptavkaContent() {
                     id="notes"
                     value={formData.notes || ''}
                     onChange={(e) => handleInputChange("notes", e.target.value)}
-                    placeholder="např. jméno jednatele/jednatelky společnosti"
+                    placeholder="např. jméno jednatele/jednatelky společnosti nebo jiné údaje, které chcete, aby byly uvedené ve smlouvě"
                     rows={4}
                   />
                 </div>
@@ -1507,7 +1522,7 @@ export default function PoptavkaPage() {
       <div className="min-h-screen bg-gradient-to-br from-background via-secondary to-background p-4 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto">
           <div className="mb-8">
-            <Link href="/" className="cursor-pointer hover:opacity-80 transition-opacity inline-block">
+            <Link href="/" className="cursor-pointer transition-opacity hover:opacity-80 active:opacity-70 focus:outline-none inline-block">
               <Image
                 src="/handyhands_horizontal.svg"
                 alt="HandyHands"

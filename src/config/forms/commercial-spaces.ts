@@ -472,7 +472,7 @@ export const commercialSpacesFormConfig: FormConfig = {
           options: [
             { value: "yes", label: "Ano", coefficient: 1.02 },
             { value: "no", label: "Ne", coefficient: 0.97 },
-            { value: "dishwasher-only", label: "Ano, ale pouze vložení nádobí do myčky", coefficient: 1.01 }
+            { value: "dishwasher-only", label: "Ano, ale pouze vložení nádobí do myčky a její zapnutí", coefficient: 1.01 }
           ]
         }
       ]
@@ -507,14 +507,14 @@ export const commercialSpacesFormConfig: FormConfig = {
               label: "Nejpozději ráno má být uklizeno v",
               required: false,
               options: [
-                { value: "3", label: "3:00" },
-                { value: "4", label: "4:00" },
                 { value: "5", label: "5:00" },
                 { value: "6", label: "6:00" },
                 { value: "7", label: "7:00" },
                 { value: "8", label: "8:00" },
                 { value: "9", label: "9:00" },
-                { value: "10", label: "10:00" }
+                { value: "10", label: "10:00" },
+                { value: "11", label: "11:00" },
+                { value: "12", label: "12:00" }
               ]
             },
             {
@@ -523,14 +523,14 @@ export const commercialSpacesFormConfig: FormConfig = {
               label: "Nejdříve se může večer začít v",
               required: false,
               options: [
+                { value: "15", label: "15:00" },
                 { value: "16", label: "16:00" },
                 { value: "17", label: "17:00" },
                 { value: "18", label: "18:00" },
                 { value: "19", label: "19:00" },
                 { value: "20", label: "20:00" },
                 { value: "21", label: "21:00" },
-                { value: "22", label: "22:00" },
-                { value: "23", label: "23:00" }
+                { value: "22", label: "22:00" }
               ]
             }
           ]

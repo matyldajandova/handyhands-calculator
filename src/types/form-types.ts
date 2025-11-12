@@ -174,6 +174,7 @@ export interface FormConfig {
   id: string;
   title: string;
   description: string;
+  tooltip?: string; // Tooltip text to display with info icon next to description
   sections: FormSection[];
   validationSchema: z.ZodSchema<Record<string, unknown>>; // More specific than any
   basePrice?: number; // Base price for the service (optional, defaults to 1500)

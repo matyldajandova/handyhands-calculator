@@ -23,7 +23,7 @@ interface SuccessScreenProps {
 
 // Helper function to get price description based on form type
 function getPriceDescription(formConfig: FormConfig | null): string {
-  if (!formConfig) return "Cena za pravidelný úklid domu";
+  if (!formConfig) return "Cena za pravidelný úklid";
   
   const descriptions: Record<string, string> = {
     "commercial-spaces": "Cena za pravidelný úklid komerčních nebytových (retailových) prostor",
@@ -40,7 +40,7 @@ function getPriceDescription(formConfig: FormConfig | null): string {
 function getMinimumHours(formData: FormSubmissionData): number {
   // For one-time cleaning
   if (formData.spaceArea) {
-    const areaHours: Record<string, number> = {
+    const baseAreaHours: Record<string, number> = {
       "up-to-30": 3,
       "up-to-50": 3.5,
       "50-75": 4,
@@ -49,7 +49,22 @@ function getMinimumHours(formData: FormSubmissionData): number {
       "125-200": 4,
       "200-plus": 4
     };
-    return areaHours[formData.spaceArea as string] || 4;
+    
+    // If window cleaning is selected, override minimum hours
+    if (formData.windowCleaning === "yes") {
+      const windowCleaningHours: Record<string, number> = {
+        "up-to-30": 4,
+        "up-to-50": 4,
+        "50-75": 5,
+        "75-100": 5,
+        "100-125": 6,
+        "125-200": 6,
+        "200-plus": 6
+      };
+      return windowCleaningHours[formData.spaceArea as string] || 6;
+    }
+    
+    return baseAreaHours[formData.spaceArea as string] || 4;
   }
   
   // For handyman services (window cleaning)
@@ -420,7 +435,7 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
         >
           <button 
             onClick={onBackToServices}
-            className="cursor-pointer transition-opacity hover:opacity-80"
+            className="cursor-pointer transition-opacity hover:opacity-80 focus:outline-none"
           >
             <Image 
               src="/handyhands_horizontal.svg" 

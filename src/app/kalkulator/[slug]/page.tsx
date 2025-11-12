@@ -118,7 +118,7 @@ export default function CalculatorPage() {
           <div className="flex justify-start items-center mb-8">
             <button 
               onClick={handleBackToHome}
-              className="cursor-pointer transition-opacity hover:opacity-80"
+              className="cursor-pointer transition-opacity hover:opacity-80 focus:outline-none"
             >
               <Image 
                 src="/handyhands_horizontal.svg" 

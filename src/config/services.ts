@@ -25,14 +25,14 @@ export const serviceTypes: ServiceType[] = [
   {
     id: "office-cleaning",
     title: "Pravidelný úklid kancelářských prostor",
-    description: "Hodinový i plošný výpočet úklidu prostor kanceláří s pokročilými koeficienty.",
+    description: "Hodinová nebo plošná metoda výpočtu pravidelného úklidu prostor kanceláří s pokročilými koeficienty.",
     icon: "Building2",
     formConfig: officeCleaningFormConfig,
   },
   {
     id: "commercial-spaces",
     title: "Pravidelný úklid komerčních nebytových (retailových) prostor",
-    description: "Výpočet cen pravidelných úklidů prodejen, skladů, fitness, kadeřnictví, ordinací, školek, restaurací, barů, kaváren, atd. s pokročilými koeficienty.",
+    description: "Výpočet cen pravidelných úklidů prodejen, fitness, kadeřnictví, ordinací, restaurací, barů, kaváren, atd. s pokročilými koeficienty.",
     icon: "Store",
     formConfig: commercialSpacesFormConfig,
   },
@@ -53,7 +53,7 @@ export const serviceTypes: ServiceType[] = [
   {
     id: "handyman-services",
     title: "Mytí oken a ostatní služby včetně zahradních",
-    description: "Přesný výpočet ceny mytí oken, výloh, žaluzií. Dále základní zahradnické práce, jako např. sekání trávníků nebo zimní údržbu chodníků a komunikací.",
+    description: "Přesný výpočet ceny mytí oken, výloh, žaluzií. Dále základní zahradnické práce, jako např. sekání trávníků nebo zimní údržba chodníků.",
     icon: "Bubbles",
     formConfig: handymanServicesFormConfig,
   },

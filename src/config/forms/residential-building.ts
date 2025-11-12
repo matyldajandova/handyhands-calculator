@@ -427,15 +427,15 @@ export const residentialBuildingFormConfig: FormConfig = {
             {
               id: "windowsPerFloor",
               type: "radio",
-              label: "Orientační počet oken na patře",
+              label: "Orientační velikost a umístění oken ve společných prostorách domu",
               required: true,
               layout: "vertical",
               options: [
-                { value: 1, label: "1", coefficient: 0.9 },
-                { value: 2, label: "2", coefficient: 1.0 },
-                { value: 3, label: "3", coefficient: 1.02 },
-                { value: 4, label: "4", coefficient: 1.1 },
-                { value: 5, label: "5-10", coefficient: 1.35 }
+                { value: 1, label: "Pouze v přízemí domu", tooltip: "Např. ve formě vstupních dvěří se zasklením, schodiště okna nemají nebo nejsou předmětem mytí v rámci generálního úklidu.", coefficient: 0.9 },
+                { value: 2, label: "Pouze v přízemí domu – velkoformátové zasklení", tooltip: "Např. celoproskléný vstupní parter na celou výšku podlaží", coefficient: 1.0 },
+                { value: 3, label: "Na podestách schodišť", tooltip: "Klasická okna osvětlující domovní schodiště", coefficient: 1.02, note: "frequent" },
+                { value: 4, label: "Na podestách schodišť – velkoformátové zasklení", tooltip: "Zasklení na celou výšku podlaží, většinou se tento typ vyskytuje u novostaveb.", coefficient: 1.1 },
+                { value: 5, label: "Na podestách schodišť a také průběžně na chodbách domu nebo na pavlačích", coefficient: 1.35 }
               ]
             },
             {
@@ -521,7 +521,7 @@ export const residentialBuildingFormConfig: FormConfig = {
           type: "alert" as const,
           variant: "default" as const,
           title: "Informace o zimní údržbě",
-          description: `Pro zimní údržbu platí pohotovost od 15. 11. do 14. 3. následujícího roku a v tomto období jsou prováděny výjezdy – úklidu sněhu nebo náledí. Úklid sněhu se provádí, pokud je minimální sněhová pokrývka výšky 1 až 2 cm. Měsíční poplatek za pohotovostní službu: 500 Kč/měsíc. Poplatek za výjezd: 50 Kč/běžný metr nebo 40 Kč/m² (min. 300 Kč, max. 2000 Kč za výjezd).`,
+          description: `Pro zimní údržbu držíme pohotovost od 15. 11. do 14. 3. následujícího roku a v tomto období jsou prováděny výjezdy – úklidu sněhu nebo náledí. Úklid sněhu se provádí, pokud je minimální sněhová pokrývka výšky 1 až 2 cm. Měsíční poplatek za pohotovostní službu: 500 Kč/měsíc. Poplatek za výjezd: 50 Kč/běžný metr nebo 40 Kč/m² (min. 300 Kč, max. 2000 Kč za výjezd).`,
           icon: "Info"
         }] : []),
         {
@@ -531,7 +531,7 @@ export const residentialBuildingFormConfig: FormConfig = {
           required: true,
           layout: "horizontal",
           options: [
-            { value: "yes", label: "Ano, mám zájem i o zimní údržbu kolem domu", tooltip: "Pro zimní údržbu platí pohotovost vždy v kalendářním roce od 15. 11. do 14. 3. následujícího roku a v tomto období jsou prováděny výjezdy – úklidu sněhu nebo náledí. Úklid sněhu se provádí, pokud je minimální sněhová pokrývka výšky 1 až 2 cm. V jednom dni je možné provést maximálně 2 výjezdy (většinou ráno a poté odpoledne nebo večer). V případě úklidu chodníků se vždy provádí schůdná cestička na šířku kočárku – cca 75 cm." },
+            { value: "yes", label: "Ano, mám zájem i o zimní údržbu kolem domu", tooltip: "Pro zimní údržbu držíme pohotovost vždy v kalendářním roce od 15. 11. do 14. 3. následujícího roku a v tomto období jsou prováděny výjezdy – úklidu sněhu nebo náledí. Úklid sněhu se provádí, pokud je minimální sněhová pokrývka výšky 1 až 2 cm. V jednom dni je možné provést maximálně 2 výjezdy (většinou ráno a poté odpoledne nebo večer). V případě úklidu chodníků se vždy provádí schůdná cestička na šířku kočárku – cca 75 cm. Pozn.: jedná se o menší plochy pro chůzi, které jsou uklízeny ručně hrably apod., nikoli strojní mechanizací." },
             { value: "no", label: "Ne" }
           ]
         },
