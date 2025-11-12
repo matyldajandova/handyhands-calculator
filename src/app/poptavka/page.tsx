@@ -1033,7 +1033,7 @@ function PoptavkaContent() {
                       <>
                         {/* Check if this is an hourly service */}
                         {(hashData.serviceType === "one-time-cleaning" || hashData.serviceType === "handyman-services") ? (
-                          <div>
+                          <div className="mb-2">
                             <p className="text-2xl font-bold text-primary">
                               {Math.round(hashData.calculationData.hourlyRate || hashData.totalPrice)} Kč <span className="font-normal text-muted-foreground">/hod/pracovník</span>
                             </p>
@@ -1072,7 +1072,7 @@ function PoptavkaContent() {
                         hashData.calculationData,
                         reconstructedDetails || hashData.calculationData.calculationDetails
                       ).map((item, index) => (
-                        <p key={index} className="text-sm text-muted-foreground mt-2">
+                        <p key={index} className="text-sm text-muted-foreground first:mt-2">
                           + {item.label} ({item.amount} Kč)
                         </p>
                       ))

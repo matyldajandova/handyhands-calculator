@@ -97,14 +97,11 @@ export async function POST(request: NextRequest) {
     // Build tags array
     const tags: string[] = [label];
     
-    // For poptavka submissions, add additional tags
-    if (customerData.serviceStartDate) {      
-      // Add service type tag if available (use serviceType ID for accurate mapping)
-      if (customerData.serviceType) {
-        const serviceTag = getServiceTag(customerData.serviceType);
-        if (serviceTag) {
-          tags.push(serviceTag);
-        }
+    // Add service type tag if available (for both PDF and Kalkulátor nabídka)
+    if (customerData.serviceType) {
+      const serviceTag = getServiceTag(customerData.serviceType);
+      if (serviceTag) {
+        tags.push(serviceTag);
       }
     }
 
