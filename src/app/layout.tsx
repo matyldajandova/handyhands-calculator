@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { GoogleTagManager } from "@next/third-parties/google";
+import { Analytics } from "@vercel/analytics/next";
 import { Raleway, Open_Sans } from "next/font/google";
 import "./globals.css";
 
@@ -62,6 +63,7 @@ export default function RootLayout({
       <body className={`${openSans.variable} ${raleway.variable} font-sans antialiased`}>
         <GoogleTagManager gtmId="GTM-58FFPMBH" />
         {children}
+        <Analytics />
       </body>
     </html>
   );
