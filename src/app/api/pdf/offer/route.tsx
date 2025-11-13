@@ -323,24 +323,24 @@ export async function POST(req: NextRequest) {
   let uploadedPdfUrl = '';
   let uploadError: Error | null = null;
   
-  // Upload to Google Drive if tokens are available
+  // Upload to Google Drive if tokens are available (server-side only via environment variables)
   const isPoptavka = data.isPoptavka;
-  const tokensCookie = req.cookies.get("gg_tokens")?.value;
+  const { getTokensFromEnv } = await import("@/utils/google-drive");
+  const tokens = getTokensFromEnv();
   const parentFolderId = process.env.GDRIVE_PARENT_FOLDER_ID;
   const poptavkyFolderId = process.env.GDRIVE_FINAL_OFFER_FOLDER_ID;
   
   // Log upload conditions for debugging
   console.log('PDF Upload conditions:', {
     isPoptavka,
-    hasTokens: !!tokensCookie,
+    hasTokens: !!tokens,
     hasParentFolderId: !!parentFolderId,
     hasPoptavkyFolderId: !!poptavkyFolderId,
-    shouldUpload: tokensCookie && (parentFolderId || (isPoptavka && poptavkyFolderId))
+    shouldUpload: tokens && (parentFolderId || (isPoptavka && poptavkyFolderId))
   });
   
-  if (tokensCookie && (parentFolderId || (isPoptavka && poptavkyFolderId))) {
+  if (tokens && (parentFolderId || (isPoptavka && poptavkyFolderId))) {
     try {
-      const tokens = JSON.parse(tokensCookie);
       
       // Check if access token is expired and refresh if needed
       let validTokens = tokens;
@@ -363,8 +363,19 @@ export async function POST(req: NextRequest) {
             }>;
           };
           const { credentials } = await oauthClientWithRefresh.refreshAccessToken();
-          validTokens = credentials;
-          console.log('Tokens refreshed successfully');
+          // Ensure we have an access_token before assigning
+          if (credentials.access_token) {
+            validTokens = {
+              access_token: credentials.access_token,
+              refresh_token: credentials.refresh_token || validTokens.refresh_token,
+              expiry_date: credentials.expiry_date,
+              token_type: credentials.token_type || "Bearer",
+              scope: credentials.scope,
+            };
+            console.log('Tokens refreshed successfully');
+          } else {
+            throw new Error('Refresh token response missing access_token');
+          }
         } catch (refreshError) {
           console.error('Failed to refresh tokens:', refreshError);
           throw new Error('Access token expired and refresh failed. Please re-authorize Google Drive access.');
@@ -451,8 +462,8 @@ export async function POST(req: NextRequest) {
     }
   } else {
     const missingItems: string[] = [];
-    if (!tokensCookie) {
-      missingItems.push('Google Drive OAuth tokens (complete OAuth flow at /api/google/oauth/init)');
+    if (!tokens) {
+      missingItems.push('Google Drive OAuth tokens (complete OAuth flow at /api/google/oauth/init and set GOOGLE_ACCESS_TOKEN env var)');
     }
     if (isPoptavka && !poptavkyFolderId) {
       missingItems.push('GDRIVE_FINAL_OFFER_FOLDER_ID environment variable');
@@ -462,7 +473,8 @@ export async function POST(req: NextRequest) {
     }
     
     console.warn('PDF upload skipped - missing requirements:', {
-      tokensCookie: !!tokensCookie,
+      hasAccessToken: !!process.env.GOOGLE_ACCESS_TOKEN,
+      hasRefreshToken: !!process.env.GOOGLE_REFRESH_TOKEN,
       parentFolderId: !!parentFolderId,
       poptavkyFolderId: !!poptavkyFolderId,
       isPoptavka,

@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOAuthClient } from "@/utils/google-drive";
+import { getOAuthClient, getTokensFromEnv } from "@/utils/google-drive";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
  * Test endpoint to verify Google Drive OAuth token status and refresh functionality
+ * Checks both environment variable tokens (server-side) and cookie tokens (browser)
  * GET /api/google/oauth/test-tokens
  */
 export async function GET(req: NextRequest) {
@@ -14,27 +15,44 @@ export async function GET(req: NextRequest) {
     // Allow forcing refresh test even if token is not expired (for testing)
     const forceRefresh = url.searchParams.get('forceRefresh') === 'true';
     
-    const tokensCookie = req.cookies.get("gg_tokens")?.value;
+    // Verify OAuth client configuration
+    const hasClientId = !!process.env.GOOGLE_CLIENT_ID;
+    const hasClientSecret = !!process.env.GOOGLE_CLIENT_SECRET;
+    const hasRedirectUri = !!process.env.GOOGLE_REDIRECT_URI;
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+    
+    const configStatus = {
+      hasClientId,
+      hasClientSecret,
+      hasRedirectUri,
+      redirectUri: redirectUri || 'NOT SET',
+      configValid: hasClientId && hasClientSecret && hasRedirectUri,
+    };
+    
+    // Check environment variables only (server-side tokens)
+    const tokens = getTokensFromEnv();
+    const tokenSource = tokens ? 'environment variables (GOOGLE_ACCESS_TOKEN, etc.)' : null;
 
-    if (!tokensCookie) {
+    // Return configuration status even if no tokens
+    const envTokenStatus = {
+      hasAccessToken: !!process.env.GOOGLE_ACCESS_TOKEN,
+      hasRefreshToken: !!process.env.GOOGLE_REFRESH_TOKEN,
+    };
+    
+    if (!tokens) {
       return NextResponse.json({
         success: false,
-        error: "No tokens found in cookies",
-        message: "Please complete OAuth flow at /api/google/oauth/init",
+        error: "No tokens found",
+        message: "Please complete OAuth flow at /api/google/oauth/init and set environment variables for server-side access",
         tokensPresent: false,
-      });
-    }
-
-    let tokens;
-    try {
-      tokens = JSON.parse(tokensCookie);
-    } catch (parseError) {
-      return NextResponse.json({
-        success: false,
-        error: "Failed to parse tokens from cookie",
-        details: parseError instanceof Error ? parseError.message : String(parseError),
-        tokensPresent: true,
-        tokensValid: false,
+        configStatus,
+        envTokenStatus,
+        setupInstructions: {
+          step1: "Complete OAuth flow: /api/google/oauth/init",
+          step2: "Copy GOOGLE_ACCESS_TOKEN and GOOGLE_REFRESH_TOKEN from the logs",
+          step3: "Add them to your .env.local or Vercel environment variables",
+          step4: "Redeploy for environment variables to take effect"
+        }
       });
     }
 
@@ -42,16 +60,17 @@ export async function GET(req: NextRequest) {
     const hasAccessToken = !!tokens.access_token;
     const hasRefreshToken = !!tokens.refresh_token;
     const hasExpiryDate = typeof tokens.expiry_date === 'number';
+    const expiryDate = tokens.expiry_date; // Store for type narrowing
     
     // If forceRefresh is true, treat token as expired for testing purposes
-    let isExpired = hasExpiryDate && tokens.expiry_date < now;
+    let isExpired = hasExpiryDate && expiryDate !== undefined && expiryDate < now;
     if (forceRefresh && hasRefreshToken) {
       isExpired = true;
       console.log('Force refresh mode enabled - treating token as expired for testing');
     }
     
-    const timeUntilExpiry = hasExpiryDate 
-      ? (tokens.expiry_date - now) 
+    const timeUntilExpiry = hasExpiryDate && expiryDate !== undefined
+      ? (expiryDate - now) 
       : null;
     const expiresInMinutes = timeUntilExpiry 
       ? Math.floor(timeUntilExpiry / 1000 / 60) 
@@ -59,13 +78,14 @@ export async function GET(req: NextRequest) {
 
     const tokenStatus = {
       tokensPresent: true,
+      tokenSource,
       tokensValid: hasAccessToken && (hasRefreshToken || !isExpired),
       hasAccessToken,
       hasRefreshToken,
       hasExpiryDate,
       isExpired: forceRefresh ? 'forced (for testing)' : isExpired,
-      actualExpiry: hasExpiryDate && !forceRefresh ? (tokens.expiry_date < now) : null,
-      expiryDate: hasExpiryDate ? new Date(tokens.expiry_date).toISOString() : null,
+      actualExpiry: hasExpiryDate && expiryDate !== undefined && !forceRefresh ? (expiryDate < now) : null,
+      expiryDate: hasExpiryDate && expiryDate !== undefined ? new Date(expiryDate).toISOString() : null,
       expiresInMinutes,
       timeUntilExpiry: timeUntilExpiry ? `${Math.floor(timeUntilExpiry / 1000 / 60)} minutes` : null,
       forceRefreshMode: forceRefresh,
@@ -74,7 +94,7 @@ export async function GET(req: NextRequest) {
     // If token is expired (or force refresh) and we have a refresh token, test refresh
     if (isExpired && hasRefreshToken) {
       try {
-        console.log('Testing token refresh...', { forceRefresh, actualExpired: hasExpiryDate && tokens.expiry_date < now });
+        console.log('Testing token refresh...', { forceRefresh, actualExpired: hasExpiryDate && expiryDate !== undefined && expiryDate < now });
         const oauth2Client = getOAuthClient();
         oauth2Client.setCredentials(tokens);
         
@@ -105,11 +125,12 @@ export async function GET(req: NextRequest) {
           message: forceRefresh 
             ? "Token refresh test successful! (Forced refresh test - token was not actually expired)"
             : "Token refresh test successful!",
+          configStatus,
           tokenStatus,
           refreshTest: {
             success: true,
             forceRefresh,
-            actualTokenExpired: hasExpiryDate && tokens.expiry_date < now,
+            actualTokenExpired: hasExpiryDate && expiryDate !== undefined && expiryDate < now,
             oldAccessToken: tokens.access_token?.substring(0, 20) + '...',
             newAccessToken: credentials.access_token?.substring(0, 20) + '...',
             tokenChanged: tokens.access_token !== credentials.access_token,
@@ -125,6 +146,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({
           success: false,
           error: "Token refresh test failed",
+          configStatus,
           tokenStatus,
           refreshTest: {
             success: false,
@@ -142,6 +164,7 @@ export async function GET(req: NextRequest) {
       message: isExpired 
         ? "Token is expired but no refresh token available" 
         : "Token is valid",
+      configStatus,
       tokenStatus,
       refreshTest: {
         attempted: false,
@@ -153,11 +176,29 @@ export async function GET(req: NextRequest) {
     });
 
   } catch (error) {
+    // Include config status even in error cases
+    const hasClientId = !!process.env.GOOGLE_CLIENT_ID;
+    const hasClientSecret = !!process.env.GOOGLE_CLIENT_SECRET;
+    const hasRedirectUri = !!process.env.GOOGLE_REDIRECT_URI;
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+    
     return NextResponse.json({
       success: false,
       error: "Unexpected error",
       details: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
+      configStatus: {
+        hasClientId,
+        hasClientSecret,
+        hasRedirectUri,
+        redirectUri: redirectUri || 'NOT SET',
+        configValid: hasClientId && hasClientSecret && hasRedirectUri,
+      },
+      envTokenStatus: {
+        hasAccessToken: !!process.env.GOOGLE_ACCESS_TOKEN,
+        hasRefreshToken: !!process.env.GOOGLE_REFRESH_TOKEN,
+      },
+      hasEnvTokens: !!getTokensFromEnv(),
     }, { status: 500 });
   }
 }

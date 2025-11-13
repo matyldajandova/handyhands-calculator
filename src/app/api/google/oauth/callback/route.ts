@@ -15,8 +15,17 @@ export async function GET(req: NextRequest) {
 
   try {
     const tokens = await exchangeCodeForTokens(code);
-    // In production, store tokens securely (DB/KV). For now, echo minimal success.
-    // Optionally, redirect back to an admin page with a success flag.
+    
+    // Log individual environment variables for server-side setup
+    console.log('\n=== Google OAuth Tokens - Add these to your .env.local or Vercel environment variables ===');
+    console.log('GOOGLE_ACCESS_TOKEN=' + (tokens.access_token || ''));
+    if (tokens.refresh_token) {
+      console.log('GOOGLE_REFRESH_TOKEN=' + tokens.refresh_token);
+    }
+    console.log('=== Copy the above lines to your environment variables ===');
+    console.log('Note: Token type is always "Bearer", expiry date is managed automatically after refresh\n');
+    
+    // Redirect back to an admin page with a success flag
     const origin = new URL(req.url).origin;
     let absoluteRedirect: string;
     if (state) {
@@ -31,16 +40,8 @@ export async function GET(req: NextRequest) {
       absoluteRedirect = `${origin}/?googleDrive=connected`;
     }
 
-    // Set HttpOnly cookie with refresh/access (temporary demo storage)
-    const response = NextResponse.redirect(absoluteRedirect);
-    response.cookies.set("gg_tokens", JSON.stringify(tokens), {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30,
-    });
-    return response;
+    // No cookies - tokens are only stored in environment variables (server-side only)
+    return NextResponse.redirect(absoluteRedirect);
   } catch (e) {
     const message = e instanceof Error ? e.message : "OAuth exchange failed";
     return NextResponse.json({ error: message }, { status: 500 });

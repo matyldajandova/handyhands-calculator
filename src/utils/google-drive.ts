@@ -27,6 +27,30 @@ export function getOAuthClient() {
   return oauth2Client;
 }
 
+/**
+ * Get OAuth tokens from environment variables (server-side) or return null
+ * Constructs token object from individual env vars: GOOGLE_ACCESS_TOKEN, GOOGLE_REFRESH_TOKEN
+ * Token type is always "Bearer", expiry date is read from refreshed tokens, scope is not needed
+ */
+export function getTokensFromEnv(): OAuthTokens | null {
+  const accessToken = process.env.GOOGLE_ACCESS_TOKEN;
+  if (!accessToken) {
+    return null;
+  }
+
+  const tokens: OAuthTokens = {
+    access_token: accessToken,
+    token_type: "Bearer", // Always Bearer for OAuth 2.0
+  };
+
+  // Optional refresh token
+  if (process.env.GOOGLE_REFRESH_TOKEN) {
+    tokens.refresh_token = process.env.GOOGLE_REFRESH_TOKEN;
+  }
+
+  return tokens;
+}
+
 export function generateAuthUrl() {
   const oauth2Client = getOAuthClient();
   return oauth2Client.generateAuthUrl({
