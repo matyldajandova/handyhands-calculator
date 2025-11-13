@@ -2,40 +2,45 @@
 
 ## Where to Find Console.log Output
 
-In Vercel, `console.log()` output from your API routes appears in **Function Logs**, not in the main deployment logs that show HTTP requests.
+In Vercel, `console.log()` output from your API routes appears in **Runtime Logs** in the main Logs tab.
 
 ### Method 1: Vercel Dashboard (Recommended)
 
 1. Go to your [Vercel Dashboard](https://vercel.com/dashboard)
 2. Select your project
-3. Click on a specific **deployment**
-4. Look for one of these tabs:
-   - **"Functions"** tab - Click on a specific function to see its logs
-   - **"Runtime Logs"** or **"Logs"** tab - Shows function execution logs
-   - **"Function Logs"** - Direct access to console.log output
+3. Click on the **"Logs"** tab (top navigation)
+4. You'll see Runtime Logs showing:
+   - HTTP requests (GET, POST, etc.)
+   - **Console.log output from your functions** (scroll down or filter)
+   - Function execution details
+
+**Important**: Console.log output appears in the same Logs tab, mixed with HTTP requests. Use filters to find them:
+- Filter by **Function** (e.g., `api/google/oauth/callback`)
+- Filter by **Resource** → Select "Vercel Function"
+- Search for your log messages in the search bar
 
 ### Method 2: Vercel CLI
 
 You can view logs in real-time using the Vercel CLI:
 
 ```bash
+# View logs for the latest deployment (recommended)
+vercel logs --follow
+
 # View logs for a specific deployment
 vercel logs [deployment-url] --follow
 
-# View logs for the latest deployment
-vercel logs --follow
-
-# View logs for a specific function
-vercel logs --follow --function=api/google/oauth/callback
+# Filter logs by function
+vercel logs --follow | grep "api/google/oauth/callback"
 ```
 
-### Method 3: Vercel Dashboard - Real-time Logs
+### Method 3: Filtering in Dashboard
 
-1. Go to your project dashboard
-2. Click on **"Deployments"**
-3. Click on a specific deployment
-4. Look for **"Runtime Logs"** or **"Function Logs"** section
-5. You should see console.log output with timestamps
+In the Logs tab, use the left sidebar filters:
+- **Function**: Select specific API route (e.g., `api/test-logs`)
+- **Resource**: Select "Vercel Function" to see only function logs
+- **Level**: Filter by Info, Warning, or Error
+- **Search bar**: Search for specific text (e.g., "OAUTH", "TEST", "ERROR")
 
 ## Understanding Vercel Log Types
 
@@ -50,15 +55,21 @@ vercel logs --follow --function=api/google/oauth/callback
 - **Contains**: Request method, path, status code, timestamp
 - **Example**: `GET 200 /api/google/oauth/callback`
 
-### 3. Function Logs (Runtime Logs) ⭐ **This is where console.log appears**
+### 3. Runtime Logs ⭐ **This is where console.log appears**
 - Shows console.log, console.error, etc. from your API routes
-- **Location**: Deployment page → "Functions" tab → Click on a function
+- **Location**: Project Dashboard → **"Logs"** tab (main navigation)
 - **Contains**: All console output from serverless function execution
+- **How to find**: Filter by Function name or Resource type
 - **Example**: 
   ```
   [2024-11-13T17:18:57.123Z] [OAUTH] Google OAuth Tokens - Add these to your .env.local...
   [2024-11-13T17:18:57.124Z] [OAUTH] GOOGLE_ACCESS_TOKEN=ya29.a0AfH6...
   ```
+  
+**Log Level Mapping** (according to Vercel docs):
+- `console.log`, `console.info` → **Info** level (blue)
+- `console.warn` → **Warning** level (amber)
+- `console.error`, `stderr` → **Error** level (red)
 
 ## Using the Logger Utility
 
@@ -90,24 +101,36 @@ logger.apiResponse('GET', '/api/endpoint', 200, { result: 'success' });
 
 ### Logs Only Show HTTP Requests?
 
-The main "Logs" tab shows HTTP requests. To see console.log output:
-- Click on the **"Functions"** tab
-- Click on the specific function (e.g., `api/google/oauth/callback`)
-- You'll see the console.log output there
+The Logs tab shows both HTTP requests AND console.log output. To see console.log output:
+1. **Filter by Function**: Use the left sidebar → Function filter → Select your API route
+2. **Filter by Resource**: Select "Vercel Function" to see only function logs
+3. **Search**: Use the search bar to find specific log messages (e.g., search for "OAUTH" or "TEST")
+4. **Look for Info/Warning/Error levels**: Console.log appears as Info level logs
+
+**Tip**: HTTP requests appear as single-line entries. Console.log output appears as separate log entries with the full message.
 
 ## Example: Finding OAuth Token Logs
 
 When you complete the OAuth flow at `/api/google/oauth/init`:
 
-1. Go to Vercel Dashboard → Your Project → Latest Deployment
-2. Click **"Functions"** tab
-3. Find and click on `api/google/oauth/callback`
+1. Go to Vercel Dashboard → Your Project → **"Logs"** tab
+2. **Filter by Function**: Select `api/google/oauth/callback` from the Function filter
+3. **Or search**: Type "OAUTH" in the search bar
 4. You should see logs like:
    ```
    [2024-11-13T17:18:57.123Z] [OAUTH] === Google OAuth Tokens ===
    [2024-11-13T17:18:57.124Z] [OAUTH] GOOGLE_ACCESS_TOKEN=ya29.a0AfH6...
    [2024-11-13T17:18:57.125Z] [OAUTH] GOOGLE_REFRESH_TOKEN=1//0g...
    ```
+
+## Test Your Logging
+
+Visit `/api/test-logs` after deploying to verify logging works:
+1. Deploy your app
+2. Visit `https://your-domain.com/api/test-logs`
+3. Go to Vercel Dashboard → Logs tab
+4. Filter by Function: `api/test-logs`
+5. You should see test log messages
 
 ## Additional Resources
 

@@ -1,14 +1,18 @@
 /**
  * Logger utility for Vercel serverless functions
  * 
- * In Vercel, console.log output appears in Function Logs, not the main deployment logs.
+ * In Vercel, console.log output appears in Runtime Logs.
  * To view these logs:
- * 1. Go to your Vercel project dashboard
- * 2. Click on a deployment
- * 3. Go to the "Functions" tab (or "Runtime Logs")
- * 4. Click on a specific function to see its console.log output
+ * 1. Go to your Vercel project dashboard → Logs tab
+ * 2. Filter by Function, Resource, or use the search bar
+ * 3. Runtime logs show console.log, console.warn, console.error output
  * 
- * Alternatively, use: vercel logs [deployment-url] --follow
+ * According to Vercel docs:
+ * - console.log, console.info → Info level
+ * - console.warn → Warning level
+ * - console.error, stderr → Error level
+ * 
+ * Alternatively, use CLI: vercel logs --follow
  */
 
 type LogLevel = 'log' | 'info' | 'warn' | 'error' | 'debug';
@@ -46,8 +50,9 @@ export const logger = {
     const { prefix = 'LOG', timestamp = true } = options || {};
     const formattedMessage = formatMessage(message, prefix, timestamp);
     
+    // Ensure logs are written - Vercel captures console.log output
     if (data !== undefined) {
-      console.log(formattedMessage, data);
+      console.log(formattedMessage, JSON.stringify(data, null, 2));
     } else {
       console.log(formattedMessage);
     }
@@ -60,8 +65,9 @@ export const logger = {
     const { prefix = 'INFO', timestamp = true } = options || {};
     const formattedMessage = formatMessage(message, prefix, timestamp);
     
+    // Use console.log for info level (Vercel maps this to Info level)
     if (data !== undefined) {
-      console.log(formattedMessage, data);
+      console.log(formattedMessage, typeof data === 'object' ? JSON.stringify(data, null, 2) : data);
     } else {
       console.log(formattedMessage);
     }

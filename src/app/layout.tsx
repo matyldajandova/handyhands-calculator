@@ -9,7 +9,9 @@ const openSans = Open_Sans({
   subsets: ["latin"], 
   variable: "--font-sans",
   display: "swap",
-  fallback: ["system-ui", "arial"]
+  fallback: ["system-ui", "arial"],
+  preload: false,
+  adjustFontFallback: true,
 });
 
 const raleway = Raleway({ 
@@ -17,7 +19,9 @@ const raleway = Raleway({
   weight: ["400", "500", "600", "700"],
   variable: "--font-heading",
   display: "swap",
-  fallback: ["system-ui", "arial"]
+  fallback: ["system-ui", "arial"],
+  preload: false,
+  adjustFontFallback: true,
 });
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
