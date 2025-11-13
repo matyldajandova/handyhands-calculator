@@ -20,23 +20,14 @@ type LogLevel = 'log' | 'info' | 'warn' | 'error' | 'debug';
 interface LogOptions {
   level?: LogLevel;
   prefix?: string;
-  timestamp?: boolean;
 }
 
-function formatTimestamp(): string {
-  return new Date().toISOString();
-}
-
-function formatMessage(message: string, prefix?: string, timestamp?: boolean): string {
-  const parts: string[] = [];
-  if (timestamp) {
-    parts.push(`[${formatTimestamp()}]`);
-  }
+function formatMessage(message: string, prefix?: string): string {
+  // Vercel adds its own timestamps, so we just use a simple prefix
   if (prefix) {
-    parts.push(`[${prefix}]`);
+    return `[${prefix}] ${message}`;
   }
-  parts.push(message);
-  return parts.join(' ');
+  return message;
 }
 
 /**
@@ -44,15 +35,15 @@ function formatMessage(message: string, prefix?: string, timestamp?: boolean): s
  */
 export const logger = {
   /**
-   * Log a message with optional prefix and timestamp
+   * Log a message with optional prefix
    */
   log(message: string, data?: unknown, options?: LogOptions): void {
-    const { prefix = 'LOG', timestamp = true } = options || {};
-    const formattedMessage = formatMessage(message, prefix, timestamp);
+    const { prefix = 'LOG' } = options || {};
+    const formattedMessage = formatMessage(message, prefix);
     
-    // Ensure logs are written - Vercel captures console.log output
+    // Simple console.log - Vercel will add its own timestamp
     if (data !== undefined) {
-      console.log(formattedMessage, JSON.stringify(data, null, 2));
+      console.log(formattedMessage, data);
     } else {
       console.log(formattedMessage);
     }
@@ -62,12 +53,12 @@ export const logger = {
    * Log an info message
    */
   info(message: string, data?: unknown, options?: Omit<LogOptions, 'level'>): void {
-    const { prefix = 'INFO', timestamp = true } = options || {};
-    const formattedMessage = formatMessage(message, prefix, timestamp);
+    const { prefix = 'INFO' } = options || {};
+    const formattedMessage = formatMessage(message, prefix);
     
     // Use console.log for info level (Vercel maps this to Info level)
     if (data !== undefined) {
-      console.log(formattedMessage, typeof data === 'object' ? JSON.stringify(data, null, 2) : data);
+      console.log(formattedMessage, data);
     } else {
       console.log(formattedMessage);
     }
@@ -77,8 +68,8 @@ export const logger = {
    * Log a warning message
    */
   warn(message: string, data?: unknown, options?: Omit<LogOptions, 'level'>): void {
-    const { prefix = 'WARN', timestamp = true } = options || {};
-    const formattedMessage = formatMessage(message, prefix, timestamp);
+    const { prefix = 'WARN' } = options || {};
+    const formattedMessage = formatMessage(message, prefix);
     
     if (data !== undefined) {
       console.warn(formattedMessage, data);
@@ -91,13 +82,13 @@ export const logger = {
    * Log an error message
    */
   error(message: string, error?: unknown, options?: Omit<LogOptions, 'level'>): void {
-    const { prefix = 'ERROR', timestamp = true } = options || {};
-    const formattedMessage = formatMessage(message, prefix, timestamp);
+    const { prefix = 'ERROR' } = options || {};
+    const formattedMessage = formatMessage(message, prefix);
     
     if (error !== undefined) {
       console.error(formattedMessage, error);
       if (error instanceof Error && error.stack) {
-        console.error('Stack trace:', error.stack);
+        console.error(`${formattedMessage} Stack trace:`, error.stack);
       }
     } else {
       console.error(formattedMessage);
@@ -109,8 +100,8 @@ export const logger = {
    */
   debug(message: string, data?: unknown, options?: Omit<LogOptions, 'level'>): void {
     if (process.env.NODE_ENV === 'development') {
-      const { prefix = 'DEBUG', timestamp = true } = options || {};
-      const formattedMessage = formatMessage(message, prefix, timestamp);
+      const { prefix = 'DEBUG' } = options || {};
+      const formattedMessage = formatMessage(message, prefix);
       
       if (data !== undefined) {
         console.log(formattedMessage, data);
