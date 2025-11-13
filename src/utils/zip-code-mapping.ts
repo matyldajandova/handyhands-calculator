@@ -84,7 +84,8 @@ async function loadZipCodeMapping(): Promise<Map<string, string>> {
   } catch (error) {
     // Suppress noisy logs in tests when explicit skip flag is set
     if (!(typeof process !== 'undefined' && process.env && process.env.HH_SKIP_ZIP_RESOLVE === '1')) {
-      console.error('Error loading zip code mapping:', error);
+      const { logger } = await import('./logger');
+      logger.error('Error loading zip code mapping:', error, { prefix: 'ZIP' });
     }
     return new Map();
   }

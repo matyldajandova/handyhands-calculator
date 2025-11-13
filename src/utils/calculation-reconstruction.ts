@@ -4,6 +4,7 @@
  */
 
 import { CalculationResult, FormConfig, FormSubmissionData, CheckboxField, RadioField, SelectField, FormField } from "@/types/form-types";
+import { logger } from "./logger";
 
 /**
  * Find a field in the form config by ID
@@ -215,7 +216,7 @@ export async function reconstructCalculationDetails(
         }
       }
     } catch (error) {
-      console.error('Error getting fixed fee for region:', error);
+      logger.error('Error getting fixed fee for region:', error, { prefix: 'CALC-RECON' });
     }
   }
 

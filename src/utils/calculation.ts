@@ -4,6 +4,7 @@ import { calculateOfficeCleaningPrice } from "./office-cleaning-calculation";
 import { FIXED_PRICES, getGeneralCleaningPrice } from "@/config/forms/residential-building";
 import { getRegionFromZipCode, getAvailableRegions } from "./zip-code-mapping";
 import { getFixedFeeForService } from "./regional-fixed-fees";
+import { logger } from "./logger";
 
 // Helper function to find a field in the form configuration
 function findFieldInConfig(config: FormConfig, fieldId: string): FormField | null {
@@ -174,7 +175,7 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
     } catch (error) {
       // Suppress noisy logs in tests when explicit skip flag is set
       if (!(typeof process !== 'undefined' && process.env && process.env.HH_SKIP_ZIP_RESOLVE === '1')) {
-        console.error('Error mapping zip code to region:', error);
+        logger.error('Error mapping zip code to region:', error, { prefix: 'CALC' });
       }
       // Fallback to Prague
       finalCoefficient *= 1.0;
@@ -406,7 +407,7 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
         }
       }
     } catch (error) {
-      console.error('Error getting fixed fee for region:', error);
+      logger.error('Error getting fixed fee for region:', error, { prefix: 'CALC' });
     }
   }
 

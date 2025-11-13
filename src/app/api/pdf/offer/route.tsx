@@ -7,6 +7,7 @@ import fs from "node:fs/promises";
 import { hashService } from "@/services/hash-service";
 import { buildPoptavkaHashData } from "@/utils/hash-data-builder";
 import path from "node:path";
+import { logger } from "@/utils/logger";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -114,7 +115,7 @@ export async function POST(req: NextRequest) {
           }
         }
       } catch (hashError) {
-        console.error('Failed to decode poptavkaHash:', hashError);
+        logger.error('Failed to decode poptavkaHash:', hashError, { prefix: 'PDF' });
         // Continue anyway - hash might be invalid but we can still generate PDF
       }
     }
@@ -246,12 +247,12 @@ export async function POST(req: NextRequest) {
         // Verify the hash can be decoded
         const decoded = hashService.decodeHash(data.poptavkaHash);
         if (!decoded) {
-          console.error('Failed to decode generated hash:', JSON.stringify(hashData, null, 2));
+          logger.error('Failed to decode generated hash:', JSON.stringify(hashData, null, 2), { prefix: 'PDF' });
           throw new Error('Generated hash cannot be decoded');
         }
       } catch (error) {
-        console.error('Error generating hash:', error);
-        console.error('Hash data:', JSON.stringify(hashData, null, 2));
+        logger.error('Error generating hash:', error, { prefix: 'PDF' });
+        logger.error('Hash data:', JSON.stringify(hashData, null, 2), { prefix: 'PDF' });
         throw error;
       }
     }
@@ -331,13 +332,13 @@ export async function POST(req: NextRequest) {
   const poptavkyFolderId = process.env.GDRIVE_FINAL_OFFER_FOLDER_ID;
   
   // Log upload conditions for debugging
-  console.log('PDF Upload conditions:', {
+  logger.info('PDF Upload conditions:', {
     isPoptavka,
     hasTokens: !!tokens,
     hasParentFolderId: !!parentFolderId,
     hasPoptavkyFolderId: !!poptavkyFolderId,
     shouldUpload: tokens && (parentFolderId || (isPoptavka && poptavkyFolderId))
-  });
+  }, { prefix: 'PDF' });
   
   if (tokens && (parentFolderId || (isPoptavka && poptavkyFolderId))) {
     try {
@@ -345,7 +346,7 @@ export async function POST(req: NextRequest) {
       // Check if access token is expired and refresh if needed
       let validTokens = tokens;
       if (tokens.expiry_date && tokens.expiry_date < Date.now() && tokens.refresh_token) {
-        console.log('Access token expired, attempting to refresh...');
+        logger.info('Access token expired, attempting to refresh...', undefined, { prefix: 'PDF' });
         try {
           const { getOAuthClient } = await import("@/utils/google-drive");
           const oauth2Client = getOAuthClient();
@@ -372,12 +373,12 @@ export async function POST(req: NextRequest) {
               token_type: credentials.token_type || "Bearer",
               scope: credentials.scope,
             };
-            console.log('Tokens refreshed successfully');
+            logger.info('Tokens refreshed successfully', undefined, { prefix: 'PDF' });
           } else {
             throw new Error('Refresh token response missing access_token');
           }
         } catch (refreshError) {
-          console.error('Failed to refresh tokens:', refreshError);
+          logger.error('Failed to refresh tokens:', refreshError, { prefix: 'PDF' });
           throw new Error('Access token expired and refresh failed. Please re-authorize Google Drive access.');
         }
       }
@@ -390,11 +391,11 @@ export async function POST(req: NextRequest) {
       const filename = `${serviceTitle.replace(/\s+/g, "_")}_${customer.replace(/\s+/g, "_")}_${email}_${date}${suffix}`;
       const subfolder = serviceTitle;
       
-      console.log('Uploading PDF to Google Drive:', {
+      logger.info('Uploading PDF to Google Drive:', {
         filename,
         subfolder,
         parentFolderId: isPoptavka ? poptavkyFolderId : parentFolderId
-      });
+      }, { prefix: 'PDF' });
       
       const result = await uploadPdfToDrive({
         tokens: validTokens,
@@ -405,12 +406,12 @@ export async function POST(req: NextRequest) {
       });
       
       uploadedPdfUrl = `https://drive.google.com/file/d/${result.fileId}/view`;
-      console.log('PDF uploaded successfully to Google Drive:', uploadedPdfUrl);
+      logger.info('PDF uploaded successfully to Google Drive:', uploadedPdfUrl, { prefix: 'PDF' });
       
       // Send transactional email with PDF attachment
       if (data.customer?.email) {
         try {
-          console.log('Sending transactional email with PDF attachment...');
+          logger.info('Sending transactional email with PDF attachment...', undefined, { prefix: 'PDF' });
           const { sendTransactionalEmail, createPdfAttachment } = await import('@/utils/ecomail-transactional');
           
           // Use different template IDs: 2 for poptavka, 3 for regular PDF download
@@ -444,20 +445,20 @@ export async function POST(req: NextRequest) {
           });
           
           if (emailResult.success) {
-            console.log(`Transactional email sent successfully (template ${templateId}):`, emailResult.messageId);
+            logger.info(`Transactional email sent successfully (template ${templateId}):`, emailResult.messageId, { prefix: 'PDF' });
           } else {
-            console.error('Failed to send transactional email:', emailResult.error);
+            logger.error('Failed to send transactional email:', emailResult.error, { prefix: 'PDF' });
             // Don't fail the request if email fails, but log it
           }
         } catch (emailError) {
-          console.error('Error sending transactional email:', emailError);
+          logger.error('Error sending transactional email:', emailError, { prefix: 'PDF' });
           // Don't fail the request if email fails
         }
       }
     } catch (err) {
       uploadError = err instanceof Error ? err : new Error(String(err));
-      console.error('Failed to upload to Google Drive:', uploadError);
-      console.error('Upload error stack:', uploadError.stack);
+      logger.error('Failed to upload to Google Drive:', uploadError, { prefix: 'PDF' });
+      logger.error('Upload error stack:', uploadError.stack, { prefix: 'PDF' });
       // Don't fail the request if upload fails, but log it clearly
     }
   } else {
@@ -472,14 +473,14 @@ export async function POST(req: NextRequest) {
       missingItems.push('GDRIVE_PARENT_FOLDER_ID environment variable');
     }
     
-    console.warn('PDF upload skipped - missing requirements:', {
+    logger.warn('PDF upload skipped - missing requirements:', {
       hasAccessToken: !!process.env.GOOGLE_ACCESS_TOKEN,
       hasRefreshToken: !!process.env.GOOGLE_REFRESH_TOKEN,
       parentFolderId: !!parentFolderId,
       poptavkyFolderId: !!poptavkyFolderId,
       isPoptavka,
       missingItems
-    });
+    }, { prefix: 'PDF' });
     
     uploadError = new Error(`PDF upload skipped: ${missingItems.join(', ')}`);
   }
@@ -514,8 +515,8 @@ export async function POST(req: NextRequest) {
 
   return new NextResponse(pdf as BodyInit, { headers });
   } catch (error) {
-    console.error('PDF generation error:', error);
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    logger.error('PDF generation error:', error, { prefix: 'PDF' });
+    logger.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace', { prefix: 'PDF' });
     return NextResponse.json(
       { error: "Failed to generate PDF", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
