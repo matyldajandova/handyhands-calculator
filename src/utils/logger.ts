@@ -42,7 +42,7 @@ export const logger = {
   /**
    * Log a message with optional prefix and timestamp
    */
-  log(message: string, data?: any, options?: LogOptions): void {
+  log(message: string, data?: unknown, options?: LogOptions): void {
     const { prefix = 'LOG', timestamp = true } = options || {};
     const formattedMessage = formatMessage(message, prefix, timestamp);
     
@@ -56,7 +56,7 @@ export const logger = {
   /**
    * Log an info message
    */
-  info(message: string, data?: any, options?: Omit<LogOptions, 'level'>): void {
+  info(message: string, data?: unknown, options?: Omit<LogOptions, 'level'>): void {
     const { prefix = 'INFO', timestamp = true } = options || {};
     const formattedMessage = formatMessage(message, prefix, timestamp);
     
@@ -70,7 +70,7 @@ export const logger = {
   /**
    * Log a warning message
    */
-  warn(message: string, data?: any, options?: Omit<LogOptions, 'level'>): void {
+  warn(message: string, data?: unknown, options?: Omit<LogOptions, 'level'>): void {
     const { prefix = 'WARN', timestamp = true } = options || {};
     const formattedMessage = formatMessage(message, prefix, timestamp);
     
@@ -84,7 +84,7 @@ export const logger = {
   /**
    * Log an error message
    */
-  error(message: string, error?: any, options?: Omit<LogOptions, 'level'>): void {
+  error(message: string, error?: unknown, options?: Omit<LogOptions, 'level'>): void {
     const { prefix = 'ERROR', timestamp = true } = options || {};
     const formattedMessage = formatMessage(message, prefix, timestamp);
     
@@ -101,7 +101,7 @@ export const logger = {
   /**
    * Log a debug message (only in development)
    */
-  debug(message: string, data?: any, options?: Omit<LogOptions, 'level'>): void {
+  debug(message: string, data?: unknown, options?: Omit<LogOptions, 'level'>): void {
     if (process.env.NODE_ENV === 'development') {
       const { prefix = 'DEBUG', timestamp = true } = options || {};
       const formattedMessage = formatMessage(message, prefix, timestamp);
@@ -117,14 +117,14 @@ export const logger = {
   /**
    * Log API request details
    */
-  apiRequest(method: string, path: string, data?: any): void {
+  apiRequest(method: string, path: string, data?: unknown): void {
     logger.info(`API ${method} ${path}`, data, { prefix: 'API' });
   },
 
   /**
    * Log API response details
    */
-  apiResponse(method: string, path: string, status: number, data?: any): void {
+  apiResponse(method: string, path: string, status: number, data?: unknown): void {
     const level = status >= 400 ? 'error' : 'info';
     const message = `API ${method} ${path} → ${status}`;
     
