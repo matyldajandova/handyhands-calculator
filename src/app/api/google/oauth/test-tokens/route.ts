@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOAuthClient, getTokensFromEnv } from "@/utils/google-drive";
-import { logger } from "@/utils/logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -67,7 +66,7 @@ export async function GET(req: NextRequest) {
     let isExpired = hasExpiryDate && expiryDate !== undefined && expiryDate < now;
     if (forceRefresh && hasRefreshToken) {
       isExpired = true;
-      logger.info('Force refresh mode enabled - treating token as expired for testing', undefined, { prefix: 'OAUTH' });
+      console.log('[OAUTH] Force refresh mode enabled - treating token as expired for testing');
     }
     
     const timeUntilExpiry = hasExpiryDate && expiryDate !== undefined
@@ -95,7 +94,7 @@ export async function GET(req: NextRequest) {
     // If token is expired (or force refresh) and we have a refresh token, test refresh
     if (isExpired && hasRefreshToken) {
       try {
-        logger.info('Testing token refresh...', { forceRefresh, actualExpired: hasExpiryDate && expiryDate !== undefined && expiryDate < now }, { prefix: 'OAUTH' });
+        console.log('[OAUTH] Testing token refresh...', { forceRefresh, actualExpired: hasExpiryDate && expiryDate !== undefined && expiryDate < now });
         const oauth2Client = getOAuthClient();
         oauth2Client.setCredentials(tokens);
         

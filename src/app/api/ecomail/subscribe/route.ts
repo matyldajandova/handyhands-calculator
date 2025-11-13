@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { logger } from '@/utils/logger';
 
 const ECOMail_API_KEY = process.env.ECOMAIL_API_KEY;
 const ECOMail_API_URL = process.env.ECOMAIL_API_URL;
@@ -32,14 +31,14 @@ interface CustomerData {
 
 export async function POST(request: NextRequest) {
   try {
-    logger.apiRequest('POST', '/api/ecomail/subscribe');
+    console.log('[ECOMAIL] API POST /api/ecomail/subscribe');
     
     const customerData: CustomerData = await request.json();
 
     // Debug logging for Vercel
-    logger.info('Ecomail API Key exists:', !!ECOMail_API_KEY, { prefix: 'ECOMAIL' });
-    logger.info('Ecomail API URL:', ECOMail_API_URL, { prefix: 'ECOMAIL' });
-    logger.info('Customer data received:', {
+    console.log('[ECOMAIL] Ecomail API Key exists:', !!ECOMail_API_KEY);
+    console.log('[ECOMAIL] Ecomail API URL:', ECOMail_API_URL);
+    console.log('[ECOMAIL] Customer data received:', {
       email: customerData.email,
       firstName: customerData.firstName,
       lastName: customerData.lastName,
@@ -49,11 +48,11 @@ export async function POST(request: NextRequest) {
       hasPoptavkaUrl: !!customerData.poptavkaUrl,
       poptavkaUrl: customerData.poptavkaUrl || 'NOT PROVIDED',
       serviceType: customerData.serviceType || 'NOT PROVIDED'
-    }, { prefix: 'ECOMAIL' });
+    });
 
     // Validate API key
     if (!ECOMail_API_KEY) {
-      logger.error('Ecomail API key not configured', undefined, { prefix: 'ECOMAIL' });
+      console.error('[ECOMAIL] Ecomail API key not configured');
       return NextResponse.json(
         { error: 'Ecomail API key not configured' },
         { status: 500 }
@@ -62,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     // Validate API URL
     if (!ECOMail_API_URL) {
-      logger.error('Ecomail API URL not configured', undefined, { prefix: 'ECOMAIL' });
+      console.error('[ECOMAIL] Ecomail API URL not configured');
       return NextResponse.json(
         { error: 'Ecomail API URL not configured' },
         { status: 500 }
@@ -110,11 +109,11 @@ export async function POST(request: NextRequest) {
 
     // Prepare custom fields data based on the merge tags from the image
     const pdfUrlValue = customerData.pdfUrl || '';
-    logger.info('Setting PDF_OBJEDNAVKA custom field:', {
+    console.log('[ECOMAIL] Setting PDF_OBJEDNAVKA custom field:', {
       hasPdfUrl: !!customerData.pdfUrl,
       pdfUrlValue: pdfUrlValue || 'EMPTY - PDF may not have been uploaded to Google Drive',
       pdfUrlLength: pdfUrlValue.length
-    }, { prefix: 'ECOMAIL' });
+    });
     
     const customFields = {
       'START_UKLIDU': {
@@ -175,8 +174,8 @@ export async function POST(request: NextRequest) {
     const listId = '1'; // Ecomail list ID
     const apiUrl = `${ECOMail_API_URL}/lists/${listId}/subscribe`;
     
-    logger.info('Making request to Ecomail API:', apiUrl, { prefix: 'ECOMAIL' });
-    logger.info('Subscriber data:', JSON.stringify(subscriberData, null, 2), { prefix: 'ECOMAIL' });
+    console.log('[ECOMAIL] Making request to Ecomail API:', apiUrl);
+    console.log('[ECOMAIL] Subscriber data:', JSON.stringify(subscriberData, null, 2));
     
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -187,12 +186,12 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(subscriberData)
     });
 
-    logger.info('Ecomail API response status:', response.status, { prefix: 'ECOMAIL' });
-    logger.info('Ecomail API response headers:', Object.fromEntries(response.headers.entries()), { prefix: 'ECOMAIL' });
+    console.log('[ECOMAIL] Ecomail API response status:', response.status);
+    console.log('[ECOMAIL] Ecomail API response headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
       const errorText = await response.text();
-      logger.error('Ecomail API error:', errorText, { prefix: 'ECOMAIL' });
+      console.error('[ECOMAIL] Ecomail API error:', errorText);
       return NextResponse.json(
         { error: 'Failed to subscribe to Ecomail', details: errorText },
         { status: response.status }
@@ -201,7 +200,7 @@ export async function POST(request: NextRequest) {
 
     const result = await response.json();
 
-    logger.apiResponse('POST', '/api/ecomail/subscribe', 200, { success: true });
+    console.log('[ECOMAIL] API POST /api/ecomail/subscribe → 200', { success: true });
     return NextResponse.json({
       success: true,
       message: 'Customer data stored successfully',
@@ -209,13 +208,13 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    logger.error('Error storing customer data:', error, { prefix: 'ECOMAIL' });
-    logger.error('Error details:', {
+    console.error('[ECOMAIL] Error storing customer data:', error);
+    console.error('[ECOMAIL] Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
       name: error instanceof Error ? error.name : undefined
-    }, { prefix: 'ECOMAIL' });
-    logger.apiResponse('POST', '/api/ecomail/subscribe', 500, { error: error instanceof Error ? error.message : 'Unknown error' });
+    });
+    console.error('[ECOMAIL] API POST /api/ecomail/subscribe → 500', { error: error instanceof Error ? error.message : 'Unknown error' });
     return NextResponse.json(
       { 
         error: 'Internal server error',

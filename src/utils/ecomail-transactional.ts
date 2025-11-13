@@ -5,8 +5,6 @@
  * Documentation: https://support.ecomail.cz/cs/articles/6197248-transakcni-e-maily
  */
 
-import { logger } from './logger';
-
 const ECOMAIL_API_KEY = process.env.ECOMAIL_API_KEY;
 const ECOMAIL_API_URL = process.env.ECOMAIL_API_URL;
 
@@ -69,7 +67,7 @@ export async function sendTransactionalEmail(
 ): Promise<SendTransactionalEmailResult> {
   // Validate API configuration
   if (!ECOMAIL_API_KEY) {
-    logger.error('Ecomail API key not configured', undefined, { prefix: 'ECOMAIL' });
+    console.error('[ECOMAIL] Ecomail API key not configured');
     return {
       success: false,
       error: 'Ecomail API key not configured',
@@ -77,7 +75,7 @@ export async function sendTransactionalEmail(
   }
 
   if (!ECOMAIL_API_URL) {
-    logger.error('Ecomail API URL not configured', undefined, { prefix: 'ECOMAIL' });
+    console.error('[ECOMAIL] Ecomail API URL not configured');
     return {
       success: false,
       error: 'Ecomail API URL not configured',
@@ -134,7 +132,7 @@ export async function sendTransactionalEmail(
     };
   }
 
-  logger.info('Sending transactional email via Ecomail:', {
+  console.log('[ECOMAIL] Sending transactional email via Ecomail:', {
     endpoint,
     useTemplate,
     templateId: params.templateId,
@@ -142,7 +140,7 @@ export async function sendTransactionalEmail(
     toEmail: params.to[0]?.email,
     hasAttachments: (params.attachments?.length || 0) > 0,
     attachmentCount: params.attachments?.length || 0,
-  }, { prefix: 'ECOMAIL' });
+  });
 
   try {
     const response = await fetch(endpoint, {
@@ -163,11 +161,11 @@ export async function sendTransactionalEmail(
     }
 
     if (!response.ok) {
-      logger.error('Ecomail transactional email error:', {
+      console.error('[ECOMAIL] Ecomail transactional email error:', {
         status: response.status,
         statusText: response.statusText,
         response: result,
-      }, { prefix: 'ECOMAIL' });
+      });
       
       return {
         success: false,
@@ -176,10 +174,10 @@ export async function sendTransactionalEmail(
       };
     }
 
-    logger.info('Transactional email sent successfully:', {
+    console.log('[ECOMAIL] Transactional email sent successfully:', {
       messageId: result.message_id || result.id,
       toEmail: params.to[0]?.email,
-    }, { prefix: 'ECOMAIL' });
+    });
 
     return {
       success: true,
@@ -187,7 +185,7 @@ export async function sendTransactionalEmail(
       details: result,
     };
   } catch (error) {
-    logger.error('Error sending transactional email:', error, { prefix: 'ECOMAIL' });
+    console.error('[ECOMAIL] Error sending transactional email:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : String(error),
