@@ -8,7 +8,8 @@ export const dynamic = "force-dynamic";
  * Test endpoint to verify logging works in Vercel
  * GET /api/test-logs
  */
-export async function GET(req: NextRequest) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function GET(_req: NextRequest) {
   try {
     // Test all log levels
     logger.log('Test log message', { test: 'data' }, { prefix: 'TEST' });
