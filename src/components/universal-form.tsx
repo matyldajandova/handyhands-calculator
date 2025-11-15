@@ -205,7 +205,7 @@ function RadioFieldWithHiddenOptions({
               variant="default"
               className="text-xs bg-orange-100 text-orange-800 border-orange-200"
             >
-              {option.note === 'frequent' ? 'Nejvyužívanější' : 'Doporučeno'}
+              {option.note === 'frequent' ? 'Nejvyužívanější' : option.note === 'common' ? 'Nejběžnější' : 'Doporučeno'}
             </Badge>
           )}
           {option.tooltip && (
@@ -608,7 +608,7 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
                     variant="default"
                     className="text-xs bg-orange-100 text-orange-800 border-orange-200"
                   >
-                    {option.note === 'frequent' ? 'Nejvyužívanější' : 'Doporučeno'}
+                    {option.note === 'frequent' ? 'Nejvyužívanější' : option.note === 'common' ? 'Nejběžnější' : 'Doporučeno'}
                   </Badge>
                 )}
                 {isDisabled && disabledReason && (

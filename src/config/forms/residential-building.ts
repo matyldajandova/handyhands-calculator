@@ -432,8 +432,8 @@ export const residentialBuildingFormConfig: FormConfig = {
               layout: "vertical",
               options: [
                 { value: 1, label: "Pouze v přízemí domu", tooltip: "Např. ve formě vstupních dvěří se zasklením, schodiště okna nemají nebo nejsou předmětem mytí v rámci generálního úklidu.", coefficient: 0.9 },
-                { value: 2, label: "Pouze v přízemí domu – velkoformátové zasklení", tooltip: "Např. celoproskléný vstupní parter na celou výšku podlaží", coefficient: 1.0 },
-                { value: 3, label: "Na podestách schodišť", tooltip: "Klasická okna osvětlující domovní schodiště", coefficient: 1.02, note: "frequent" },
+                { value: 2, label: "Pouze v přízemí domu – velkoformátové zasklení", tooltip: "Např. celoprosklený vstupní parter na celou výšku podlaží", coefficient: 1.0 },
+                { value: 3, label: "Na podestách schodišť", tooltip: "Klasická okna osvětlující domovní schodiště", coefficient: 1.02, note: "common" },
                 { value: 4, label: "Na podestách schodišť – velkoformátové zasklení", tooltip: "Zasklení na celou výšku podlaží, většinou se tento typ vyskytuje u novostaveb.", coefficient: 1.1 },
                 { value: 5, label: "Na podestách schodišť a také průběžně na chodbách domu nebo na pavlačích", coefficient: 1.35 }
               ]

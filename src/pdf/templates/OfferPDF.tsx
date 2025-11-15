@@ -169,7 +169,7 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
         <div class="text-xs">
           <div class="font-semibold">Údaje o nás:</div>
           <div>Handy Hands CZ, s.r.o.</div>
-          <div>Můžíkova 1759/2, Nusle, 140 00 Praha 4</div>
+          <div>Mužíkova 1759/2, Nusle, 140 00 Praha 4</div>
           <div>IČO: 23952580</div>
         </div>
       </div>

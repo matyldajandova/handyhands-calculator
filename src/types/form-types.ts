@@ -22,7 +22,7 @@ export interface FormData {
 // Form configuration types
 export type FieldType = 'radio' | 'select' | 'input' | 'textarea' | 'conditional' | 'checkbox' | 'alert';
 
-export type NoteType = 'frequent' | 'recommended';
+export type NoteType = 'frequent' | 'common' | 'recommended';
 
 export interface BaseField {
   id: string;

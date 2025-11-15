@@ -130,7 +130,7 @@ html, body, * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .hh-pricing-box {
   border: 2px solid var(--primary-color);
   border-radius: 8px;
-  background-color: #fffef8;
+  background-color: #faf2eb;
   padding: 12px 8px;
 }
 .hh-pricing-top {
@@ -220,7 +220,7 @@ html, body, * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .hh-features-box {
   border: 2px solid var(--primary-color);
   border-radius: 8px;
-  background-color: #fffef8;
+  background-color: #faf2eb;
   padding: 16px;
 }
 .hh-features-grid {
