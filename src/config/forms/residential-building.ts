@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { FormConfig } from "@/types/form-types";
-import { isWinterMaintenancePeriod } from "@/utils/date-utils";
 
 // Base prices and inflation
 const BASE_PRICES = {
@@ -516,14 +515,6 @@ export const residentialBuildingFormConfig: FormConfig = {
       icon: "Snowflake",
       note: "Odklízení čerstvě napadlého sněhu, odstranění náledí a zajištění vhodného posypu chodníků a udržování těchto ploch pro chodce ve stavu, aby nedošlo k újmě na zdraví a byla zajištěna bezpečnost osob.",
       fields: [
-        ...(isWinterMaintenancePeriod() ? [{
-          id: "winterMaintenanceAlert",
-          type: "alert" as const,
-          variant: "default" as const,
-          title: "Informace o zimní údržbě",
-          description: `Pro zimní údržbu držíme pohotovost od 15. 11. do 14. 3. následujícího roku a v tomto období jsou prováděny výjezdy – úklidu sněhu nebo náledí. Úklid sněhu se provádí, pokud je minimální sněhová pokrývka výšky 1 až 2 cm. Měsíční poplatek za pohotovostní službu: 500 Kč/měsíc. Poplatek za výjezd: 50 Kč/běžný metr nebo 40 Kč/m² (min. 300 Kč, max. 2000 Kč za výjezd).`,
-          icon: "Info"
-        }] : []),
         {
           id: "winterMaintenance",
           type: "radio",
