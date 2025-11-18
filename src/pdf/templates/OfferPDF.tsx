@@ -479,7 +479,7 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
           const includeSupplies = !data.generalCleaningPrice && !data.winterServiceFee;
           const suppliesText = includeSupplies ? ', běžné úklidové prostředky a vlastní úklidové náčiní' : '';
           
-          return `<p class="mt-6 hh-small text-black-pdf">Cena obsahuje ${frequencyPart} ${generalCleaningFreq} podle rozpisu níže, dopravu pracovníků na místo úklidových prací, pojištění odpovědnosti do výše 5 mil. Kč${suppliesText}, běžné úklidové prostředky a vlastní úklidové náčinní. Ostatní práce nad rámec smlouvy (např. úklid po řemeslnících, po havárii apod.): 345 Kč / hod. za pracovníka.</p>
+          return `<p class="mt-6 hh-small text-black-pdf">Cena obsahuje ${frequencyPart} ${generalCleaningFreq} podle rozpisu níže, dopravu pracovníků na místo úklidových prací, pojištění odpovědnosti do výše 5 mil. Kč${suppliesText}, běžné úklidové prostředky a vlastní úklidové náčiní. Ostatní práce nad rámec smlouvy (např. úklid po řemeslnících, po havárii apod.): 345 Kč / hod. za pracovníka.</p>
             <p class="hh-muted text-xs text-black-pdf mt-4"><strong>Nejsme plátci DPH, uvedené ceny jsou konečné</strong>.</p>
             <p class="hh-muted text-xs text-black-pdf">Úklidové práce provádějí vždy naši <strong>stálí</strong> pracovníci.</p>
             <p class="hh-muted text-xs text-black-pdf">V případě dotazů nebo nejasností se na nás neváhejte obrátit.</p>`;

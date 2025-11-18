@@ -164,7 +164,7 @@ export const panelBuildingFormConfig: FormConfig = {
       "očištění osvětlení zvenčí",
       "důkladný úklid suterénu domu (pokud má dům suterén)",
       "čištění celé konstrukce zábradlí",
-      "mytí prosklenných částí v přízemi domu",
+      "mytí prosklených částí v přízemi domu",
       "setření prachu z hydrantů, mytí omyvatelných částí revizních dvířek, vypínačů a tech. rozvodů"
     ]
   },
