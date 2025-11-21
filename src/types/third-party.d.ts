@@ -33,9 +33,40 @@ declare module 'googleapis' {
     };
   }
 
+  export interface SheetsLike {
+    spreadsheets: {
+      values: {
+        append(options: {
+          spreadsheetId: string;
+          range: string;
+          valueInputOption: string;
+          requestBody: { values: unknown[][] };
+        }): Promise<{ data: { updates?: { updatedRows?: number } } }>;
+      };
+    };
+  }
+
+  export interface GoogleAuthLike {
+    getClient(): Promise<OAuth2ClientLike>;
+  }
+
+  export interface GoogleAuthConstructor {
+    new (options: {
+      credentials?: {
+        client_email?: string;
+        private_key?: string;
+      };
+      scopes?: string[];
+    }): GoogleAuthLike;
+  }
+
   export const google: {
-    auth: { OAuth2: new (clientId: string, clientSecret: string, redirectUri: string) => OAuth2ClientLike };
+    auth: { 
+      OAuth2: new (clientId: string, clientSecret: string, redirectUri: string) => OAuth2ClientLike;
+      GoogleAuth: GoogleAuthConstructor;
+    };
     drive: (opts: { version: 'v3'; auth: OAuth2ClientLike }) => DriveLike;
+    sheets: (opts: { version: 'v4'; auth: OAuth2ClientLike | GoogleAuthLike | unknown }) => SheetsLike;
   };
 }
 

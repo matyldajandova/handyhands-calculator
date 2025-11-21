@@ -339,49 +339,46 @@ export async function POST(req: NextRequest) {
     shouldUpload: tokens && (parentFolderId || (isPoptavka && poptavkyFolderId))
   });
   
-  if (tokens && (parentFolderId || (isPoptavka && poptavkyFolderId))) {
+  // Refresh tokens if needed (for both Drive upload and Sheets write)
+  let validTokens = tokens;
+  if (tokens && tokens.expiry_date && tokens.expiry_date < Date.now() && tokens.refresh_token) {
     try {
-      
-      // Check if access token is expired and refresh if needed
-      let validTokens = tokens;
-      if (tokens.expiry_date && tokens.expiry_date < Date.now() && tokens.refresh_token) {
-        console.log('[PDF] Access token expired, attempting to refresh...');
-        try {
-          const { getOAuthClient } = await import("@/utils/google-drive");
-          const oauth2Client = getOAuthClient();
-          oauth2Client.setCredentials(tokens);
-          // Type assertion needed because our minimal types don't include all methods
-          const oauthClientWithRefresh = oauth2Client as typeof oauth2Client & {
-            refreshAccessToken: () => Promise<{ 
-              credentials: { 
-                access_token?: string; 
-                refresh_token?: string; 
-                expiry_date?: number; 
-                token_type?: string; 
-                scope?: string;
-              } 
-            }>;
-          };
-          const { credentials } = await oauthClientWithRefresh.refreshAccessToken();
-          // Ensure we have an access_token before assigning
-          if (credentials.access_token) {
-            validTokens = {
-              access_token: credentials.access_token,
-              refresh_token: credentials.refresh_token || validTokens.refresh_token,
-              expiry_date: credentials.expiry_date,
-              token_type: credentials.token_type || "Bearer",
-              scope: credentials.scope,
-            };
-            console.log('[PDF] Tokens refreshed successfully');
-          } else {
-            throw new Error('Refresh token response missing access_token');
-          }
-        } catch (refreshError) {
-          console.error('[PDF] Failed to refresh tokens:', refreshError);
-          throw new Error('Access token expired and refresh failed. Please re-authorize Google Drive access.');
-        }
+      console.log('[PDF] Access token expired, attempting to refresh...');
+      const { getOAuthClient } = await import("@/utils/google-drive");
+      const oauth2Client = getOAuthClient();
+      oauth2Client.setCredentials(tokens);
+      // Type assertion needed because our minimal types don't include all methods
+      const oauthClientWithRefresh = oauth2Client as typeof oauth2Client & {
+        refreshAccessToken: () => Promise<{ 
+          credentials: { 
+            access_token?: string; 
+            refresh_token?: string; 
+            expiry_date?: number; 
+            token_type?: string; 
+            scope?: string;
+          } 
+        }>;
+      };
+      const { credentials } = await oauthClientWithRefresh.refreshAccessToken();
+      // Ensure we have an access_token before assigning
+      if (credentials.access_token && validTokens) {
+        validTokens = {
+          access_token: credentials.access_token,
+          refresh_token: credentials.refresh_token || validTokens.refresh_token,
+          expiry_date: credentials.expiry_date,
+          token_type: credentials.token_type || "Bearer",
+          scope: credentials.scope,
+        };
+        console.log('[PDF] Tokens refreshed successfully');
       }
-      
+    } catch (refreshError) {
+      console.error('[PDF] Failed to refresh tokens:', refreshError);
+      // Continue with original tokens - might still work
+    }
+  }
+  
+  if (validTokens && (parentFolderId || (isPoptavka && poptavkyFolderId))) {
+    try {
       const customer = data.customer?.name || "zakaznik";
       const email = data.customer?.email || "bez-emailu";
       const serviceTitle = data.serviceTitle || "Ostatní";
@@ -406,8 +403,6 @@ export async function POST(req: NextRequest) {
       
       uploadedPdfUrl = `https://drive.google.com/file/d/${result.fileId}/view`;
       console.log('[PDF] PDF uploaded successfully to Google Drive:', uploadedPdfUrl);
-      
-      // Send transactional email with PDF attachment
       if (data.customer?.email) {
         try {
           console.log('[PDF] Sending transactional email with PDF attachment...');
@@ -482,6 +477,32 @@ export async function POST(req: NextRequest) {
     });
     
     uploadError = new Error(`PDF upload skipped: ${missingItems.join(', ')}`);
+  }
+
+  // Write submission data to Google Sheets using Service Account (runs regardless of upload status)
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+  const hasServiceAccount = process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY;
+  
+  if (spreadsheetId && hasServiceAccount) {
+    try {
+      console.log('[PDF] Writing submission data to Google Sheets...');
+      const { writeToGoogleSheets } = await import('@/utils/google-sheets');
+      await writeToGoogleSheets({
+        spreadsheetId,
+        offerData: data,
+        isPoptavka: isPoptavka ?? false,
+      });
+      console.log('[PDF] Successfully wrote data to Google Sheets');
+    } catch (sheetsError) {
+      console.error('[PDF] Failed to write to Google Sheets:', sheetsError);
+      // Don't fail the request if Google Sheets write fails, but log it
+    }
+  } else {
+    if (!spreadsheetId) {
+      console.warn('[PDF] Google Sheets write skipped - GOOGLE_SHEET_ID environment variable not set');
+    } else if (!hasServiceAccount) {
+      console.warn('[PDF] Google Sheets write skipped - GOOGLE_CLIENT_EMAIL or GOOGLE_PRIVATE_KEY not set');
+    }
   }
 
   // If this is a poptavka submission, return JSON with PDF URL
