@@ -428,6 +428,7 @@ export async function POST(req: NextRequest) {
             subject: emailSubject,
             fromName: 'Handy Hands',
             fromEmail: process.env.ECOMAIL_FROM_EMAIL || 'info@handyhands.cz',
+            replyTo: process.env.ECOMAIL_REPLY_EMAIL || process.env.ECOMAIL_FROM_EMAIL || 'info@handyhands.cz',
             templateId,
             attachments: [
               createPdfAttachment(pdf, `${filename}.pdf`)
