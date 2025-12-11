@@ -1330,11 +1330,11 @@ function PoptavkaContent() {
 
 
                 {/* Service Start Date */}
-                <div className="space-y-2 max-w-1/3">
+                <div className="space-y-2">
                   <Label htmlFor="serviceStartDate">
                     Zahájení plnění je dnem
                   </Label>
-                  <div className="relative">
+                  <div className="relative max-w-1/3">
                     <Input
                       id="serviceStartDate"
                       value={formatDate(formData.serviceStartDate)}
@@ -1439,12 +1439,21 @@ function PoptavkaContent() {
                   {errors.serviceStartDate && (
                     <p className="text-sm text-destructive">{errors.serviceStartDate}</p>
                   )}
+                  {(hashData?.serviceType === "one-time-cleaning" || hashData?.serviceType === "handyman-services") && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Pokud chcete uvést konkrétní čas zahájení úklidových prací, napište to prosím do poznámky na konci tohoto formuláře
+                    </p>
+                  )}
                 </div>
 
                 {/* Invoice Email */}
                 <div className="space-y-2 mt-6">
                   <Label htmlFor="invoiceEmail">
-                    Email, kam mají být zasílány faktury <span className="text-muted-foreground">(volitelné)</span>
+                    {(hashData?.serviceType === "one-time-cleaning" || hashData?.serviceType === "handyman-services") ? (
+                      <>Email, kam má být zaslána faktura za úklidové práce <span className="text-muted-foreground">(volitelné)</span></>
+                    ) : (
+                      <>Email, kam mají být zasílány faktury <span className="text-muted-foreground">(volitelné)</span></>
+                    )}
                   </Label>
                   <Input
                     id="invoiceEmail"
@@ -1455,7 +1464,11 @@ function PoptavkaContent() {
                     className={errors.invoiceEmail ? "border-destructive" : ""}
                   />
                   <p className="text-sm text-muted-foreground">
-                    Pokud není uvedeno, budou faktury zasílány na email uvedený v kontaktních údajích
+                    {(hashData?.serviceType === "one-time-cleaning" || hashData?.serviceType === "handyman-services") ? (
+                      "Pokud není uvedeno, bude faktura zaslána na email uvedený v kontaktních údajích"
+                    ) : (
+                      "Pokud není uvedeno, budou faktury zasílány na email uvedený v kontaktních údajích"
+                    )}
                   </p>
                   {errors.invoiceEmail && (
                     <p className="text-sm text-destructive">{errors.invoiceEmail}</p>
@@ -1471,7 +1484,11 @@ function PoptavkaContent() {
                     id="notes"
                     value={formData.notes || ''}
                     onChange={(e) => handleInputChange("notes", e.target.value)}
-                    placeholder="např. jméno jednatele/jednatelky společnosti nebo jiné údaje, které chcete, aby byly uvedené ve smlouvě"
+                    placeholder={
+                      (hashData?.serviceType === "one-time-cleaning" || hashData?.serviceType === "handyman-services")
+                        ? "např. v jakém čase preferujete, aby se začalo s úklidovými pracemi, jméno a telefon kontaktní osoby, která bude na místě úklidu nebo další specifické informace jako třeba jméno na zvoncích"
+                        : "např. jméno jednatele/jednatelky společnosti nebo jiné údaje, které chcete, aby byly uvedené ve smlouvě"
+                    }
                     rows={4}
                   />
                 </div>
@@ -1489,7 +1506,11 @@ function PoptavkaContent() {
                     ) : (
                       <>
                         <Check className="h-4 w-4" />
-                        Odeslat návrh smlouvy
+                        {(hashData?.serviceType === "one-time-cleaning" || hashData?.serviceType === "handyman-services") ? (
+                          "Závazně objednat"
+                        ) : (
+                          "Odeslat návrh smlouvy"
+                        )}
                       </>
                     )}
                   </Button>
