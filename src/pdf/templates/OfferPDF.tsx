@@ -196,7 +196,14 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
 
   return `
     <section>
-      <div class="text-3xl font-bold text-foreground">Cenová nabídka úklidových služeb</div>
+      <div class="text-3xl font-bold text-foreground">${(() => {
+        // For one-time/window cleaning from poptavka, change title to "Objednávka"
+        const isOneTimeOrWindow = data.serviceType === "one-time-cleaning" || data.serviceType === "handyman-services";
+        if (data.isPoptavka && isOneTimeOrWindow) {
+          return "Objednávka úklidových služeb";
+        }
+        return "Cenová nabídka úklidových služeb";
+      })()}</div>
       <p class="text-muted-foreground">poskytnutá na základě vyplnění poptávkového formuláře ze dne ${escapeHtml(data.quoteDate)}</p>
     </section>
 
@@ -207,7 +214,12 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
         <div class="text-xs">
           <div class="font-semibold">Údaje o vás:</div>
           <div>${escapeHtml(data.customer.name)}</div>
-          ${data.customer.address ? `<div>${escapeHtml(data.customer.address)}</div>` : ""}
+          ${(() => {
+            // For one-time/window cleaning from poptavka, don't show customer.address here (it's shown as property address below)
+            const isOneTimeOrWindow = data.serviceType === "one-time-cleaning" || data.serviceType === "handyman-services";
+            const shouldHideAddress = data.isPoptavka && isOneTimeOrWindow;
+            return !shouldHideAddress && data.customer.address ? `<div>${escapeHtml(data.customer.address)}</div>` : "";
+          })()}
           ${data.customer.email ? `<div>${escapeHtml(data.customer.email)}</div>` : ""}
           ${data.customer.phone ? `<div>${escapeHtml(data.customer.phone)}</div>` : ""}
           ${(data.customer as Record<string, unknown>).company ? (() => {
@@ -238,6 +250,30 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
           <div>IČO: 23952580</div>
         </div>
       </div>
+      ${(() => {
+        // For one-time/window cleaning from poptavka, show property address and invoice email
+        const isOneTimeOrWindow = data.serviceType === "one-time-cleaning" || data.serviceType === "handyman-services";
+        if (data.isPoptavka && isOneTimeOrWindow) {
+          const propertyAddress = data.customer?.address || '';
+          const invoiceEmail = (data.customer as Record<string, unknown>)?.invoiceEmail as string | undefined;
+          
+          return `
+            ${propertyAddress ? `
+              <div class="mt-4 text-xs">
+                <div class="font-semibold">Adresa nemovitosti, kde bude probíhat úklid:</div>
+                <div>${escapeHtml(propertyAddress)}</div>
+              </div>
+            ` : ''}
+            ${invoiceEmail ? `
+              <div class="mt-2 text-xs">
+                <div class="font-semibold">Faktura bude odeslána na email:</div>
+                <div>${escapeHtml(invoiceEmail)}</div>
+              </div>
+            ` : ''}
+          `;
+        }
+        return '';
+      })()}
       ${data.poptavkaNotes ? `
         <div class="mt-2">
           <div class="text-xs"><span class="font-semibold">Poznámka k poptávce:</span> ${escapeHtml(data.poptavkaNotes)}</div>
