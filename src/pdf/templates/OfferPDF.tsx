@@ -1,3 +1,5 @@
+import { calendarLinkService } from '@/services/calendar-link-service';
+
 export type OfferData = {
   quoteDate: string;
   price: number;
@@ -58,6 +60,69 @@ function formatMinimumHoursText(hours: number): string {
     return `jsou ${hoursNum} hodiny`;
   } else {
     return `je ${hoursNum} hodin`;
+  }
+}
+
+/**
+ * Helper function to generate calendar links for one-time/window cleaning services
+ */
+function generateCalendarLinks(data: OfferData): { google: string; outlook: string } | null {
+  // Only for one-time cleaning and window cleaning when submitted from poptavka
+  if (!data.isPoptavka || !data.startDate) {
+    return null;
+  }
+  
+  const isOneTimeOrWindow = data.serviceType === "one-time-cleaning" || data.serviceType === "handyman-services";
+  if (!isOneTimeOrWindow) {
+    return null;
+  }
+
+  try {
+    // Parse Czech date format (DD. MM. YYYY) or ISO format (YYYY-MM-DD)
+    let startDate: Date;
+    if (data.startDate.includes('.')) {
+      // Czech format: "DD. MM. YYYY"
+      const parts = data.startDate.split('.').map(p => p.trim());
+      if (parts.length === 3) {
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1; // JavaScript months are 0-based
+        const year = parseInt(parts[2], 10);
+        startDate = new Date(year, month, day, 9, 0, 0); // Default to 9:00 AM
+      } else {
+        return null;
+      }
+    } else if (data.startDate.includes('-')) {
+      // ISO format: "YYYY-MM-DD"
+      const [year, month, day] = data.startDate.split('-').map(Number);
+      startDate = new Date(year, month - 1, day, 9, 0, 0); // Default to 9:00 AM
+    } else {
+      return null;
+    }
+
+    // Calculate end date: start date + minimum hours (default to 4 hours if not specified)
+    const minimumHours = data.minimumHours || 4;
+    const endDate = new Date(startDate);
+    endDate.setHours(endDate.getHours() + minimumHours);
+
+    // Get location from customer address or use empty string
+    const location = data.customer?.address || '';
+
+    // Get service title
+    const title = data.serviceTitle || 'Úklidové práce';
+
+    // Generate calendar links
+    const links = calendarLinkService.generateCalendarLinks({
+      title,
+      startDate,
+      endDate,
+      location,
+      description: '',
+    });
+
+    return links;
+  } catch (error) {
+    console.error('Failed to generate calendar links:', error);
+    return null;
   }
 }
 
@@ -411,14 +476,40 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
             <p class="hh-muted text-xs text-black-pdf">Úklidové práce provádějí vždy naši <strong>stálí</strong> pracovníci.</p>
             <p class="hh-muted text-xs text-black-pdf">V případě dotazů nebo nejasností se na nás neváhejte obrátit.</p>
           </div>
-          ${data.poptavkaHash ? `
-            <div class="self-start">
-              <a href="${baseUrl}/poptavka?hash=${escapeHtml(data.poptavkaHash)}" 
-                 class="inline-block px-5 py-2.5 bg-primary-pdf border-2 border-primary-pdf rounded-md font-bold text-black text-sm">
-                Závazná poptávka
-              </a>
-            </div>
-          ` : ''}
+          ${(() => {
+            const calendarLinks = generateCalendarLinks(data);
+            if (calendarLinks) {
+              // For one-time/window cleaning from poptavka: show calendar links
+              return `
+                <div class="self-start">
+                  <div class="text-sm font-semibold text-black-pdf mb-2">Přidat do kalendáře:</div>
+                  <div class="flex gap-2">
+                    <a href="${escapeHtml(calendarLinks.google)}" 
+                       target="_blank"
+                       class="inline-block px-4 py-2 bg-primary-pdf border-2 border-primary-pdf rounded-md font-bold text-black text-xs">
+                      Google
+                    </a>
+                    <a href="${escapeHtml(calendarLinks.outlook)}" 
+                       target="_blank"
+                       class="inline-block px-4 py-2 bg-primary-pdf border-2 border-primary-pdf rounded-md font-bold text-black text-xs">
+                      Outlook
+                    </a>
+                  </div>
+                </div>
+              `;
+            } else if (data.poptavkaHash) {
+              // For regular services or non-poptavka: show original button
+              return `
+                <div class="self-start">
+                  <a href="${baseUrl}/poptavka?hash=${escapeHtml(data.poptavkaHash)}" 
+                     class="inline-block px-5 py-2.5 bg-primary-pdf border-2 border-primary-pdf rounded-md font-bold text-black text-sm">
+                    Závazná poptávka
+                  </a>
+                </div>
+              `;
+            }
+            return '';
+          })()}
         </div>
         
         <!-- Signatures for hourly services -->
