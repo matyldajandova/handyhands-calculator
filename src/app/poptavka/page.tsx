@@ -934,7 +934,11 @@ function PoptavkaContent() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.3 }}
                 >
-                  Poptávka byla úspěšně odeslána!
+                  {(hashData?.serviceType === "one-time-cleaning" || hashData?.serviceType === "handyman-services") ? (
+                    "Objednávka byla úspěšně odeslána!"
+                  ) : (
+                    "Poptávka byla úspěšně odeslána!"
+                  )}
                 </motion.h1>
                 <motion.p 
                   className="text-lg text-muted-foreground mb-8"
@@ -942,7 +946,11 @@ function PoptavkaContent() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.4 }}
                 >
-                  Děkujeme za vaši poptávku. Brzy vás budeme kontaktovat s dalšími informacemi.
+                  {(hashData?.serviceType === "one-time-cleaning" || hashData?.serviceType === "handyman-services") ? (
+                    "Děkujeme za Vaši objednávku, kterou Vám posíláme do emailu. Brzy Vás budeme kontaktovat s potvrzením času úklidu a dalšími informacemi."
+                  ) : (
+                    "Děkujeme za vaši poptávku. Brzy vás budeme kontaktovat s dalšími informacemi."
+                  )}
                 </motion.p>
                 <motion.div 
                   className="flex flex-col gap-4 justify-center"
