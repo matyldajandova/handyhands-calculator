@@ -1008,9 +1008,19 @@ function PoptavkaContent() {
           transition={{ delay: 0.1, duration: 0.6 }}
           className="mb-8"
         >
-          <h1 className="text-3xl font-bold text-foreground mb-2">Poptávka úklidových služeb</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">
+            {(hashData?.serviceType === "one-time-cleaning" || hashData?.serviceType === "handyman-services") ? (
+              "Objednávka úklidových služeb"
+            ) : (
+              "Poptávka úklidových služeb"
+            )}
+          </h1>
           <p className="text-muted-foreground text-lg max-w-lg">
-            Abychom vám mohli zaslat návrh smlouvy, budeme potřebovat od vás několik údajů.
+            {(hashData?.serviceType === "one-time-cleaning" || hashData?.serviceType === "handyman-services") ? (
+              "Abychom mohli začít, budeme od Vás potřebovat několik údajů."
+            ) : (
+              "Abychom vám mohli zaslat návrh smlouvy, budeme potřebovat od vás několik údajů."
+            )}
           </p>
         </motion.div>
 
@@ -1449,7 +1459,7 @@ function PoptavkaContent() {
                   )}
                   {(hashData?.serviceType === "one-time-cleaning" || hashData?.serviceType === "handyman-services") && (
                     <p className="text-sm text-muted-foreground mt-2">
-                      Pokud chcete uvést konkrétní čas zahájení úklidových prací, napište to prosím do poznámky na konci tohoto formuláře
+                      Pokud chcete uvést konkrétní čas zahájení úklidových prací, napište to prosím do poznámky na konci tohoto formuláře.
                     </p>
                   )}
                 </div>
@@ -1473,9 +1483,9 @@ function PoptavkaContent() {
                   />
                   <p className="text-sm text-muted-foreground">
                     {(hashData?.serviceType === "one-time-cleaning" || hashData?.serviceType === "handyman-services") ? (
-                      "Pokud není uvedeno, bude faktura zaslána na email uvedený v kontaktních údajích"
+                      "Pokud není uvedeno, bude faktura zaslána na email uvedený v kontaktních údajích."
                     ) : (
-                      "Pokud není uvedeno, budou faktury zasílány na email uvedený v kontaktních údajích"
+                      "Pokud není uvedeno, budou faktury zasílány na email uvedený v kontaktních údajích."
                     )}
                   </p>
                   {errors.invoiceEmail && (
