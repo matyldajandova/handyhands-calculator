@@ -22,6 +22,11 @@ declare module 'googleapis' {
     files?: Array<{ id?: string; name?: string }>;
   }
 
+  export interface DriveFilesCopyResponse {
+    id?: string;
+    name?: string;
+  }
+
   export interface DriveLike {
     files: {
       list(options: { q: string; fields: string; pageSize: number }): Promise<{ data: DriveFilesListResponse }>;
@@ -30,6 +35,10 @@ declare module 'googleapis' {
         media?: { mimeType?: string; body?: unknown };
         fields?: string;
       }): Promise<{ data: { id?: string } }>;
+      copy(options: {
+        fileId: string;
+        requestBody: { name?: string; parents?: string[] };
+      }): Promise<{ data: DriveFilesCopyResponse }>;
     };
   }
 
@@ -43,6 +52,47 @@ declare module 'googleapis' {
           requestBody: { values: unknown[][] };
         }): Promise<{ data: { updates?: { updatedRows?: number } } }>;
       };
+    };
+  }
+
+  export interface DocsLike {
+    documents: {
+      get(options: { documentId: string }): Promise<{
+        data: {
+          documentId?: string;
+          title?: string;
+          body?: {
+            content?: Array<{
+              paragraph?: {
+                elements?: Array<{
+                  textRun?: { content?: string };
+                }>;
+              };
+            }>;
+          };
+        };
+      }>;
+      batchUpdate(options: {
+        documentId: string;
+        requestBody: {
+          requests: Array<{
+            insertText?: {
+              location: { index: number };
+              text: string;
+            };
+            deleteContentRange?: {
+              range: {
+                startIndex: number;
+                endIndex: number;
+              };
+            };
+            replaceAllText?: {
+              containsText: { text: string; matchCase?: boolean };
+              replaceText: string;
+            };
+          }>;
+        };
+      }): Promise<{ data: { documentId?: string } }>;
     };
   }
 
@@ -65,8 +115,9 @@ declare module 'googleapis' {
       OAuth2: new (clientId: string, clientSecret: string, redirectUri: string) => OAuth2ClientLike;
       GoogleAuth: GoogleAuthConstructor;
     };
-    drive: (opts: { version: 'v3'; auth: OAuth2ClientLike }) => DriveLike;
+    drive: (opts: { version: 'v3'; auth: OAuth2ClientLike | GoogleAuthLike | unknown }) => DriveLike;
     sheets: (opts: { version: 'v4'; auth: OAuth2ClientLike | GoogleAuthLike | unknown }) => SheetsLike;
+    docs: (opts: { version: 'v1'; auth: OAuth2ClientLike | GoogleAuthLike | unknown }) => DocsLike;
   };
 }
 
