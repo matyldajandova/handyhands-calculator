@@ -30,6 +30,7 @@ declare module 'googleapis' {
   export interface DriveLike {
     files: {
       list(options: { q: string; fields: string; pageSize: number }): Promise<{ data: DriveFilesListResponse }>;
+      get(options: { fileId: string; fields?: string }): Promise<{ data: { owners?: Array<{ emailAddress?: string }> } }>;
       create(options: {
         requestBody: { name: string; mimeType?: string; parents?: string[] };
         media?: { mimeType?: string; body?: unknown };
@@ -39,6 +40,19 @@ declare module 'googleapis' {
         fileId: string;
         requestBody: { name?: string; parents?: string[] };
       }): Promise<{ data: DriveFilesCopyResponse }>;
+      update(options: {
+        fileId: string;
+        addParents?: string;
+        removeParents?: string;
+      }): Promise<unknown>;
+      delete(options: { fileId: string }): Promise<void>;
+    };
+    permissions: {
+      create(options: {
+        fileId: string;
+        transferOwnership: boolean;
+        requestBody: { role: string; type: string; emailAddress: string };
+      }): Promise<unknown>;
     };
   }
 

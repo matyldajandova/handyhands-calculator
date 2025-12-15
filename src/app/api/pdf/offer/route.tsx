@@ -330,6 +330,25 @@ export async function POST(req: NextRequest) {
   const parentFolderId = process.env.GDRIVE_PARENT_FOLDER_ID;
   const poptavkyFolderId = process.env.GDRIVE_FINAL_OFFER_FOLDER_ID;
   
+  // Generate contract from Google Docs template for poptavka submissions (before email to attach contract files)
+  let contractResult: { documentId: string; name: string; url: string } | null = null;
+  const hasServiceAccount = process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY;
+  if (isPoptavka && hasServiceAccount && !data.isHourlyService) {
+    try {
+      console.log('[PDF] Generating contract from Google Docs template...');
+      const { generateContractFromTemplate } = await import('@/utils/google-docs-contract');
+      contractResult = await generateContractFromTemplate(data);
+      if (contractResult) {
+        console.log('[PDF] Contract generated successfully:', contractResult.url);
+      } else {
+        console.log('[PDF] Contract generation skipped (not applicable for this service type or missing config)');
+      }
+    } catch (contractError) {
+      console.error('[PDF] Failed to generate contract:', contractError);
+      // Don't fail the request if contract generation fails, but log it
+    }
+  }
+  
   // Log upload conditions for debugging
   console.log('[PDF] PDF Upload conditions:', {
     isPoptavka,
@@ -437,6 +456,39 @@ export async function POST(req: NextRequest) {
             ? hashService.createPoptavkaUrl(data.poptavkaHash, baseUrl)
             : '';
           
+          // Determine attachments based on whether contract was generated
+          let attachments: Array<{ type: string; name: string; content: string }> = [];
+          
+          // If contract was generated for regular cleaning service, attach contract files instead of PDF
+          if (contractResult && !data.isHourlyService) {
+            try {
+              console.log('[PDF] Exporting contract as PDF and DOCX for email attachment...');
+              const { exportGoogleDocAsPdf, exportGoogleDocAsDocx } = await import('@/utils/google-docs');
+              const { createDocxAttachment } = await import('@/utils/ecomail-transactional');
+              
+              // Export contract as PDF and DOCX
+              const contractPdf = await exportGoogleDocAsPdf(contractResult.documentId);
+              const contractDocx = await exportGoogleDocAsDocx(contractResult.documentId);
+              
+              // Clean filename for attachments (remove special characters)
+              const contractFilename = contractResult.name.replace(/[^a-zA-Z0-9áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ._-]/g, '_');
+              
+              attachments = [
+                createPdfAttachment(contractPdf, `${contractFilename}.pdf`),
+                createDocxAttachment(contractDocx, `${contractFilename}.docx`),
+              ];
+              
+              console.log('[PDF] Contract files exported and attached to email');
+            } catch (exportError) {
+              console.error('[PDF] Failed to export contract files, falling back to PDF attachment:', exportError);
+              // Fallback to original PDF if contract export fails
+              attachments = [createPdfAttachment(pdf, `${filename}.pdf`)];
+            }
+          } else {
+            // No contract generated, attach the original PDF
+            attachments = [createPdfAttachment(pdf, `${filename}.pdf`)];
+          }
+          
           const emailResult = await sendTransactionalEmail({
             to: [{
               email: data.customer.email,
@@ -447,9 +499,7 @@ export async function POST(req: NextRequest) {
             fromEmail: process.env.ECOMAIL_FROM_EMAIL || 'info@handyhands.cz',
             replyTo: process.env.ECOMAIL_REPLY_EMAIL || process.env.ECOMAIL_FROM_EMAIL || 'info@handyhands.cz',
             templateId,
-            attachments: [
-              createPdfAttachment(pdf, `${filename}.pdf`)
-            ],
+            attachments,
             globalMergeVars: [
               { name: 'POPTAVKA_URL', content: poptavkaUrl },
               { name: 'PDF_OBJEDNAVKA', content: uploadedPdfUrl || '' },
@@ -497,9 +547,10 @@ export async function POST(req: NextRequest) {
     uploadError = new Error(`PDF upload skipped: ${missingItems.join(', ')}`);
   }
 
+  // Contract generation moved earlier (before email sending) to attach contract files to email
+
   // Write submission data to Google Sheets using Service Account (runs regardless of upload status)
   const spreadsheetId = process.env.GOOGLE_SHEET_ID;
-  const hasServiceAccount = process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY;
   
   if (spreadsheetId && hasServiceAccount) {
     try {
@@ -509,6 +560,7 @@ export async function POST(req: NextRequest) {
         spreadsheetId,
         offerData: data,
         isPoptavka: isPoptavka ?? false,
+        contractUrl: contractResult?.url,
       });
       console.log('[PDF] Successfully wrote data to Google Sheets');
     } catch (sheetsError) {
@@ -528,6 +580,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       pdfUrl: uploadedPdfUrl,
+      contractUrl: contractResult?.url,
+      contractDocumentId: contractResult?.documentId,
+      contractName: contractResult?.name,
       message: uploadedPdfUrl 
         ? 'PDF generated and uploaded successfully' 
         : 'PDF generated but upload to Google Drive failed or was skipped',

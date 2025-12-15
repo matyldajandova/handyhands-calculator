@@ -22,12 +22,12 @@ export async function GET(req: NextRequest) {
     const type = searchParams.get("type");
 
     // If type is provided, use predefined document IDs
-    let targetDocumentId = documentId;
+    let targetDocumentId: string | null = documentId;
     if (!targetDocumentId && type) {
       if (type === "residential") {
-        targetDocumentId = process.env.GOOGLE_DOC_RESIDENTIAL_ID || undefined;
+        targetDocumentId = process.env.GOOGLE_DOC_RESIDENTIAL_ID || null;
       } else if (type === "commercial") {
-        targetDocumentId = process.env.GOOGLE_DOC_COMMERCIAL_ID || undefined;
+        targetDocumentId = process.env.GOOGLE_DOC_COMMERCIAL_ID || null;
       }
     }
 
@@ -96,12 +96,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Determine target document ID
-    let targetDocumentId = documentId;
+    let targetDocumentId: string | null = documentId || null;
     if (!targetDocumentId && type) {
       if (type === "residential") {
-        targetDocumentId = process.env.GOOGLE_DOC_RESIDENTIAL_ID || undefined;
+        targetDocumentId = process.env.GOOGLE_DOC_RESIDENTIAL_ID || null;
       } else if (type === "commercial") {
-        targetDocumentId = process.env.GOOGLE_DOC_COMMERCIAL_ID || undefined;
+        targetDocumentId = process.env.GOOGLE_DOC_COMMERCIAL_ID || null;
       }
     }
 

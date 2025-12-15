@@ -218,3 +218,17 @@ export function createPdfAttachment(
   };
 }
 
+/**
+ * Create a DOCX attachment from a buffer
+ */
+export function createDocxAttachment(
+  docxBuffer: Buffer | Uint8Array,
+  filename: string
+): EcomailAttachment {
+  return {
+    type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    name: filename.endsWith('.docx') ? filename : `${filename}.docx`,
+    content: bufferToBase64(docxBuffer),
+  };
+}
+

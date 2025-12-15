@@ -61,6 +61,8 @@ export function generateAuthUrl() {
       "email",
       "profile",
       "https://www.googleapis.com/auth/drive.file",
+      "https://www.googleapis.com/auth/drive", // Full Drive access for copying files
+      "https://www.googleapis.com/auth/documents", // Google Docs API access
       "https://www.googleapis.com/auth/spreadsheets",
     ],
   });

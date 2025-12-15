@@ -65,8 +65,9 @@ export async function writeToGoogleSheets(params: {
   spreadsheetId: string;
   offerData: OfferData;
   isPoptavka: boolean;
+  contractUrl?: string;
 }): Promise<{ success: boolean }> {
-  const { spreadsheetId, offerData, isPoptavka } = params;
+  const { spreadsheetId, offerData, isPoptavka, contractUrl } = params;
 
   const sheets = getSheetsClient();
 
@@ -115,7 +116,8 @@ export async function writeToGoogleSheets(params: {
   const currentDate = new Date().toLocaleDateString("cs-CZ");
 
   // Determine request type
-  const requestType = isPoptavka ? "Poptávka" : "PDF";
+  // If contract was generated, it's "Smlouva", otherwise "Poptávka" for poptavka submissions
+  const requestType = contractUrl ? "Smlouva" : (isPoptavka ? "Poptávka" : "PDF");
 
   // Get service type (cleaning type)
   const serviceType = offerData.serviceTitle || "Ostatní služby";
@@ -192,7 +194,7 @@ export async function writeToGoogleSheets(params: {
   // A: Datum | B: Typ poptávky | C: Typ úklidu | D: Cena úklidu | E: Extra položky | F: Generální úklid | G: Winter maintenance | 
   // H: Jméno | I: Příjmení | J: E-mail | K: Telefon |
   // L: Název společnosti | M: IČO | N: DIČ | O: Ulice a čp (property) | P: Město (property) | Q: PSČ (property) |
-  // R: Ulice a čp (company) | S: Město (company) | T: PSČ (company) | U: Zahájení plnění | V: Fakturační e-mail | W: Poznámka
+  // R: Ulice a čp (company) | S: Město (company) | T: PSČ (company) | U: Zahájení plnění | V: Fakturační e-mail | W: Poznámka | X: Smlouva
   const rowData = [
     currentDate,        // A: Datum
     requestType,        // B: Typ poptávky
@@ -217,16 +219,17 @@ export async function writeToGoogleSheets(params: {
     serviceStartDate,   // U: Zahájení plnění
     invoiceEmail,       // V: Fakturační e-mail
     notes,              // W: Poznámka
+    contractUrl || '',  // X: Smlouva (link to contract document)
   ];
 
   // Append data to the sheet (will automatically find the next available row)
   // Using "USER_ENTERED" to preserve number formatting
   // Try with sheet name first, fallback to range without sheet name
-  // Updated range to A:W (23 columns: A-K + new columns L-W)
+  // Updated range to A:X (24 columns: A-W + new column X for contract link)
   const sheetName = "Data";
   const rangesToTry = [
-    `${sheetName}!A:W`,  // Try with explicit sheet name first (23 columns now)
-    "A:W",               // Fallback: let API use default sheet
+    `${sheetName}!A:X`,  // Try with explicit sheet name first (24 columns now)
+    "A:X",               // Fallback: let API use default sheet
   ];
   
   let lastError: Error | null = null;
