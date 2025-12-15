@@ -408,8 +408,25 @@ export async function POST(req: NextRequest) {
           console.log('[PDF] Sending transactional email with PDF attachment...');
           const { sendTransactionalEmail, createPdfAttachment } = await import('@/utils/ecomail-transactional');
           
-          // Use different template IDs: 2 for poptavka, 3 for regular PDF download
-          const templateId = isPoptavka ? 2 : 3;
+          // Determine service type for template selection
+          let serviceType = data.serviceType;
+          if (!serviceType && data.poptavkaHash) {
+            try {
+              const decodedHash = hashService.decodeHash(data.poptavkaHash);
+              serviceType = decodedHash?.serviceType;
+            } catch (e) {
+              // Ignore errors, use fallback
+            }
+          }
+          if (!serviceType) {
+            serviceType = (data.customer as Record<string, unknown>)?.serviceType as string | undefined;
+          }
+          
+          // Use template ID 5 for one-time cleaning and window cleaning (handyman-services) when submitted from poptavka
+          // Otherwise use template ID 2 for poptavka, 3 for regular PDF download
+          const templateId = isPoptavka 
+            ? (serviceType === 'one-time-cleaning' || serviceType === 'handyman-services' ? 5 : 2)
+            : 3;
           
           // Set subject based on template/context
           const emailSubject = isPoptavka 
