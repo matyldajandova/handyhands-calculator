@@ -16,10 +16,41 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { User, Building, Check, ShieldCheck, CalendarIcon, ArrowLeftIcon } from "lucide-react";
+import { User, Building, Check, ShieldCheck, CalendarIcon, ArrowLeftIcon, FileText, Download } from "lucide-react";
 import { FormConfig, CalculationResult, FormSubmissionData } from "@/types/form-types";
 import { cn } from "@/lib/utils";
 import { CalculationData } from "@/utils/hash-generator";
+
+// Helper function to check if service type is regular cleaning (not hourly)
+function isRegularCleaningType(serviceType: string | undefined): boolean {
+  if (!serviceType) return false;
+  const regularTypes = ['residential-building', 'panel-building', 'office-cleaning', 'commercial-spaces', 'home-cleaning'];
+  return regularTypes.includes(serviceType);
+}
+
+// Helper function to get contract file paths based on service type
+function getContractFiles(serviceType: string | undefined): { word: string; pdf: string } | null {
+  if (!serviceType) return null;
+  
+  // Map service types to contract file groups
+  if (serviceType === 'residential-building' || serviceType === 'panel-building') {
+    return {
+      word: '/contracts/Smlouva_HH_pravidelny_uklid_cinzovni_a_panelove_domy_prazdna_W.docx',
+      pdf: '/contracts/Smlouva_HH_pravidelny_uklid_cinzovni_a_panelove_domy_prazdna.pdf'
+    };
+  }
+  
+  if (serviceType === 'office-cleaning' || serviceType === 'commercial-spaces') {
+    return {
+      word: '/contracts/Smlouva_HH_pravidelny_uklid_kancelare_a_komercni_prostory_prazdna_W.docx',
+      pdf: '/contracts/Smlouva_HH_pravidelny_uklid_kancelare_a_komercni_prostory_prazdna.pdf'
+    };
+  }
+  
+  // For home-cleaning, we might need a specific contract or use one of the existing ones
+  // For now, return null (can be updated later if needed)
+  return null;
+}
 
 // Helper function to get minimum hours for hourly services
 function getMinimumHours(formData: Record<string, unknown>): number {
@@ -949,7 +980,7 @@ function PoptavkaContent() {
                   {(hashData?.serviceType === "one-time-cleaning" || hashData?.serviceType === "handyman-services") ? (
                     "Děkujeme za Vaši objednávku, kterou Vám posíláme do emailu. Brzy Vás budeme kontaktovat s potvrzením času úklidu a dalšími informacemi."
                   ) : (
-                    "Děkujeme za vaši poptávku. Brzy vás budeme kontaktovat s dalšími informacemi."
+                    "Děkujeme! Vaše údaje jsme v pořádku obdrželi a co nejdříve Vám zašleme návrh smlouvy."
                   )}
                 </motion.p>
                 <motion.div 
@@ -1097,6 +1128,49 @@ function PoptavkaContent() {
                     }
                   </div>
                 </div>
+                
+                {/* Contract Preview Section - Only for regular cleaning types */}
+                {isRegularCleaningType(hashData.serviceType) && getContractFiles(hashData.serviceType) && (
+                  <>
+                    <div className="border-t border-border my-6"></div>
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-black" />
+                        <h3 className="font-semibold text-foreground">Náhled bianco smlouvy</h3>
+                      </div>
+                      <div className="flex flex-row gap-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="flex items-center gap-2"
+                          onClick={() => {
+                            const contractFiles = getContractFiles(hashData.serviceType);
+                            if (contractFiles) {
+                              window.open(contractFiles.word, '_blank');
+                            }
+                          }}
+                        >
+                          <Download className="h-4 w-4" />
+                          Word
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="flex items-center gap-2"
+                          onClick={() => {
+                            const contractFiles = getContractFiles(hashData.serviceType);
+                            if (contractFiles) {
+                              window.open(contractFiles.pdf, '_blank');
+                            }
+                          }}
+                        >
+                          <Download className="h-4 w-4" />
+                          PDF
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </motion.div>
@@ -1527,7 +1601,7 @@ function PoptavkaContent() {
                         {(hashData?.serviceType === "one-time-cleaning" || hashData?.serviceType === "handyman-services") ? (
                           "Závazně objednat"
                         ) : (
-                          "Odeslat návrh smlouvy"
+                          "Připravit smlouvu"
                         )}
                       </>
                     )}
