@@ -1133,11 +1133,14 @@ function PoptavkaContent() {
                 {isRegularCleaningType(hashData.serviceType) && getContractFiles(hashData.serviceType) && (
                   <>
                     <div className="border-t border-border my-6"></div>
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <FileText className="h-5 w-5 text-black" />
                         <h3 className="font-semibold text-foreground">Náhled bianco smlouvy</h3>
                       </div>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Zde si můžete prohlédnout naši standardní smlouvu. Pokud k ní máte připomínky napište je prosím do pole Poznámky na konci stránky. V opačném případě ji bereme za vyhovující.
+                      </p>
                       <div className="flex flex-row gap-3">
                         <Button
                           type="button"
