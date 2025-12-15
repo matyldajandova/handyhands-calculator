@@ -414,7 +414,7 @@ export async function POST(req: NextRequest) {
             try {
               const decodedHash = hashService.decodeHash(data.poptavkaHash);
               serviceType = decodedHash?.serviceType;
-            } catch (e) {
+            } catch {
               // Ignore errors, use fallback
             }
           }

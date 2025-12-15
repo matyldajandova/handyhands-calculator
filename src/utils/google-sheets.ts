@@ -148,30 +148,85 @@ export async function writeToGoogleSheets(params: {
   // Get customer phone
   const phone = offerData.customer?.phone || "";
 
+  // Extract company information
+  const customerData = offerData.customer as Record<string, unknown> | undefined;
+  const company = customerData?.company as { name?: string; ico?: string; dic?: string; address?: string } | undefined;
+  const companyName = company?.name || "";
+  const companyIco = company?.ico || "";
+  const companyDic = company?.dic || "";
+
+  // Parse property address (format: "street, city, zip")
+  const propertyAddress = offerData.customer?.address || "";
+  const propertyAddressParts = propertyAddress.split(',').map(part => part.trim());
+  const propertyStreet = propertyAddressParts[0] || "";
+  const propertyCity = propertyAddressParts[1] || "";
+  const propertyZip = propertyAddressParts[2] || "";
+
+  // Parse company address (format: "street, city, zip")
+  const companyAddress = company?.address || "";
+  const companyAddressParts = companyAddress.split(',').map(part => part.trim());
+  const companyStreet = companyAddressParts[0] || "";
+  const companyCity = companyAddressParts[1] || "";
+  const companyZip = companyAddressParts[2] || "";
+
+  // Format service start date (convert from ISO format YYYY-MM-DD to DD.MM.YYYY if needed)
+  let serviceStartDate = "";
+  if (offerData.startDate) {
+    if (offerData.startDate.includes('-')) {
+      // ISO format: convert to DD.MM.YYYY
+      const [year, month, day] = offerData.startDate.split('-');
+      serviceStartDate = `${day}.${month}.${year}`;
+    } else {
+      // Already in Czech format or other format
+      serviceStartDate = offerData.startDate;
+    }
+  }
+
+  // Get invoice email
+  const invoiceEmail = (customerData?.invoiceEmail as string | undefined) || "";
+
+  // Get notes (poptavka notes)
+  const notes = offerData.poptavkaNotes || "";
+
   // Prepare row data matching the column order:
-  // Datum | Typ poptávky | Typ úklidu | Cena úklidu | Extra položky | Generální úklid | Winter maintenance | Jméno | Příjmení | E-mail | Telefon
+  // A: Datum | B: Typ poptávky | C: Typ úklidu | D: Cena úklidu | E: Extra položky | F: Generální úklid | G: Winter maintenance | 
+  // H: Jméno | I: Příjmení | J: E-mail | K: Telefon |
+  // L: Název společnosti | M: IČO | N: DIČ | O: Ulice a čp (property) | P: Město (property) | Q: PSČ (property) |
+  // R: Ulice a čp (company) | S: Město (company) | T: PSČ (company) | U: Zahájení plnění | V: Fakturační e-mail | W: Poznámka
   const rowData = [
-    currentDate,
-    requestType,
-    serviceType,
-    cleaningPrice,
-    extraItems,
-    generalCleaning,
-    winterMaintenance, // New column G
-    firstName,         // Moved from G to H
-    lastName,          // Moved from H to I
-    email,             // Moved from I to J
-    phone,             // Moved from J to K
+    currentDate,        // A: Datum
+    requestType,        // B: Typ poptávky
+    serviceType,        // C: Typ úklidu
+    cleaningPrice,      // D: Cena úklidu
+    extraItems,        // E: Extra položky
+    generalCleaning,   // F: Generální úklid
+    winterMaintenance, // G: Winter maintenance
+    firstName,          // H: Jméno
+    lastName,          // I: Příjmení
+    email,             // J: E-mail
+    phone,             // K: Telefon
+    companyName,       // L: Název společnosti
+    companyIco,        // M: IČO
+    companyDic,        // N: DIČ
+    propertyStreet,    // O: Ulice a čp (property)
+    propertyCity,       // P: Město (property)
+    propertyZip,        // Q: PSČ (property)
+    companyStreet,      // R: Ulice a čp (company)
+    companyCity,        // S: Město (company)
+    companyZip,         // T: PSČ (company)
+    serviceStartDate,   // U: Zahájení plnění
+    invoiceEmail,       // V: Fakturační e-mail
+    notes,              // W: Poznámka
   ];
 
   // Append data to the sheet (will automatically find the next available row)
   // Using "USER_ENTERED" to preserve number formatting
   // Try with sheet name first, fallback to range without sheet name
-  // Updated range to A:K (11 columns: A-J + new column K for phone)
+  // Updated range to A:W (23 columns: A-K + new columns L-W)
   const sheetName = "Data";
   const rangesToTry = [
-    `${sheetName}!A:K`,  // Try with explicit sheet name first (11 columns now)
-    "A:K",               // Fallback: let API use default sheet
+    `${sheetName}!A:W`,  // Try with explicit sheet name first (23 columns now)
+    "A:W",               // Fallback: let API use default sheet
   ];
   
   let lastError: Error | null = null;
