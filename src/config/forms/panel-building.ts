@@ -422,10 +422,10 @@ export const panelBuildingFormConfig: FormConfig = {
           label: "1x měsíčně",
           required: false,
           options: [
-            { value: "remove-stickers", label: "Odstraňování samolepek (reklam) ze vstupních dveří (90 Kč/měsíc)", fixedAddon: 90 },
-            { value: "elevator-maintenance-monthly", label: "Olejování nerezových stěn interiéru výtahu a jejich údržba (140 Kč/měsíc)", fixedAddon: 140 },
-            { value: "clean-doors-handles", label: "Čištění povrchu dveří a otírání klik ve společných prostorách domu (250 Kč/měsíc)", fixedAddon: 250 },
-            { value: "clean-washable-walls", label: "Čištění omyvatelných stěn (např. linkrust) v přízemí domu (120 Kč/měsíc)", fixedAddon: 120, hidden: true }
+            { value: "remove-stickers", label: "Odstraňování samolepek (reklam) ze vstupních dveří (+90 Kč/měsíc)", fixedAddon: 90 },
+            { value: "elevator-maintenance-monthly", label: "Olejování nerezových stěn interiéru výtahu a jejich údržba (+140 Kč/měsíc)", fixedAddon: 140 },
+            { value: "clean-doors-handles", label: "Čištění povrchu dveří a otírání klik ve společných prostorách domu (+250 Kč/měsíc)", fixedAddon: 250 },
+            { value: "clean-washable-walls", label: "Čištění omyvatelných stěn (např. linkrust) v přízemí domu (+120 Kč/měsíc)", fixedAddon: 120, hidden: true }
           ]
         }
       ]

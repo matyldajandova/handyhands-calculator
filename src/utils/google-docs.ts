@@ -538,3 +538,287 @@ export async function processConditionalBlocks(
   return modifyGoogleDoc(documentId, requests);
 }
 
+/**
+ * Format cleaning services list with proper bullets and bold headings
+ * Finds the inserted text by searching for the first category heading, then formats it.
+ * Category headings: bold, no bullet
+ * Standard services: 1st level bullets
+ * Optional heading ("Příplatkové služby:"): bold, 1st level bullet
+ * Optional services: 2nd level bullets (nested using indentation)
+ */
+export async function formatCleaningServicesListInDoc(
+  documentId: string,
+  categoryHeadings: string[],
+  optionalHeadings: string[]
+): Promise<{ success: boolean; documentId: string }> {
+  const docs = await getDocsClient();
+  const docsApi = docs as unknown as DocsApiType;
+
+  try {
+    const doc = await docsApi.documents.get({ documentId });
+    const requests: Array<{
+      updateTextStyle?: {
+        range: { startIndex: number; endIndex: number };
+        textStyle: { bold?: boolean };
+        fields: string;
+      };
+      createParagraphBullets?: {
+        range: { startIndex: number; endIndex: number };
+        bulletPreset?: string;
+      };
+      updateParagraphStyle?: {
+        range: { startIndex: number; endIndex: number };
+        paragraphStyle: {
+          indentFirstLine?: { magnitude: number; unit: string };
+          indentStart?: { magnitude: number; unit: string };
+        };
+        fields: string;
+      };
+    }> = [];
+
+    // Parse all paragraphs and find the ones that match our headings (the inserted content)
+    let currentIndex = 1;
+    const paragraphInfo: Array<{
+      startIndex: number;
+      endIndex: number;
+      text: string;
+      isCategoryHeading: boolean;
+      isOptionalHeading: boolean;
+      isService: boolean;
+      paragraphIndex: number;
+    }> = [];
+    
+    const bodyContent = doc.data.body?.content || [];
+    let paragraphIndex = 0;
+    let foundServicesSection = false;
+    const firstHeading = categoryHeadings[0];
+    
+    for (const element of bodyContent) {
+      if (element.paragraph?.elements) {
+        const paraStart = currentIndex;
+        let paraText = '';
+        
+        for (const paraElement of element.paragraph.elements) {
+          if (paraElement.textRun?.content) {
+            paraText += paraElement.textRun.content;
+            currentIndex += paraElement.textRun.content.length;
+          }
+        }
+        
+        const paraTextEnd = currentIndex; // Index after last character of text (before separator)
+        const trimmedText = paraText.trim();
+        
+        // Check if we've reached the services section (first category heading)
+        if (!foundServicesSection && trimmedText === firstHeading) {
+          foundServicesSection = true;
+        }
+        
+        // Only process paragraphs in the services section
+        if (foundServicesSection) {
+          const isCategoryHeading = categoryHeadings.some(h => trimmedText === h);
+          const isOptionalHeading = optionalHeadings.some(h => trimmedText === h || trimmedText.includes(h));
+          const isService = !isCategoryHeading && !isOptionalHeading && trimmedText !== '';
+          
+          // Store both the text end (before separator) and the separator position
+          paragraphInfo.push({
+            startIndex: paraStart,
+            endIndex: paraTextEnd, // Index at the END of the paragraph text (before separator)
+            text: trimmedText,
+            isCategoryHeading,
+            isOptionalHeading,
+            isService,
+            paragraphIndex: paragraphIndex++,
+          });
+          
+          // Stop when we've found all expected headings and processed a reasonable number of paragraphs
+          const foundHeadings = paragraphInfo.filter(p => p.isCategoryHeading).length;
+          if (foundHeadings >= categoryHeadings.length) {
+            // Check if we've gone past the last service (empty paragraphs or non-service content)
+            const lastFewParas = paragraphInfo.slice(-3);
+            if (lastFewParas.length === 3 && lastFewParas.every(p => p.text === '' || (!p.isCategoryHeading && !p.isOptionalHeading && !p.isService))) {
+              break;
+            }
+          }
+        }
+        
+        currentIndex += 1; // Add paragraph separator (now currentIndex points AFTER the separator)
+      } else {
+        currentIndex += 1;
+      }
+    }
+    
+    console.log('[formatCleaningServicesListInDoc] Found', paragraphInfo.length, 'paragraphs in services section');
+
+    // Find services section range
+    let firstHeadingIndex = -1;
+    let lastServiceIndex = -1;
+    
+    for (let i = 0; i < paragraphInfo.length; i++) {
+      if (paragraphInfo[i].isCategoryHeading && firstHeadingIndex === -1) {
+        firstHeadingIndex = i;
+      }
+      if (paragraphInfo[i].isService || paragraphInfo[i].isOptionalHeading) {
+        lastServiceIndex = i;
+      }
+    }
+    
+    if (firstHeadingIndex === -1 || lastServiceIndex === -1) {
+      console.log('[formatCleaningServicesListInDoc] Could not find services section');
+      return { success: false, documentId };
+    }
+
+    // Format category headings as bold (no bullets)
+    for (let i = firstHeadingIndex; i <= lastServiceIndex; i++) {
+      const para = paragraphInfo[i];
+      if (para.isCategoryHeading) {
+        // For updateTextStyle, use endIndex directly (it's at the end of text, before separator)
+        if (para.endIndex > para.startIndex) {
+          requests.push({
+            updateTextStyle: {
+              range: { startIndex: para.startIndex, endIndex: para.endIndex },
+              textStyle: { bold: true },
+              fields: 'bold',
+            },
+          });
+        }
+      }
+    }
+
+    // Group services by category
+    const serviceGroups: Array<{
+      standardServices: typeof paragraphInfo;
+      optionalHeading: typeof paragraphInfo[0] | null;
+      optionalServices: typeof paragraphInfo;
+    }> = [];
+    
+    let currentGroup = {
+      standardServices: [] as typeof paragraphInfo,
+      optionalHeading: null as typeof paragraphInfo[0] | null,
+      optionalServices: [] as typeof paragraphInfo,
+    };
+    
+    for (let i = firstHeadingIndex; i <= lastServiceIndex; i++) {
+      const para = paragraphInfo[i];
+      if (para.isCategoryHeading) {
+        if (currentGroup.standardServices.length > 0 || currentGroup.optionalServices.length > 0) {
+          serviceGroups.push(currentGroup);
+        }
+        currentGroup = {
+          standardServices: [],
+          optionalHeading: null,
+          optionalServices: [],
+        };
+      } else if (para.isOptionalHeading) {
+        currentGroup.optionalHeading = para;
+      } else if (para.isService) {
+        if (currentGroup.optionalHeading) {
+          currentGroup.optionalServices.push(para);
+        } else {
+          currentGroup.standardServices.push(para);
+        }
+      }
+    }
+    if (currentGroup.standardServices.length > 0 || currentGroup.optionalServices.length > 0) {
+      serviceGroups.push(currentGroup);
+    }
+
+    // Apply bullets and formatting
+    for (const group of serviceGroups) {
+      // Standard services + optional heading: 1st level bullets
+      const allFirstLevel: typeof paragraphInfo = [...group.standardServices];
+      if (group.optionalHeading) {
+        allFirstLevel.push(group.optionalHeading);
+      }
+      
+      if (allFirstLevel.length > 0) {
+        const firstPara = allFirstLevel[0];
+        const lastPara = allFirstLevel[allFirstLevel.length - 1];
+        // For createParagraphBullets, endIndex should be the start of the paragraph AFTER the last one
+        // Since lastPara.endIndex is before the separator, we add 1 to include the separator
+        // But we need to make sure we don't exceed document bounds
+        // Actually, let's find the next paragraph's startIndex if it exists
+        let bulletsEndIndex = lastPara.endIndex + 1; // Include the separator
+        
+        // Check if there's a next paragraph in paragraphInfo
+        const lastParaIndex = paragraphInfo.findIndex(p => p === lastPara);
+        if (lastParaIndex !== -1 && lastParaIndex < paragraphInfo.length - 1) {
+          // Use the startIndex of the next paragraph as the end
+          bulletsEndIndex = paragraphInfo[lastParaIndex + 1].startIndex;
+        }
+        
+        // Validate range
+        if (bulletsEndIndex > firstPara.startIndex) {
+          requests.push({
+            createParagraphBullets: {
+              range: {
+                startIndex: firstPara.startIndex,
+                endIndex: bulletsEndIndex,
+              },
+              bulletPreset: 'BULLET_DISC_CIRCLE_SQUARE',
+            },
+          });
+        }
+      }
+      
+      // Optional services: 2nd level (indent + bullets)
+      if (group.optionalServices.length > 0) {
+        const firstPara = group.optionalServices[0];
+        const lastPara = group.optionalServices[group.optionalServices.length - 1];
+        
+        // First apply bullets - endIndex should exclude the paragraph separator
+        const bulletsEndIndex = lastPara.endIndex - 1;
+        // Make sure endIndex is valid (greater than startIndex)
+        if (bulletsEndIndex > firstPara.startIndex) {
+          requests.push({
+            createParagraphBullets: {
+              range: {
+                startIndex: firstPara.startIndex,
+                endIndex: bulletsEndIndex,
+              },
+              bulletPreset: 'BULLET_DISC_CIRCLE_SQUARE',
+            },
+          });
+        }
+        
+        // Then indent for nesting (36pt = 0.5 inch standard indent)
+        for (const para of group.optionalServices) {
+          // endIndex should exclude the paragraph separator
+          const paraEnd = para.endIndex - 1;
+          // Make sure endIndex is valid
+          if (paraEnd > para.startIndex) {
+            requests.push({
+              updateParagraphStyle: {
+                range: {
+                  startIndex: para.startIndex,
+                  endIndex: paraEnd,
+                },
+                paragraphStyle: {
+                  indentFirstLine: { magnitude: 36, unit: 'PT' },
+                  indentStart: { magnitude: 36, unit: 'PT' },
+                },
+                fields: 'indentFirstLine,indentStart',
+              },
+            });
+          }
+        }
+      }
+    }
+
+    if (requests.length === 0) {
+      return { success: true, documentId };
+    }
+
+    await (docsApi.documents.batchUpdate as any)({
+      documentId,
+      requestBody: { requests },
+    });
+
+    console.log('[formatCleaningServicesListInDoc] Applied', requests.length, 'formatting requests');
+    return { success: true, documentId };
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error('[formatCleaningServicesListInDoc] Error:', errorMsg);
+    return { success: false, documentId };
+  }
+}
+

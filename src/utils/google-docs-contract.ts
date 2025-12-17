@@ -68,6 +68,119 @@ function generateContractFilename(
 }
 
 /**
+ * Format cleaning services list for Word template
+ * Uses the same logic as PDF generation, including optional services
+ */
+function formatCleaningServicesList(
+  commonServices?: {
+    weekly?: string[];
+    monthly?: string[];
+    biAnnual?: string[];
+    perCleaning?: string[];
+    generalCleaning?: string[];
+  },
+  cleaningFrequency?: string
+): string {
+  if (!commonServices) return '';
+
+  // Map cleaning frequency to commonServices key
+  // Weekly frequencies map to weekly, monthly to monthly
+  const frequencyMap: Record<string, 'weekly' | 'monthly'> = {
+    'weekly': 'weekly',
+    'twice-weekly': 'weekly',
+    'biweekly': 'weekly',
+    'daily': 'weekly',
+    'workdays': 'weekly', // Commercial spaces: every workday
+    'everyday': 'weekly', // Commercial spaces: every day including weekends
+    '3x-weekly': 'weekly',
+    '2x-weekly': 'weekly',
+    'daily-basic-weekly': 'weekly',
+    'daily-basic-weekly-wc': 'weekly',
+    'daily-weekends-basic-weekly': 'weekly',
+    'daily-weekends-basic-weekly-wc': 'weekly',
+    'monthly': 'monthly'
+  };
+
+  // Merge perCleaning into the appropriate frequency category
+  const mergedServices: typeof commonServices = { ...commonServices };
+
+  if (cleaningFrequency && commonServices.perCleaning && commonServices.perCleaning.length > 0) {
+    const targetKey = frequencyMap[cleaningFrequency];
+    if (targetKey) {
+      // Merge perCleaning services into the frequency category
+      mergedServices[targetKey] = [
+        ...(mergedServices[targetKey] || []),
+        ...commonServices.perCleaning
+      ];
+      // Remove perCleaning since it's now merged
+      delete mergedServices.perCleaning;
+    }
+  }
+
+  // Define service categories with their labels
+  const serviceCategories = [
+    { key: 'weekly', label: 'Při každém úklidu' },
+    { key: 'monthly', label: '1 x měsíčně' },
+    { key: 'perCleaning', label: 'Při každém úklidu' }, // Fallback if perCleaning wasn't merged
+    { key: 'generalCleaning', label: 'V rámci pravidelného generálního úklidu (pokud je zadán v poptávkovém formuláři)' }
+  ];
+
+  // Filter to only categories that have content
+  const activeCategories = serviceCategories.filter(category => {
+    const services = mergedServices[category.key as keyof typeof mergedServices] as string[] | undefined;
+    return services && services.length > 0;
+  });
+
+  if (activeCategories.length === 0) return '';
+
+  // Build plain text with ASCII formatting: category titles, bullets, and empty lines between sections
+  const blocks: string[] = [];
+
+  activeCategories.forEach((category, categoryIndex) => {
+    const categoryHeading = category.label;
+    
+    const services = mergedServices[category.key as keyof typeof mergedServices] as string[];
+    
+    // Separate standard services from optional services
+    const standardServices: string[] = [];
+    const optionalServices: string[] = [];
+
+    services.forEach(service => {
+      if (service.startsWith('příplatkové služby:')) {
+        const serviceName = service.replace(/^příplatkové služby:\s*/, '');
+        optionalServices.push(serviceName);
+      } else {
+        standardServices.push(service);
+      }
+    });
+
+    // Add empty line before category (except first one)
+    if (categoryIndex > 0) {
+      blocks.push('');
+    }
+    
+    // Add category heading
+    blocks.push(categoryHeading);
+    
+    // Add standard services with bullets
+    standardServices.forEach(service => {
+      blocks.push('- ' + service);
+    });
+
+    // Add optional services section if any
+    if (optionalServices.length > 0) {
+      blocks.push('- Příplatkové služby:');
+      // Optional services with double indent
+      optionalServices.forEach(service => {
+        blocks.push('  - ' + service);
+      });
+    }
+  });
+
+  return blocks.join('\n');
+}
+
+/**
  * Map OfferData to contract template variables and condition flags
  * Returns both string replacements and boolean flags for conditionals
  */
@@ -98,33 +211,13 @@ function mapOfferDataToContractVariables(offerData: OfferData): {
     return dateStr;
   };
   
-  // Format prices
+  // Format prices with space as thousand separator (e.g., 5 600 Kč)
   const formatPrice = (price: number | undefined): string => {
     if (!price || price === 0) return '';
-    return `${price} Kč`;
+    // Format with Czech locale to use space as thousand separator
+    return `${price.toLocaleString('cs-CZ')} Kč`;
   };
   
-  // Get cleaning frequency - extract just the number since template has "x týdně" after it
-  // The contract template uses: "{{cetnost_uklidu}} x týdně"
-  const getCleaningFrequencyNumber = (): string => {
-    if (offerData.cleaningFrequencyLabel) {
-      // Extract number from label like "1x týdně" -> "1"
-      const match = offerData.cleaningFrequencyLabel.match(/^(\d+)/);
-      if (match) return match[1];
-    }
-    
-    // Map frequency values to numbers
-    if (offerData.cleaningFrequency === 'daily') return '7';
-    if (offerData.cleaningFrequency === 'three-times-weekly') return '3';
-    if (offerData.cleaningFrequency === 'twice-weekly') return '2';
-    if (offerData.cleaningFrequency === 'weekly') return '1';
-    if (offerData.cleaningFrequency === 'biweekly') return '1'; // 1x za 14 dní
-    if (offerData.cleaningFrequency === 'monthly') return '1'; // 1x měsíčně
-    
-    return '1'; // Default
-  };
-  
-  const cleaningFrequency = getCleaningFrequencyNumber();
   
   // Check if general cleaning is opted for
   const hasGeneralCleaning = offerData.generalCleaningPrice !== undefined && 
@@ -155,8 +248,8 @@ function mapOfferDataToContractVariables(offerData: OfferData): {
       // Dates
       '{{datum_zahajeni_uklidu}}': formatDate(offerData.startDate),
       
-      // Cleaning frequency
-      '{{cetnost_uklidu}}': cleaningFrequency,
+      // Cleaning services list - plain text, will be formatted after insertion
+      '{{uklid_obsahuje}}': formatCleaningServicesList(offerData.commonServices, offerData.cleaningFrequency),
     },
     conditions: {
       // Conditional flags for {{#if ...}} blocks
@@ -221,13 +314,26 @@ export async function generateContractFromTemplate(
     console.log('[Google Docs Contract] Replacing variables:', Object.keys(replacements));
     console.log('[Google Docs Contract] Processing conditions:', Object.keys(conditions));
 
-    // First, process conditional blocks ({{#if ...}}...{{/if}})
-    const { processConditionalBlocks } = await import('@/utils/google-docs');
-    await processConditionalBlocks(clonedDoc.documentId, conditions);
-    console.log('[Google Docs Contract] Conditional blocks processed');
 
-    // Then replace all variables in the document
+    // Replace uklid_obsahuje with plain text (formatting will be applied after)
+    const uklidValue = replacements['{{uklid_obsahuje}}'];
+    if (uklidValue) {
+      try {
+        await replaceTextInGoogleDoc(clonedDoc.documentId, '{{uklid_obsahuje}}', uklidValue, false);
+        console.log('[Google Docs Contract] Replaced {{uklid_obsahuje}} placeholder with text');
+      } catch (error) {
+        console.error('[Google Docs Contract] Failed to replace uklid_obsahuje:', error);
+      }
+    }
+
+    // Then replace all other variables in the document
     for (const [placeholder, value] of Object.entries(replacements)) {
+      // Skip uklid_obsahuje as we handled it above
+      if (placeholder === '{{uklid_obsahuje}}') {
+        continue;
+      }
+      
+      // For other placeholders, only replace if value is truthy
       if (value) {
         try {
           await replaceTextInGoogleDoc(clonedDoc.documentId, placeholder, value, false);
@@ -236,8 +342,16 @@ export async function generateContractFromTemplate(
           console.error(`[Google Docs Contract] Failed to replace ${placeholder}:`, error);
           // Continue with other replacements even if one fails
         }
+      } else {
+        console.log(`[Google Docs Contract] Skipping ${placeholder} (empty value)`);
       }
     }
+
+    // Process conditional blocks ({{#if ...}}...{{/if}})
+    const { processConditionalBlocks } = await import('@/utils/google-docs');
+    await processConditionalBlocks(clonedDoc.documentId, conditions);
+    console.log('[Google Docs Contract] Conditional blocks processed');
+
 
     const documentUrl = `https://docs.google.com/document/d/${clonedDoc.documentId}/edit`;
 
