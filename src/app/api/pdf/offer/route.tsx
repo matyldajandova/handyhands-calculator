@@ -441,16 +441,17 @@ export async function POST(req: NextRequest) {
             serviceType = (data.customer as Record<string, unknown>)?.serviceType as string | undefined;
           }
           
-          // Use template ID 5 for one-time cleaning and window cleaning (handyman-services) when submitted from poptavka
-          // Otherwise use template ID 2 for poptavka, 3 for regular PDF download
+          // Template selection:
+          // - Poptávka: Template 7 for one-time/window, Template 6 for regular cleaning services
+          // - PDF download from /vysledek: Template 3 for regular cleaning services, Template 5 for one-time/window
           const templateId = isPoptavka 
-            ? (serviceType === 'one-time-cleaning' || serviceType === 'handyman-services' ? 5 : 2)
-            : 3;
+            ? (serviceType === 'one-time-cleaning' || serviceType === 'handyman-services' ? 7 : 6)
+            : (serviceType === 'one-time-cleaning' || serviceType === 'handyman-services' ? 5 : 3);
           
           // Set subject based on template/context
           const emailSubject = isPoptavka 
-            ? 'Návrh smlouvy a zahájení spolupráce s Handy Hands'  // Template 2: Poptávka
-            : 'Vaše kalkulace úklidových služeb Handy Hands';       // Template 3: Regular PDF
+            ? 'Návrh smlouvy a zahájení spolupráce s Handy Hands'  // Template 6/7: Poptávka
+            : 'Vaše kalkulace úklidových služeb Handy Hands';       // Template 3/5: PDF download
 
           const poptavkaUrl = data.poptavkaHash
             ? hashService.createPoptavkaUrl(data.poptavkaHash, baseUrl)
@@ -489,28 +490,94 @@ export async function POST(req: NextRequest) {
             attachments = [createPdfAttachment(pdf, `${filename}.pdf`)];
           }
           
-          const emailResult = await sendTransactionalEmail({
-            to: [{
-              email: data.customer.email,
-              name: data.customer.name || undefined,
-            }],
-            subject: emailSubject,
-            fromName: 'Handy Hands',
-            fromEmail: process.env.ECOMAIL_FROM_EMAIL || 'info@handyhands.cz',
-            replyTo: process.env.ECOMAIL_REPLY_EMAIL || process.env.ECOMAIL_FROM_EMAIL || 'info@handyhands.cz',
-            templateId,
-            attachments,
-            globalMergeVars: [
+          // Send email with appropriate template
+          if (templateId) {
+            // Generate calendar links for one-time/window cleaning services from poptavka
+            let calendarLinks: { google: string; outlook: string } | null = null;
+            const isOneTimeOrWindow = serviceType === 'one-time-cleaning' || serviceType === 'handyman-services';
+            if (isPoptavka && isOneTimeOrWindow && data.startDate) {
+              try {
+                const { calendarLinkService } = await import('@/services/calendar-link-service');
+                
+                // Parse Czech date format (DD. MM. YYYY) or ISO format (YYYY-MM-DD)
+                let startDate: Date;
+                if (data.startDate.includes('.')) {
+                  // Czech format: "DD. MM. YYYY"
+                  const parts = data.startDate.split('.').map(p => p.trim());
+                  if (parts.length === 3) {
+                    const day = parseInt(parts[0], 10);
+                    const month = parseInt(parts[1], 10) - 1; // JavaScript months are 0-based
+                    const year = parseInt(parts[2], 10);
+                    startDate = new Date(year, month, day, 9, 0, 0); // Default to 9:00 AM
+                  } else {
+                    throw new Error('Invalid date format');
+                  }
+                } else if (data.startDate.includes('-')) {
+                  // ISO format: "YYYY-MM-DD"
+                  const [year, month, day] = data.startDate.split('-').map(Number);
+                  startDate = new Date(year, month - 1, day, 9, 0, 0); // Default to 9:00 AM
+                } else {
+                  throw new Error('Invalid date format');
+                }
+
+                // Calculate end date: start date + minimum hours (default to 4 hours if not specified)
+                const minimumHours = data.minimumHours || 4;
+                const endDate = new Date(startDate);
+                endDate.setHours(endDate.getHours() + minimumHours);
+
+                // Get location from customer address or use empty string
+                const location = data.customer?.address || '';
+
+                // Get service title
+                const title = data.serviceTitle || 'Úklidové práce';
+
+                // Generate calendar links
+                calendarLinks = calendarLinkService.generateCalendarLinks({
+                  title,
+                  startDate,
+                  endDate,
+                  location,
+                  description: '',
+                });
+              } catch (error) {
+                console.error('[PDF] Failed to generate calendar links:', error);
+              }
+            }
+
+            // Build merge variables
+            const mergeVars = [
               { name: 'POPTAVKA_URL', content: poptavkaUrl },
               { name: 'PDF_OBJEDNAVKA', content: uploadedPdfUrl || '' },
-            ],
-          });
-          
-          if (emailResult.success) {
-            console.log(`[PDF] Transactional email sent successfully (template ${templateId}):`, emailResult.messageId);
-          } else {
-            console.error('[PDF] Failed to send transactional email:', emailResult.error);
-            // Don't fail the request if email fails, but log it
+            ];
+
+            // Add calendar links for one-time/window cleaning services from poptavka
+            if (calendarLinks) {
+              mergeVars.push(
+                { name: 'GOOGLE_URL', content: calendarLinks.google },
+                { name: 'OUTLOOK_URL', content: calendarLinks.outlook }
+              );
+            }
+
+            const emailResult = await sendTransactionalEmail({
+              to: [{
+                email: data.customer.email,
+                name: data.customer.name || undefined,
+              }],
+              subject: emailSubject,
+              fromName: 'Handy Hands',
+              fromEmail: process.env.ECOMAIL_FROM_EMAIL || 'info@handyhands.cz',
+              replyTo: process.env.ECOMAIL_REPLY_EMAIL || process.env.ECOMAIL_FROM_EMAIL || 'info@handyhands.cz',
+              templateId,
+              attachments,
+              globalMergeVars: mergeVars,
+            });
+            
+            if (emailResult.success) {
+              console.log(`[PDF] Transactional email sent successfully (template ${templateId}):`, emailResult.messageId);
+            } else {
+              console.error('[PDF] Failed to send transactional email:', emailResult.error);
+              // Don't fail the request if email fails, but log it
+            }
           }
         } catch (emailError) {
           console.error('[PDF] Error sending transactional email:', emailError);
