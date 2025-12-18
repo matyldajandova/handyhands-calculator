@@ -21,6 +21,23 @@ type DocsApiType = {
           insertText?: { location: { index: number }; text: string };
           deleteContentRange?: { range: { startIndex: number; endIndex: number } };
           replaceAllText?: { containsText: { text: string; matchCase?: boolean }; replaceText: string };
+          updateTextStyle?: {
+            range: { startIndex: number; endIndex: number };
+            textStyle: { bold?: boolean };
+            fields: string;
+          };
+          createParagraphBullets?: {
+            range: { startIndex: number; endIndex: number };
+            bulletPreset?: string;
+          };
+          updateParagraphStyle?: {
+            range: { startIndex: number; endIndex: number };
+            paragraphStyle: {
+              indentFirstLine?: { magnitude: number; unit: string };
+              indentStart?: { magnitude: number; unit: string };
+            };
+            fields: string;
+          };
         }>;
       };
     }) => Promise<{ data: { documentId?: string } }>;
@@ -808,7 +825,7 @@ export async function formatCleaningServicesListInDoc(
       return { success: true, documentId };
     }
 
-    await (docsApi.documents.batchUpdate as any)({
+    await docsApi.documents.batchUpdate({
       documentId,
       requestBody: { requests },
     });
