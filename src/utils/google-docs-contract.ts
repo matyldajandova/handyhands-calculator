@@ -212,10 +212,13 @@ function mapOfferDataToContractVariables(offerData: OfferData): {
   };
   
   // Format prices with space as thousand separator (e.g., 5 600 Kč)
+  // Round to nearest 10 Kč to match PDF and calculation results
   const formatPrice = (price: number | undefined): string => {
     if (!price || price === 0) return '';
+    // Round to nearest 10 Kč (same as PDF and calculation results)
+    const roundedPrice = Math.round(price / 10) * 10;
     // Format with Czech locale to use space as thousand separator
-    return `${price.toLocaleString('cs-CZ')} Kč`;
+    return `${roundedPrice.toLocaleString('cs-CZ')} Kč`;
   };
   
   
