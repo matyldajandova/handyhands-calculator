@@ -442,11 +442,21 @@ export async function POST(req: NextRequest) {
           }
           
           // Template selection:
-          // - Poptávka: Template 7 for one-time/window, Template 6 for regular cleaning services
+          // - Poptávka: Template 7 for one-time/window, Template 8 for commercial/retail regular cleaning, Template 6 for residential/panel regular cleaning
           // - PDF download from /vysledek: Template 3 for regular cleaning services, Template 5 for one-time/window
-          const templateId = isPoptavka 
-            ? (serviceType === 'one-time-cleaning' || serviceType === 'handyman-services' ? 7 : 6)
-            : (serviceType === 'one-time-cleaning' || serviceType === 'handyman-services' ? 5 : 3);
+          let templateId: number | undefined;
+          if (isPoptavka) {
+            if (serviceType === 'one-time-cleaning' || serviceType === 'handyman-services') {
+              templateId = 7;
+            } else {
+              // For regular cleaning services, determine template based on contract type
+              const { getContractType } = await import('@/utils/google-docs-contract');
+              const contractType = getContractType(serviceType);
+              templateId = contractType === 'commercial' ? 8 : 6; // Commercial/retail = 8, Residential/panel = 6
+            }
+          } else {
+            templateId = serviceType === 'one-time-cleaning' || serviceType === 'handyman-services' ? 5 : 3;
+          }
           
           // Set subject based on template/context
           const emailSubject = isPoptavka 
