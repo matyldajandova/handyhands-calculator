@@ -112,8 +112,11 @@ export async function writeToGoogleSheets(params: {
   const firstName = nameParts[0] || "";
   const lastName = nameParts.slice(1).join(" ") || "";
 
-  // Format date (current date in DD.MM.YYYY format)
-  const currentDate = new Date().toLocaleDateString("cs-CZ");
+  // Format date with time (current date in DD.MM.YYYY HH:MM format)
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("cs-CZ"); // DD.MM.YYYY
+  const timeStr = now.toLocaleTimeString("cs-CZ", { hour: '2-digit', minute: '2-digit', hour12: false }); // HH:MM
+  const currentDate = `${dateStr} ${timeStr}`;
 
   // Determine request type
   // If contract was generated, it's "Smlouva", otherwise "Poptávka" for poptavka submissions

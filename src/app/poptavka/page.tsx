@@ -20,6 +20,7 @@ import { User, Building, Check, ShieldCheck, CalendarIcon, ArrowLeftIcon, FileTe
 import { FormConfig, CalculationResult, FormSubmissionData } from "@/types/form-types";
 import { cn } from "@/lib/utils";
 import { CalculationData } from "@/utils/hash-generator";
+import { PoptavkaSubmittingScreen } from "@/components/poptavka-submitting-screen";
 
 // Helper function to check if service type is regular cleaning (not hourly)
 function isRegularCleaningType(serviceType: string | undefined): boolean {
@@ -248,7 +249,10 @@ function PoptavkaContent() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isShowingSubmittingScreen, setIsShowingSubmittingScreen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const submissionInProgressRef = useRef(false);
+  const submissionCompletedRef = useRef(false);
 
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [hashData, setHashData] = useState<{
@@ -633,120 +637,151 @@ function PoptavkaContent() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Extract submission logic to a separate function
+  const performSubmission = async (onProgress: (step: number, progress: number) => void) => {
+    // Prevent duplicate submissions
+    if (submissionInProgressRef.current) {
+      console.warn('Submission already in progress, ignoring duplicate call');
+      return;
+    }
     
-    if (!validateForm()) return;
-
-    setIsSubmitting(true);
+    submissionInProgressRef.current = true;
+    
     try {
+      // Step 0: Prepare data
+      onProgress(0, 10);
+      
       // Get calculation data from hash to regenerate PDF with final data
       if (!hashData?.calculationData) {
         throw new Error('Calculation data not found. Please complete the calculation first.');
       }
-      
+    
       const calculationData = hashData.calculationData;
-      const serviceType = hashData.serviceTitle || 'Ostatní služby';
+    const serviceType = hashData.serviceTitle || 'Ostatní služby';
 
-      // Get the actual form configuration
-      const { getFormConfig } = await import("@/config/services");
-      const formConfig = getFormConfig(hashData.serviceType || serviceType);
+    // Get the actual form configuration
+    const { getFormConfig } = await import("@/config/services");
+    const formConfig = getFormConfig(hashData.serviceType || serviceType);
 
-      // Get the original calculation form data from hash
-      const originalFormData = calculationData.formData as Record<string, string | number | boolean | string[] | undefined>;
-      
-      // Extract original form notes (from calculation form) - separate from poptavka notes
-      // The hash stores both: 'notes' (original form) and 'poptavkaNotes' (poptavka page)
-      // IMPORTANT: These are ABSOLUTELY separate and must NEVER be interchanged
-      // Use originalFormNotesFromHash if available (preserved from initial load), otherwise from hash
-      const originalFormNotes = originalFormNotesFromHash || (originalFormData.notes as string | undefined) || '';
-      const poptavkaPageNotes = formData.notes || ''; // This is the /poptavka page note field
+    // Get the original calculation form data from hash
+    const originalFormData = calculationData.formData as Record<string, string | number | boolean | string[] | undefined>;
+    
+    // Extract original form notes (from calculation form) - separate from poptavka notes
+    // The hash stores both: 'notes' (original form) and 'poptavkaNotes' (poptavka page)
+    // IMPORTANT: These are ABSOLUTELY separate and must NEVER be interchanged
+    // Use originalFormNotesFromHash if available (preserved from initial load), otherwise from hash
+    const originalFormNotes = originalFormNotesFromHash || (originalFormData.notes as string | undefined) || '';
+    const poptavkaPageNotes = formData.notes || ''; // This is the /poptavka page note field
 
-      // Reconstruct calculationDetails if missing (for optimized hashes)
-      let finalCalculationData = calculationData as CalculationResult;
-      if (!calculationData.calculationDetails?.appliedCoefficients || calculationData.calculationDetails.appliedCoefficients.length === 0) {
-        const { ensureCalculationDetails } = await import("@/utils/calculation-reconstruction");
-        finalCalculationData = await ensureCalculationDetails(calculationData, formConfig as FormConfig);
+    // Reconstruct calculationDetails if missing (for optimized hashes)
+    let finalCalculationData = calculationData as CalculationResult;
+    if (!calculationData.calculationDetails?.appliedCoefficients || calculationData.calculationDetails.appliedCoefficients.length === 0) {
+      const { ensureCalculationDetails } = await import("@/utils/calculation-reconstruction");
+      finalCalculationData = await ensureCalculationDetails(calculationData, formConfig as FormConfig);
+    }
+
+    // Convert form data to OfferData format and generate PDF with final poptavka data
+    const { convertFormDataToOfferData } = await import("@/utils/form-to-offer-data");
+    // Ensure originalFormData has ONLY the original form notes (not poptavka notes)
+    // Remove poptavkaNotes from formData to prevent any confusion
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { poptavkaNotes: _, ...formDataWithoutPoptavkaNotes } = originalFormData;
+    const formDataForConversion = {
+      ...formDataWithoutPoptavkaNotes,
+      notes: originalFormNotes // Use ONLY original form notes, NEVER poptavka notes
+    };
+    
+    const offerData = await convertFormDataToOfferData(
+      formDataForConversion,
+      finalCalculationData,
+      formConfig as unknown as FormConfig,
+      {
+        firstName: formData.firstName || '',
+        lastName: formData.lastName || '',
+        email: formData.email || '',
+        // Add poptavka-specific data
+        phone: formData.phone || '',
+        address: `${formData.propertyStreet}, ${formData.propertyCity}, ${formData.propertyZipCode}`,
+        company: formData.isCompany ? {
+          name: formData.companyName || '',
+          ico: formData.companyIco || '',
+          dic: formData.companyDic || '',
+          address: `${formData.companyStreet}, ${formData.companyCity}, ${formData.companyZipCode}`
+        } : undefined,
+        startDate: formData.serviceStartDate ? formData.serviceStartDate.toISOString().split('T')[0] : '',
+        notes: poptavkaPageNotes, // Pass poptavka page notes as customerData.notes (will become poptavkaNotes)
+        invoiceEmail: formData.invoiceEmail || '',
+        // Include original calculationResult and formConfig to preserve appliedCoefficients
+        // These are passed as additional properties using type assertion
+        calculationResult: finalCalculationData,
+        formConfig: formConfig as unknown as FormConfig,
+        serviceType: hashData.serviceType
+      } as {
+        firstName: string;
+        lastName: string;
+        email: string;
+        phone?: string;
+        address?: string;
+        company?: {
+          name: string;
+          ico: string;
+          dic: string;
+          address: string;
+        };
+        startDate?: string;
+        notes?: string;
+        invoiceEmail?: string;
+      } & {
+        calculationResult?: CalculationResult;
+        formConfig?: FormConfig;
+        serviceType?: string;
       }
-
-      // Convert form data to OfferData format and generate PDF with final poptavka data
-      const { convertFormDataToOfferData } = await import("@/utils/form-to-offer-data");
-      // Ensure originalFormData has ONLY the original form notes (not poptavka notes)
-      // Remove poptavkaNotes from formData to prevent any confusion
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { poptavkaNotes: _, ...formDataWithoutPoptavkaNotes } = originalFormData;
-      const formDataForConversion = {
-        ...formDataWithoutPoptavkaNotes,
-        notes: originalFormNotes // Use ONLY original form notes, NEVER poptavka notes
-      };
-      
-      const offerData = await convertFormDataToOfferData(
-        formDataForConversion,
-        finalCalculationData,
-        formConfig as unknown as FormConfig,
-        {
-          firstName: formData.firstName || '',
-          lastName: formData.lastName || '',
-          email: formData.email || '',
-          // Add poptavka-specific data
-          phone: formData.phone || '',
-          address: `${formData.propertyStreet}, ${formData.propertyCity}, ${formData.propertyZipCode}`,
-          company: formData.isCompany ? {
-            name: formData.companyName || '',
-            ico: formData.companyIco || '',
-            dic: formData.companyDic || '',
-            address: `${formData.companyStreet}, ${formData.companyCity}, ${formData.companyZipCode}`
-          } : undefined,
-          startDate: formData.serviceStartDate ? formData.serviceStartDate.toISOString().split('T')[0] : '',
-          notes: poptavkaPageNotes, // Pass poptavka page notes as customerData.notes (will become poptavkaNotes)
-          invoiceEmail: formData.invoiceEmail || '',
-          // Include original calculationResult and formConfig to preserve appliedCoefficients
-          // These are passed as additional properties using type assertion
-          calculationResult: finalCalculationData,
-          formConfig: formConfig as unknown as FormConfig,
-          serviceType: hashData.serviceType
-        } as {
-          firstName: string;
-          lastName: string;
-          email: string;
-          phone?: string;
-          address?: string;
-          company?: {
-            name: string;
-            ico: string;
-            dic: string;
-            address: string;
-          };
-          startDate?: string;
-          notes?: string;
-          invoiceEmail?: string;
-        } & {
-          calculationResult?: CalculationResult;
-          formConfig?: FormConfig;
-          serviceType?: string;
-        }
-      );
-      
-      // Include the hash from URL so PDF route doesn't regenerate it
-      const urlHash = searchParams.get('hash');
-      if (urlHash) {
-        offerData.poptavkaHash = urlHash;
-      }
-      
+    );
+    
+    // Include the hash from URL so PDF route doesn't regenerate it
+    const urlHash = searchParams.get('hash');
+    if (urlHash) {
+      offerData.poptavkaHash = urlHash;
+    }
+    
       // Mark as poptavka submission for Google Drive folder
       offerData.isPoptavka = true;
 
-      const pdfResponse = await fetch('/api/pdf/offer', {
+      // Step 1: Generate PDF - this takes a while, so simulate progress
+      onProgress(1, 30);
+      
+      // Start PDF fetch
+      const pdfPromise = fetch('/api/pdf/offer', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(offerData),
       });
+      
+      // Simulate progress during PDF generation (gradually move from 30% to 48% slowly)
+      // This operation can take 15-30 seconds, so we need slow, realistic progress
+      // Speed increased by 30%: interval 2000ms -> 1400ms, increments 0.2-0.5% -> 0.26-0.65%
+      let pdfProgressValue = 30;
+      const pdfProgressInterval = setInterval(() => {
+        // Increments increased by 30% - add 0.26-0.65% each time, max 48%
+        const increment = 0.26 + (Math.random() * 0.39); // 0.26 to 0.65% per update (30% faster)
+        pdfProgressValue = Math.min(pdfProgressValue + increment, 48);
+        onProgress(1, pdfProgressValue);
+      }, 1400); // Update every 1.4 seconds (30% faster than 2 seconds)
+
+      const pdfResponse = await pdfPromise;
+      
+      clearInterval(pdfProgressInterval);
+      // Ensure we're at 48% when PDF completes
+      onProgress(1, 48);
 
       if (!pdfResponse.ok) {
         throw new Error('Failed to regenerate PDF with final data');
       }
+
+      // Step 2: Contract is being created (happens in PDF route, but we track it here)
+      onProgress(2, 55);
 
       // Get the PDF URL from the response
       const pdfResult = await pdfResponse.json();
@@ -762,66 +797,81 @@ function PoptavkaContent() {
         console.log('PDF uploaded to Google Drive:', pdfUrl);
       }
 
+      // Step 3: Contract is being saved (happens in PDF route)
+      onProgress(3, 70);
+
       // Store customer data in Ecomail with Poptávka label
-      const poptavkaUrl = (() => {
-        if (typeof window === 'undefined') return '';
-        const origin = window.location.origin;
-        const hashFromUrl = searchParams.get('hash');
-        if (hashFromUrl) {
-          return hashService.createPoptavkaUrl(hashFromUrl, origin);
-        }
-        const hashFromData = (hashData as Record<string, unknown>).hash || (hashData as Record<string, unknown>).poptavkaHash;
-        if (typeof hashFromData === 'string' && hashFromData) {
-          return hashService.createPoptavkaUrl(hashFromData, origin);
-        }
+    const poptavkaUrl = (() => {
+      if (typeof window === 'undefined') return '';
+      const origin = window.location.origin;
+      const hashFromUrl = searchParams.get('hash');
+      if (hashFromUrl) {
+        return hashService.createPoptavkaUrl(hashFromUrl, origin);
+      }
+      const hashFromData = (hashData as Record<string, unknown>).hash || (hashData as Record<string, unknown>).poptavkaHash;
+      if (typeof hashFromData === 'string' && hashFromData) {
+        return hashService.createPoptavkaUrl(hashFromData, origin);
+      }
         return '';
       })();
-      
-      const ecomailResponse = await fetch('/api/ecomail/subscribe', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          pdfUrl,
-          poptavkaUrl,
-          serviceType: hashData.serviceType,
-          serviceTitle: hashData.serviceTitle || serviceType
-        }),
-      });
+    
+      // Step 4: Send email
+      onProgress(4, 85);
+    
+      // Store customer data in Ecomail (non-blocking - don't fail if this fails)
+      try {
+        const ecomailResponse = await fetch('/api/ecomail/subscribe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...formData,
+            pdfUrl,
+            poptavkaUrl,
+            serviceType: hashData.serviceType,
+            serviceTitle: hashData.serviceTitle || serviceType
+          }),
+        });
 
-      if (!ecomailResponse.ok) {
-        console.error('Failed to store customer data in Ecomail');
-        // Continue anyway as the main submission was successful
-      } else {
-        console.log('Customer data stored in Ecomail with PDF URL:', pdfUrl || 'NO URL');
+        if (!ecomailResponse.ok) {
+          console.warn('Failed to store customer data in Ecomail (non-critical)');
+          // Continue anyway as the main submission was successful
+        } else {
+          console.log('Customer data stored in Ecomail with PDF URL:', pdfUrl || 'NO URL');
+        }
+      } catch (ecomailError) {
+        // Non-critical error - log but don't fail the submission
+        console.warn('Error storing customer data in Ecomail (non-critical):', ecomailError);
       }
-      
+    
+      // Step 5: Finalizing
+      onProgress(5, 95);
+    
       // Clear localStorage data first
       orderStorage.clear();
-      
-      // Reset form data to initial empty state
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        propertyStreet: '',
-        propertyCity: '',
-        propertyZipCode: '',
-        isCompany: false,
-        companyName: '',
-        companyIco: '',
-        companyDic: '',
-        companyStreet: '',
-        companyCity: '',
-        companyZipCode: '',
-        serviceStartDate: null,
-        notes: '',
-        invoiceEmail: ''
-      });
-      
+    
+    // Reset form data to initial empty state
+    setFormData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      propertyStreet: '',
+      propertyCity: '',
+      propertyZipCode: '',
+      isCompany: false,
+      companyName: '',
+      companyIco: '',
+      companyDic: '',
+      companyStreet: '',
+      companyCity: '',
+      companyZipCode: '',
+      serviceStartDate: null,
+      notes: '',
+      invoiceEmail: ''
+    });
+    
       // Clear form errors
       setErrors({});
       
@@ -831,12 +881,51 @@ function PoptavkaContent() {
         hashSubmissionService.addSubmittedHash(currentHash);
       }
       
-      // Show success state
+      // Show success state - set both ref and state atomically
+      submissionCompletedRef.current = true;
       setIsSubmitted(true);
-    } catch {
-      alert("Nepodařilo se odeslat návrh smlouvy. Zkuste to prosím znovu.");
-    } finally {
+    } catch (error) {
+      // On error, reset submission state and re-throw so loading screen can handle it
       setIsSubmitting(false);
+      setIsShowingSubmittingScreen(false);
+      alert("Nepodařilo se odeslat návrh smlouvy. Zkuste to prosím znovu.");
+      throw error;
+    } finally {
+      submissionInProgressRef.current = false;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+
+    // Prevent duplicate submissions
+    if (isSubmitting || isShowingSubmittingScreen || isSubmitted) {
+      return;
+    }
+
+    // Show submitting screen - it will call performSubmission
+    setIsShowingSubmittingScreen(true);
+    setIsSubmitting(true);
+  };
+
+  const handleSubmittingComplete = () => {
+    // This is called when the submitting screen completes successfully
+    // The ref is set synchronously before state, so check ref first, then state
+    // This ensures we only hide when submission is truly complete
+    if (submissionCompletedRef.current) {
+      // Ref confirms completion - hide loading screen
+      // isSubmitted state will be true (set synchronously after ref)
+      setIsShowingSubmittingScreen(false);
+      setIsSubmitting(false);
+    } else {
+      // Fallback: if ref check somehow fails, use state check
+      // This should not happen, but provides a safety net
+      if (isSubmitted) {
+        setIsShowingSubmittingScreen(false);
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -916,6 +1005,23 @@ function PoptavkaContent() {
           </div>
         </div>
       </div>
+    );
+  }
+
+  // Show submitting screen during submission
+  if (isShowingSubmittingScreen) {
+    return (
+      <PoptavkaSubmittingScreen
+        onComplete={handleSubmittingComplete}
+        onSubmit={async (onProgress) => {
+          // performSubmission handles all the submission logic
+          // It will set setIsSubmitted(true) on success
+          // onProgress callback will update the loading screen with real progress
+          await performSubmission(onProgress);
+          // After performSubmission completes successfully, setIsSubmitted(true) is already set
+          // The loading screen will call onComplete after showing completion animation
+        }}
+      />
     );
   }
 
