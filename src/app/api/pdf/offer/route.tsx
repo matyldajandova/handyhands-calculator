@@ -459,9 +459,19 @@ export async function POST(req: NextRequest) {
           }
           
           // Set subject based on template/context
-          const emailSubject = isPoptavka 
-            ? 'Návrh smlouvy a zahájení spolupráce s Handy Hands'  // Template 6/7: Poptávka
-            : 'Vaše kalkulace úklidových služeb Handy Hands';       // Template 3/5: PDF download
+          let emailSubject: string;
+          if (isPoptavka) {
+            if (templateId === 7) {
+              // Template 7: One-time/window cleaning from poptavka
+              emailSubject = 'Objednávka úklidových služeb od Handy Hands';
+            } else {
+              // Template 6/8: Regular cleaning services from poptavka
+              emailSubject = 'Návrh smlouvy a zahájení spolupráce s Handy Hands';
+            }
+          } else {
+            // Template 3/5: PDF download from /vysledek
+            emailSubject = 'Vaše kalkulace úklidových služeb Handy Hands';
+          }
 
           const poptavkaUrl = data.poptavkaHash
             ? hashService.createPoptavkaUrl(data.poptavkaHash, baseUrl)

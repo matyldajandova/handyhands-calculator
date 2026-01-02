@@ -9,23 +9,35 @@ import Image from "next/image";
 interface PoptavkaSubmittingScreenProps {
   onComplete: () => void;
   onSubmit: (onProgress: (step: number, progress: number) => void) => Promise<void>;
+  serviceType?: string;
 }
 
-export function PoptavkaSubmittingScreen({ onComplete, onSubmit }: PoptavkaSubmittingScreenProps) {
+export function PoptavkaSubmittingScreen({ onComplete, onSubmit, serviceType }: PoptavkaSubmittingScreenProps) {
   const [progress, setProgress] = useState(0);
   const [targetProgress, setTargetProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
   const progressRef = useRef(0);
   const submissionFinishedRef = useRef(false);
 
-  const steps = [
-    "Příprava dat",
-    "Vytváření smlouvy",
-    "Ukládání smlouvy",
-    "Export do Wordu a PDF",
-    "Odesílání emailu",
-    "Dokončování"
-  ];
+  // Determine if this is a one-time/window cleaning service (no contract generation)
+  const isOneTimeOrWindow = serviceType === 'one-time-cleaning' || serviceType === 'handyman-services';
+
+  // Different steps for one-time/window cleaning vs regular cleaning services
+  const steps = isOneTimeOrWindow
+    ? [
+        "Příprava dat",
+        "Generování PDF",
+        "Odesílání emailu",
+        "Dokončování"
+      ]
+    : [
+        "Příprava dat",
+        "Vytváření smlouvy",
+        "Ukládání smlouvy",
+        "Export do Wordu a PDF",
+        "Odesílání emailu",
+        "Dokončování"
+      ];
 
   // Smooth progress bar animation towards target
   useEffect(() => {
@@ -74,7 +86,21 @@ export function PoptavkaSubmittingScreen({ onComplete, onSubmit }: PoptavkaSubmi
       try {
         // Progress callback to update UI based on actual operations
         const onProgress = (step: number, progressPercent: number) => {
-          setCurrentStep(step);
+          // Map step numbers from performSubmission to display steps
+          // For one-time/window services, skip contract steps (2 and 3)
+          let displayStep = step;
+          if (isOneTimeOrWindow) {
+            // Map: 0->0, 1->1, 2->skip (stay at 1), 3->skip (stay at 1), 4->2, 5->3
+            if (step === 2 || step === 3) {
+              // Skip contract steps, stay at previous step but update progress
+              displayStep = 1; // Stay at PDF generation step
+            } else if (step === 4) {
+              displayStep = 2; // Email step
+            } else if (step === 5) {
+              displayStep = 3; // Finalizing step
+            }
+          }
+          setCurrentStep(displayStep);
           // Update target, not actual progress - animation will smoothly catch up
           setTargetProgress(progressPercent);
         };
@@ -179,11 +205,13 @@ export function PoptavkaSubmittingScreen({ onComplete, onSubmit }: PoptavkaSubmi
           </div>
           
           <h1 className="text-3xl font-bold text-foreground font-heading mb-4">
-            Odesílání návrhu smlouvy
+            {isOneTimeOrWindow ? 'Odesílání objednávky' : 'Odesílání návrhu smlouvy'}
           </h1>
           
           <p className="text-muted-foreground text-lg font-sans">
-            Prosím vyčkejte, připravujeme vaši poptávku a generujeme dokumenty
+            {isOneTimeOrWindow 
+              ? 'Prosím vyčkejte, připravujeme vaši objednávku a generujeme dokumenty'
+              : 'Prosím vyčkejte, připravujeme vaši poptávku a generujeme dokumenty'}
           </p>
         </motion.div>
 

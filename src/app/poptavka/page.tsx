@@ -1013,6 +1013,7 @@ function PoptavkaContent() {
     return (
       <PoptavkaSubmittingScreen
         onComplete={handleSubmittingComplete}
+        serviceType={hashData?.serviceType}
         onSubmit={async (onProgress) => {
           // performSubmission handles all the submission logic
           // It will set setIsSubmitted(true) on success
