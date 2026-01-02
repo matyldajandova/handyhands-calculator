@@ -112,11 +112,25 @@ export async function writeToGoogleSheets(params: {
   const firstName = nameParts[0] || "";
   const lastName = nameParts.slice(1).join(" ") || "";
 
-  // Format date with time (current date in DD.MM.YYYY HH:MM format)
+  // Format date with time (current date in DD.MM.YYYY HH:MM format in CET/CEST timezone)
   const now = new Date();
-  const dateStr = now.toLocaleDateString("cs-CZ"); // DD.MM.YYYY
-  const timeStr = now.toLocaleTimeString("cs-CZ", { hour: '2-digit', minute: '2-digit', hour12: false }); // HH:MM
-  const currentDate = `${dateStr} ${timeStr}`;
+  // Use Europe/Prague timezone to ensure CET/CEST (Central European Time)
+  const formatter = new Intl.DateTimeFormat("cs-CZ", {
+    timeZone: "Europe/Prague",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const parts = formatter.formatToParts(now);
+  const day = parts.find(p => p.type === "day")?.value || "";
+  const month = parts.find(p => p.type === "month")?.value || "";
+  const year = parts.find(p => p.type === "year")?.value || "";
+  const hour = parts.find(p => p.type === "hour")?.value || "";
+  const minute = parts.find(p => p.type === "minute")?.value || "";
+  const currentDate = `${day}.${month}.${year} ${hour}:${minute}`;
 
   // Determine request type
   // If contract was generated, it's "Smlouva", otherwise "Poptávka" for poptavka submissions
