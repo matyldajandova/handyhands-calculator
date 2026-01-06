@@ -528,22 +528,20 @@ export async function POST(req: NextRequest) {
                     const day = parseInt(parts[0], 10);
                     const month = parseInt(parts[1], 10) - 1; // JavaScript months are 0-based
                     const year = parseInt(parts[2], 10);
-                    startDate = new Date(year, month, day, 9, 0, 0); // Default to 9:00 AM
+                    startDate = new Date(year, month, day, 0, 0, 0); // Set to midnight for all-day event
                   } else {
                     throw new Error('Invalid date format');
                   }
                 } else if (data.startDate.includes('-')) {
                   // ISO format: "YYYY-MM-DD"
                   const [year, month, day] = data.startDate.split('-').map(Number);
-                  startDate = new Date(year, month - 1, day, 9, 0, 0); // Default to 9:00 AM
+                  startDate = new Date(year, month - 1, day, 0, 0, 0); // Set to midnight for all-day event
                 } else {
                   throw new Error('Invalid date format');
                 }
 
-                // Calculate end date: start date + minimum hours (default to 4 hours if not specified)
-                const minimumHours = data.minimumHours || 4;
+                // For all-day events, use the same date for start and end
                 const endDate = new Date(startDate);
-                endDate.setHours(endDate.getHours() + minimumHours);
 
                 // Get location from customer address or use empty string
                 const location = data.customer?.address || '';
@@ -551,13 +549,14 @@ export async function POST(req: NextRequest) {
                 // Get service title
                 const title = data.serviceTitle || 'Úklidové práce';
 
-                // Generate calendar links
+                // Generate calendar links as all-day event
                 calendarLinks = calendarLinkService.generateCalendarLinks({
                   title,
                   startDate,
                   endDate,
                   location,
                   description: '',
+                  allDay: true,
                 });
               } catch (error) {
                 console.error('[PDF] Failed to generate calendar links:', error);
