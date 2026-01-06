@@ -1753,7 +1753,6 @@ export default function PoptavkaPage() {
                 height={90}
                 style={{ height: 'auto' }}
                 className="mx-auto"
-                priority
               />
             </Link>
           </div>

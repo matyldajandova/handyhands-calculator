@@ -67,14 +67,6 @@ export default function RootLayout({
   return (
     <html lang="cs" suppressHydrationWarning>
       <head>
-        <Script
-          id={`Cookiebot`}
-          async={true}
-          src={`https://consent.cookiebot.com/uc.js`}
-          strategy={`beforeInteractive`}
-          data-cbid={`93977515-dd5c-4289-9068-715cf7a0cefa`}
-          type={`text/javascript`}
-        />
       </head>
       <body className={`${openSans.variable} ${raleway.variable} font-sans antialiased`}>
         <GoogleTagManager gtmId="GTM-58FFPMBH" />
