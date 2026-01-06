@@ -41,7 +41,12 @@ const oneTimeCleaningSchema = z.object({
   cleaningSupplies: z.array(z.string()).min(1, "Vyberte úklidové náčiní a úklidovou chemii"),
   domesticAnimals: z.string().min(1, "Vyberte, zda máte domácí zvířata"),
   optionalServices: z.array(z.string()).optional(),
-  zipCode: z.string().min(1, "Zadejte PSČ").regex(/^\d{5}$/, "PSČ musí mít přesně 5 čísel"),
+  zipCode: z.string()
+    .min(1, "Zadejte PSČ")
+    .regex(/^\d{5}$/, "PSČ musí mít přesně 5 čísel")
+    .refine((val) => val.startsWith("1"), {
+      message: "Úklidové služby zatím poskytujeme jen v Praze (PSČ 10000-19999)"
+    }),
   notes: z.string().optional(),
 }).refine((data) => {
   // Validate cleaning supplies exclusive selection
@@ -194,7 +199,8 @@ export const oneTimeCleaningFormConfig: FormConfig = {
         {
           id: "zipCode",
           type: "input",
-          label: "Zadejte PSČ",
+          label: "Lokalita",
+          description: "Úklidové služby zatím poskytujeme jen v Praze (PSČ 10000-19999)",
           required: true,
           inputType: "text",
           placeholder: "12345"

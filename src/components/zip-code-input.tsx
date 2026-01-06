@@ -14,6 +14,7 @@ interface ZipCodeInputProps {
   className?: string;
   error?: string;
   onValidationChange?: (isValid: boolean) => void;
+  pragueOnly?: boolean; // If true, only show success for Prague postal codes (10000-19999)
 }
 
 export function ZipCodeInput({ 
@@ -24,11 +25,15 @@ export function ZipCodeInput({
   placeholder = "12345",
   className = "",
   error,
-  onValidationChange
+  onValidationChange,
+  pragueOnly = false
 }: ZipCodeInputProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [foundRegion, setFoundRegion] = useState<string | null>(null);
   const [isValid, setIsValid] = useState<boolean | null>(null);
+
+  // Check if postal code is Prague (10000-19999)
+  const isPraguePostalCode = value.length === 5 && /^\d{5}$/.test(value) && value.startsWith("1");
 
   // Debounced region lookup
   useEffect(() => {
@@ -38,15 +43,31 @@ export function ZipCodeInput({
         setIsValid(null);
         setFoundRegion(null);
         
+        // For Prague-only services, don't show success for non-Prague codes
+        if (pragueOnly && !isPraguePostalCode) {
+          setIsLoading(false);
+          setIsValid(false);
+          setFoundRegion(null);
+          onValidationChange?.(false);
+          return;
+        }
+        
         try {
           const regionKey = await getRegionFromZipCode(value);
           if (regionKey) {
             const regions = getAvailableRegions();
             const region = regions.find(r => r.value === regionKey);
             if (region) {
-              setFoundRegion(region.label);
-              setIsValid(true);
-              onValidationChange?.(true);
+              // For Prague-only services, only show success if it's Prague
+              if (pragueOnly && !isPraguePostalCode) {
+                setFoundRegion(null);
+                setIsValid(false);
+                onValidationChange?.(false);
+              } else {
+                setFoundRegion(region.label);
+                setIsValid(true);
+                onValidationChange?.(true);
+              }
             } else {
               setIsValid(false);
               onValidationChange?.(false);
@@ -74,7 +95,7 @@ export function ZipCodeInput({
     }, 500); // 500ms debounce
 
     return () => clearTimeout(timeoutId);
-  }, [value, onValidationChange]);
+  }, [value, onValidationChange, pragueOnly, isPraguePostalCode]);
 
   return (
     <div className="space-y-2">
@@ -96,31 +117,31 @@ export function ZipCodeInput({
         )}
       </div>
       
-      {/* Region indicator */}
-      {isLoading && (
+      {/* Region indicator - only show for non-Prague-only services or when it's Prague */}
+      {isLoading && !pragueOnly && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-3 w-3 animate-spin" />
           <span>Hledám region...</span>
         </div>
       )}
       
-      {!isLoading && foundRegion && (
+      {/* Only show region success if not Prague-only OR if it's Prague */}
+      {!isLoading && foundRegion && (!pragueOnly || isPraguePostalCode) && (
         <div className="flex items-center gap-2 text-sm text-green-success bg-green-success/10 border border-green-success/20 rounded-md px-3 py-2">
           <MapPin className="h-3 w-3" />
           <span><strong>{foundRegion}</strong></span>
         </div>
       )}
       
-      {!isLoading && isValid === false && value.length === 5 && (
+      {/* Only show "region not found" error for non-Prague-only services (when no validation error exists) */}
+      {!isLoading && isValid === false && value.length === 5 && !pragueOnly && !error && (
         <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md px-3 py-2">
           <MapPin className="h-3 w-3" />
           <span>Pro zadané PSČ nebyl nalezen žádný region</span>
         </div>
       )}
       
-      {error && error !== "Zadejte PSČ" && (
-        <p className="text-sm text-destructive">{error}</p>
-      )}
+      {/* Don't show error message here - it's shown by the form validation with warning triangle */}
     </div>
   );
 }

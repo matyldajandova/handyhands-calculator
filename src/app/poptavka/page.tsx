@@ -238,6 +238,7 @@ function PoptavkaContent() {
     companyZipCode: "",
     serviceStartDate: (() => {
       // Default to 10 days (will be updated when hashData is loaded)
+      // For hourly services, this will be updated to 5 days when hashData loads
       const date = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
       date.setHours(12, 0, 0, 0); // Use noon to avoid timezone edge cases with Calendar
       return date;
@@ -342,9 +343,9 @@ function PoptavkaContent() {
           })();
         }
         
-          // Determine minimum delay: 1 day for one-time cleaning and window washing, 10 days for regular services
+          // Determine minimum delay: 5 days for one-time cleaning and window washing, 10 days for regular services
           const isHourlyService = decodedData.serviceType === "one-time-cleaning" || decodedData.serviceType === "handyman-services";
-          const daysDelay = isHourlyService ? 1 : 10;
+          const daysDelay = isHourlyService ? 5 : 10;
           const minDate = new Date(Date.now() + daysDelay * 24 * 60 * 60 * 1000);
           minDate.setHours(12, 0, 0, 0); // Use noon to avoid timezone edge cases
         
@@ -429,9 +430,9 @@ function PoptavkaContent() {
                 now.setHours(0, 0, 0, 0);
                 const daysUntilDate = Math.ceil((parsedDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
                 
-                // Enforce minimum delay: 1 day for hourly services, 10 days for regular services
+                // Enforce minimum delay: 5 days for hourly services, 10 days for regular services
                 // Only correct dates that are too early - allow any date in the future
-                const minDaysRequired = isHourlyService ? 1 : 10;
+                const minDaysRequired = isHourlyService ? 5 : 10;
                 
                 if (parsedDate < minDate || daysUntilDate < minDaysRequired) {
                   // Date is too early - correct to minimum date
@@ -1607,7 +1608,7 @@ function PoptavkaContent() {
                             }
                           }}
                           disabled={(date) => {
-                            // Determine minimum delay: 1 day for one-time cleaning and window washing, 10 days for regular services
+                            // Determine minimum delay: 5 days for one-time cleaning and window washing, 10 days for regular services
                             // Normalize dates to start of day for accurate comparison (ignore time component)
                             const normalizeDate = (d: Date) => {
                               const normalized = new Date(d);
@@ -1624,7 +1625,7 @@ function PoptavkaContent() {
                               minDate.setDate(today.getDate() + 10);
                             } else {
                             const isHourlyService = hashData.serviceType === "one-time-cleaning" || hashData.serviceType === "handyman-services";
-                            const daysDelay = isHourlyService ? 1 : 10;
+                            const daysDelay = isHourlyService ? 5 : 10;
                               minDate = new Date(today);
                               minDate.setDate(today.getDate() + daysDelay);
                             }

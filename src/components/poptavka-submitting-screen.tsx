@@ -31,13 +31,13 @@ export function PoptavkaSubmittingScreen({ onComplete, onSubmit, serviceType }: 
         "Dokončování"
       ]
     : [
-        "Příprava dat",
-        "Vytváření smlouvy",
-        "Ukládání smlouvy",
-        "Export do Wordu a PDF",
-        "Odesílání emailu",
-        "Dokončování"
-      ];
+    "Příprava dat",
+    "Vytváření smlouvy",
+    "Ukládání smlouvy",
+    "Export do Wordu a PDF",
+    "Odesílání emailu",
+    "Dokončování"
+  ];
 
   // Smooth progress bar animation towards target
   useEffect(() => {

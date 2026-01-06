@@ -293,7 +293,7 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
         ...(poptavkaNotes ? { notes: poptavkaNotes } : {}),
         // Pass serviceStartDate from hash if it exists (convertFormDataToOfferData will validate it meets minimum requirements)
         ...(serviceStartDateFromHash ? { startDate: typeof serviceStartDateFromHash === 'string' ? serviceStartDateFromHash : String(serviceStartDateFromHash) } : {})
-        // Note: convertFormDataToOfferData will ensure date meets minimum requirements (+1 day for hourly, +10 days for regular)
+        // Note: convertFormDataToOfferData will ensure date meets minimum requirements (+5 days for hourly, +10 days for regular)
         // Note: Do NOT include form notes here - they will be passed separately via formData
       };
       
@@ -657,7 +657,7 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
                   
                   // Calculate start date (same logic as convertFormDataToOfferData)
                   const isHourlyService = formConfig.id === "one-time-cleaning" || formConfig.id === "handyman-services";
-                  const daysDelay = isHourlyService ? 1 : 10;
+                  const daysDelay = isHourlyService ? 5 : 10;
                   const minDate = new Date(Date.now() + daysDelay * 24 * 60 * 60 * 1000);
                   minDate.setHours(0, 0, 0, 0);
                   

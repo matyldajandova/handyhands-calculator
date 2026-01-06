@@ -38,7 +38,12 @@ const handymanServicesSchema = z.object({
   cleaningType: z.string().min(1, "Vyberte typ čištění"),
   roomCount: z.string().min(1, "Vyberte počet místností s okny"),
   cleaningSupplies: z.array(z.string()).optional(),
-  zipCode: z.string().min(1, "Zadejte PSČ").regex(/^\d{5}$/, "PSČ musí mít přesně 5 čísel"),
+  zipCode: z.string()
+    .min(1, "Zadejte PSČ")
+    .regex(/^\d{5}$/, "PSČ musí mít přesně 5 čísel")
+    .refine((val) => val.startsWith("1"), {
+      message: "Úklidové služby zatím poskytujeme jen v Praze (PSČ 10000-19999)"
+    }),
   notes: z.string().optional(),
 });
 
@@ -115,7 +120,8 @@ export const handymanServicesFormConfig: FormConfig = {
         {
           id: "zipCode",
           type: "input",
-          label: "Zadejte PSČ",
+          label: "Lokalita",
+          description: "Úklidové služby zatím poskytujeme jen v Praze (PSČ 10000-19999)",
           required: true,
           inputType: "text",
           placeholder: "12345"

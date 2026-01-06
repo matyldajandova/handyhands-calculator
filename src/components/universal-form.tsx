@@ -283,7 +283,7 @@ function evaluateCondition(condition: any, formData: FormSubmissionData): boolea
 }
 
 // Helper function to render conditional fields
-function renderConditionalFields(field: FormFieldType, form: UseFormReturn<FormSubmissionData>, onZipCodeValidationChange?: (fieldId: string, isValid: boolean) => void) {
+function renderConditionalFields(field: FormFieldType, form: UseFormReturn<FormSubmissionData>, onZipCodeValidationChange?: (fieldId: string, isValid: boolean) => void, config?: FormConfig) {
   if (field.type !== "conditional") return null;
   
   const conditionalField = field as ConditionalField;
@@ -330,7 +330,7 @@ function renderConditionalFields(field: FormFieldType, form: UseFormReturn<FormS
                         <FieldLabel field={subField} isRequired={shouldShowSubField && subField.required} isInConditionalContext={true} />
                       )}
                       <FormControl>
-                        {renderField(subField, subFormField, form.formState, form, onZipCodeValidationChange)}
+                        {renderField(subField, subFormField, form.formState, form, onZipCodeValidationChange, config)}
                       </FormControl>
                       {subField.description && (
                         <p className="text-xs text-muted-foreground">
@@ -353,7 +353,7 @@ function renderConditionalFields(field: FormFieldType, form: UseFormReturn<FormS
 }
 
 // Helper function to render individual fields
-function renderField(field: FormFieldType, formField: ControllerRenderProps<FormSubmissionData>, formState: any, form: any, onZipCodeValidationChange?: (fieldId: string, isValid: boolean) => void) {
+function renderField(field: FormFieldType, formField: ControllerRenderProps<FormSubmissionData>, formState: any, form: any, onZipCodeValidationChange?: (fieldId: string, isValid: boolean) => void, config?: FormConfig) {
   const placeholder = 'placeholder' in field ? field.placeholder : undefined;
 
   switch (field.type) {
@@ -414,15 +414,31 @@ function renderField(field: FormFieldType, formField: ControllerRenderProps<Form
       
       // Use custom ZipCodeInput for zip code fields
       if (field.id === "zipCode") {
+        // Check if this is a Prague-only service (one-time-cleaning or handyman-services)
+        const isPragueOnly = config?.id === "one-time-cleaning" || config?.id === "handyman-services";
         return (
           <ZipCodeInput
             value={formField.value?.toString() || ""}
-            onChange={formField.onChange}
-            onBlur={formField.onBlur}
+            onChange={(value) => {
+              formField.onChange(value);
+              // Trigger validation when value changes and it's a complete 5-digit code
+              if (value.length === 5 && /^\d{5}$/.test(value)) {
+                // Use setTimeout to ensure the value is set before validation
+                setTimeout(() => {
+                  form.trigger(field.id as keyof FormSubmissionData);
+                }, 0);
+              }
+            }}
+            onBlur={() => {
+              formField.onBlur();
+              // Trigger validation on blur
+              form.trigger(field.id as keyof FormSubmissionData);
+            }}
             name={formField.name}
             placeholder={placeholder}
             className={formField.name && formState.errors[formField.name] ? "border-destructive" : ""}
             error={formState.errors[formField.name]?.message as string}
+            pragueOnly={isPragueOnly}
             onValidationChange={(isValid) => {
               onZipCodeValidationChange?.(field.id, isValid);
             }}
@@ -881,7 +897,7 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
                           >
                     {field.type === "alert" ? (
                       <div className="">
-                        {renderField(field, {} as ControllerRenderProps<FormSubmissionData>, form.formState, form, handleZipCodeValidationChange)}
+                        {renderField(field, {} as ControllerRenderProps<FormSubmissionData>, form.formState, form, handleZipCodeValidationChange, config)}
                       </div>
                     ) : (
                       <FormField
@@ -893,9 +909,10 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
                               <FieldLabel field={field} isRequired={isRequiredWhenVisible} isInConditionalContext={false} />
                             )}
                             <FormControl>
-                              {renderField(field, formField, form.formState, form, handleZipCodeValidationChange)}
+                              {renderField(field, formField, form.formState, form, handleZipCodeValidationChange, config)}
                             </FormControl>
-                            {field.description && (
+                            {/* Only show description if there's no validation error to avoid duplicate messages */}
+                            {field.description && !form.formState.errors[field.id] && (
                               <p className="text-xs text-muted-foreground">
                                 {field.description}
                               </p>
@@ -905,7 +922,7 @@ export function UniversalForm({ config, onBack, onSubmit, onFormChange, shouldRe
                             } />
                             
                             {/* Render conditional fields if this is a conditional field */}
-                            {field.type === "conditional" && renderConditionalFields(field, form, handleZipCodeValidationChange)}
+                            {field.type === "conditional" && renderConditionalFields(field, form, handleZipCodeValidationChange, config)}
                           </FormItem>
                         )}
                       />

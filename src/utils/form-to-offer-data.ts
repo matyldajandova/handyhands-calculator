@@ -196,8 +196,8 @@ export async function convertFormDataToOfferData(
   // Generate Q&A pairs directly from form structure
   const summaryItems = generateSummaryItems(formData, formConfig);
   
-  // Determine minimum delay: 1 day for one-time cleaning and window washing, 10 days for regular services
-  const daysDelay = isHourlyService ? 1 : 10;
+  // Determine minimum delay: 5 days for one-time cleaning and window washing, 10 days for regular services
+  const daysDelay = isHourlyService ? 5 : 10;
   const minDate = new Date(Date.now() + daysDelay * 24 * 60 * 60 * 1000);
   
   // Helper type to access serviceStartDate which may exist in formData

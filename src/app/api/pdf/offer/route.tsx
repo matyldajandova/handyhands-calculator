@@ -577,26 +577,26 @@ export async function POST(req: NextRequest) {
                 { name: 'OUTLOOK_URL', content: calendarLinks.outlook }
               );
             }
-
-            const emailResult = await sendTransactionalEmail({
-              to: [{
-                email: data.customer.email,
-                name: data.customer.name || undefined,
-              }],
-              subject: emailSubject,
-              fromName: 'Handy Hands',
-              fromEmail: process.env.ECOMAIL_FROM_EMAIL || 'info@handyhands.cz',
+          
+          const emailResult = await sendTransactionalEmail({
+            to: [{
+              email: data.customer.email,
+              name: data.customer.name || undefined,
+            }],
+            subject: emailSubject,
+            fromName: 'Handy Hands',
+            fromEmail: process.env.ECOMAIL_FROM_EMAIL || 'info@handyhands.cz',
               replyTo: process.env.ECOMAIL_REPLY_EMAIL || process.env.ECOMAIL_FROM_EMAIL || 'info@handyhands.cz',
-              templateId,
+            templateId,
               attachments,
               globalMergeVars: mergeVars,
-            });
-            
-            if (emailResult.success) {
-              console.log(`[PDF] Transactional email sent successfully (template ${templateId}):`, emailResult.messageId);
-            } else {
-              console.error('[PDF] Failed to send transactional email:', emailResult.error);
-              // Don't fail the request if email fails, but log it
+          });
+          
+          if (emailResult.success) {
+            console.log(`[PDF] Transactional email sent successfully (template ${templateId}):`, emailResult.messageId);
+          } else {
+            console.error('[PDF] Failed to send transactional email:', emailResult.error);
+            // Don't fail the request if email fails, but log it
             }
           }
         } catch (emailError) {
