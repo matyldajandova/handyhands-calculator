@@ -534,12 +534,14 @@ export function renderOfferPdfBody(data: OfferData, baseUrl?: string): string {
                 </div>
               `;
             } else if (data.poptavkaHash) {
-              // For regular services or non-poptavka: show original button
+              // For one-time/window cleaning services: show "Závazně objednat", for regular services: show "Závazná poptávka"
+              const isOneTimeOrWindow = data.serviceType === "one-time-cleaning" || data.serviceType === "handyman-services";
+              const buttonText = isOneTimeOrWindow ? "Závazně objednat" : "Závazná poptávka";
               return `
                 <div class="self-start">
                   <a href="${baseUrl}/poptavka?hash=${escapeHtml(data.poptavkaHash)}" 
                      class="inline-block px-5 py-2.5 bg-primary-pdf border-2 border-primary-pdf rounded-md font-bold text-black text-sm">
-                    Závazná poptávka
+                    ${buttonText}
                   </a>
                 </div>
               `;

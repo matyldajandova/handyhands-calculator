@@ -711,7 +711,9 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
                 }}
                 size="lg"
               >
-                Návrh smlouvy
+                {(formConfig?.id === "one-time-cleaning" || formConfig?.id === "handyman-services") 
+                  ? "Závazně objednat" 
+                  : "Návrh smlouvy"}
               </Button>
             </CardContent>
           </Card>
