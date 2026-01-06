@@ -1076,7 +1076,7 @@ function PoptavkaContent() {
                   {(hashData?.serviceType === "one-time-cleaning" || hashData?.serviceType === "handyman-services") ? (
                     "Objednávka byla úspěšně odeslána!"
                   ) : (
-                    "Poptávka byla úspěšně odeslána!"
+                    "Údaje byly v pořádku odeslány."
                   )}
                 </motion.h1>
                 <motion.p 
