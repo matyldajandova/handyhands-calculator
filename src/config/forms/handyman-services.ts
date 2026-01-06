@@ -114,13 +114,13 @@ export const handymanServicesFormConfig: FormConfig = {
     },
     {
       id: "location-transport",
-      title: "Lokalita a doprava",
+      title: "Lokalita",
       icon: "MapPin",
       fields: [
         {
           id: "zipCode",
           type: "input",
-          label: "Lokalita",
+          label: "",
           description: "Úklidové služby zatím poskytujeme jen v Praze (PSČ 10000-19999)",
           required: true,
           inputType: "text",
