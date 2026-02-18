@@ -228,8 +228,13 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
     'basementCleaningDetails'
   ];
   
-  // Always exclude general-cleaning-only fields from regular cleaning calculation for residential buildings
+  // For panel-building, windowsOnLandings should only affect general cleaning portion
+  // For residential-building, exclude general-cleaning-only fields from regular cleaning
   const excludeGeneralFieldsFromRegular = formConfig.id === "residential-building";
+  const isPanelBuilding = formConfig.id === "panel-building";
+  
+  // Store windowsOnLandings coefficient separately for panel-building
+  let windowsOnLandingsCoefficient: number | undefined;
   
   for (const [fieldId, value] of Object.entries(calculationData)) {
     if (value !== undefined && value !== null && value !== '') {
@@ -237,6 +242,22 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
       // (handled separately for residential-building). For other forms (e.g., panel-building),
       // allow the configured coefficient (e.g., 1.02 / 0.96) to apply here.
       if (formConfig.id === 'residential-building' && fieldId === 'basementCleaning') continue;
+      
+      // For panel-building, handle windowsOnLandings separately (only affects general cleaning portion)
+      if (isPanelBuilding && fieldId === 'windowsOnLandings') {
+        const coefficient = getCoefficientFromConfig(formConfig, fieldId, value);
+        if (coefficient !== 1.0) {
+          windowsOnLandingsCoefficient = coefficient;
+          // Still add to appliedCoefficients for display, but don't apply to regular cleaning
+          appliedCoefficients.push({
+            field: fieldId,
+            label: getFieldLabel(fieldId, value),
+            coefficient,
+            impact: (coefficient - 1) * 100
+          });
+        }
+        continue; // Skip applying this coefficient to regular cleaning
+      }
       
       // Skip general cleaning specific fields from regular cleaning
       if (excludeGeneralFieldsFromRegular && generalCleaningOnlyFields.includes(fieldId)) {
@@ -306,8 +327,33 @@ export async function calculatePrice(formData: FormSubmissionData, formConfig: F
     // The regularCleaningPrice will be used for display purposes but represents hourly rate
     regularCleaningPrice = hourlyRate;
   } else {
-    // For other services, calculate total price as before
-    regularCleaningPrice = Math.round((basePrice * finalCoefficient + totalFixedAddons) * 10) / 10; // Round to 0.1 Kč
+    // For panel-building with general cleaning and windowsOnLandings, apply special logic
+    // windowsOnLandings should only affect the general cleaning portion, not the entire price
+    if (isPanelBuilding && formData.generalCleaning === "yes" && windowsOnLandingsCoefficient !== undefined) {
+      // Get the general cleaning coefficients
+      const generalCleaningCoeffYes = getCoefficientFromConfig(formConfig, 'generalCleaning', 'yes'); // 1.065
+      const generalCleaningCoeffNo = getCoefficientFromConfig(formConfig, 'generalCleaning', 'no'); // 0.95
+      
+      // The general cleaning portion coefficient is the difference
+      const generalCleaningPortionCoeff = generalCleaningCoeffYes - generalCleaningCoeffNo; // 0.115
+      
+      // Find the generalCleaning coefficient that was applied in finalCoefficient
+      const appliedGeneralCleaningCoeff = getCoefficientFromConfig(formConfig, 'generalCleaning', formData.generalCleaning);
+      
+      // Remove generalCleaning coefficient from finalCoefficient to get base coefficient
+      const coefficientWithoutGeneral = finalCoefficient / appliedGeneralCleaningCoeff;
+      
+      // Apply windowsOnLandings coefficient only to the general cleaning portion
+      const adjustedGeneralCleaningPortionCoeff = generalCleaningPortionCoeff * windowsOnLandingsCoefficient;
+      
+      // Reconstruct: base coefficient + adjusted general cleaning portion
+      const adjustedCoefficient = coefficientWithoutGeneral * (generalCleaningCoeffNo + adjustedGeneralCleaningPortionCoeff);
+      
+      regularCleaningPrice = Math.round((basePrice * adjustedCoefficient + totalFixedAddons) * 10) / 10; // Round to 0.1 Kč
+    } else {
+      // For other services, calculate total price as before
+      regularCleaningPrice = Math.round((basePrice * finalCoefficient + totalFixedAddons) * 10) / 10; // Round to 0.1 Kč
+    }
   }
 
   // Calculate general cleaning price if applicable

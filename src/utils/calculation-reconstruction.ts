@@ -146,6 +146,7 @@ export async function reconstructCalculationDetails(
 
   const excludeGeneralFieldsFromRegular = formConfig.id === "residential-building";
   const isHourlyService = formConfig.id === "one-time-cleaning" || formConfig.id === "handyman-services";
+  const isPanelBuilding = formConfig.id === "panel-building";
 
   for (const [fieldId, value] of Object.entries(calculationData)) {
     if (value === undefined || value === null || value === '') {
@@ -155,6 +156,22 @@ export async function reconstructCalculationDetails(
     // Skip basementCleaning in the general coefficient loop ONLY for residential buildings
     if (formConfig.id === 'residential-building' && fieldId === 'basementCleaning') {
       continue;
+    }
+
+    // For panel-building, handle windowsOnLandings separately (only affects general cleaning portion)
+    // In reconstruction, we still add it to appliedCoefficients for display, but don't apply to regular cleaning
+    if (isPanelBuilding && fieldId === 'windowsOnLandings') {
+      const coefficient = getCoefficientFromConfig(formConfig, fieldId, value);
+      if (coefficient !== 1.0) {
+        // Still add to appliedCoefficients for display, but don't apply to regular cleaning
+        appliedCoefficients.push({
+          field: fieldId,
+          label: getFieldLabel(formConfig, fieldId, value),
+          coefficient,
+          impact: (coefficient - 1) * 100
+        });
+      }
+      continue; // Skip applying this coefficient to regular cleaning
     }
 
     // Skip general cleaning specific fields from regular cleaning
