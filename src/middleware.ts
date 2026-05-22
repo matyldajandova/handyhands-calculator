@@ -1,9 +1,11 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import {
   AB_COOKIE_NAME,
+  AB_COOKIE_MAX_AGE,
   AB_HEADER_NAME,
+  isProductionCookie,
   resolveAbVariant,
-} from '@/utils/ab-variant';
+} from '@/lib/ab-variant-core';
 
 export const config = {
   matcher: ['/vysledek', '/vysledek/:path*', '/poptavka', '/poptavka/:path*'],
@@ -21,9 +23,10 @@ export function middleware(req: NextRequest) {
     res.cookies.delete(AB_COOKIE_NAME);
   } else if (setCookie) {
     res.cookies.set(AB_COOKIE_NAME, setCookie, {
-      maxAge: 60 * 60 * 24 * 30,
+      maxAge: AB_COOKIE_MAX_AGE,
       path: '/',
       sameSite: 'lax',
+      secure: isProductionCookie(),
     });
   }
 

@@ -1,27 +1,30 @@
 import { cookies, headers } from 'next/headers';
+import { AbVariantCookieSync } from '@/components/ab-variant-cookie-sync';
 import {
-  AB_HEADER_NAME,
   AB_COOKIE_NAME,
+  AB_HEADER_NAME,
   resolveVariantForPage,
 } from '@/lib/ab-variant-core';
-import VysledekContent from './vysledek-content';
 
 export const dynamic = 'force-dynamic';
 
-type PageProps = {
-  searchParams: Promise<{ ab?: string; hash?: string }>;
-};
-
-export default async function VysledekPage({ searchParams }: PageProps) {
-  const { ab: queryAb } = await searchParams;
+export default async function PoptavkaLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const headersList = await headers();
   const cookieStore = await cookies();
 
   const variant = resolveVariantForPage({
     headerVariant: headersList.get(AB_HEADER_NAME),
     cookieVariant: cookieStore.get(AB_COOKIE_NAME)?.value,
-    queryAb,
   });
 
-  return <VysledekContent variant={variant} />;
+  return (
+    <>
+      <AbVariantCookieSync variant={variant} />
+      {children}
+    </>
+  );
 }

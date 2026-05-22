@@ -114,7 +114,7 @@ This setup ensures you'll never have port conflicts again! 🎉
 
 ## A/B test (local)
 
-The PDF funnel A/B test (`/vysledek` → email/PDF → `/poptavka`) assigns variant **A** (control) or **B** (email gate) via middleware. Overrides work only in development.
+The PDF funnel A/B test (`/vysledek` → email/PDF → `/poptavka`) assigns variant **A** (control) or **B** (email gate) via `src/middleware.ts` (must live next to `src/app`, not the repo root). Overrides work only in development.
 
 ### Force a variant
 

@@ -6,6 +6,7 @@ import { hashService } from "@/services/hash-service";
 import { hashSubmissionService } from "@/services/hash-submission-service";
 import { SuccessScreen } from "@/components/success-screen";
 import { AbVariantDevBadge } from "@/components/ab-variant-dev-badge";
+import { AbVariantCookieSync } from "@/components/ab-variant-cookie-sync";
 import { Button } from "@/components/ui/button";
 import * as Icons from "lucide-react";
 import Image from "next/image";
@@ -201,6 +202,7 @@ function VysledekContentInner({ variant }: VysledekContentProps) {
 
   return (
     <>
+      <AbVariantCookieSync variant={variant} />
       <SuccessScreen
         variant={variant}
         onBackToServices={handleBackToServices}
