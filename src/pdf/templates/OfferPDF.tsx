@@ -45,6 +45,8 @@ export type OfferData = {
   cleaningFrequency?: string; // For mapping perCleaning to frequency category
   cleaningFrequencyLabel?: string; // Human-readable frequency label for dynamic text
   serviceType?: string; // Service type ID (e.g., "one-time-cleaning", "handyman-services")
+  /** A/B funnel variant from client (fallback when cookie is missing on POST). */
+  abVariant?: 'a' | 'b';
 };
 /**
  * Helper function to format Czech text for minimum hours with correct grammar

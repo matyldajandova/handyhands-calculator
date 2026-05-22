@@ -645,7 +645,10 @@ export async function POST(req: NextRequest) {
   
   if (spreadsheetId && hasServiceAccount) {
     try {
-      const abVariant = parseVariant(req.cookies.get(AB_COOKIE_NAME)?.value);
+      const cookieVariant = parseVariant(req.cookies.get(AB_COOKIE_NAME)?.value);
+      const bodyVariant =
+        data.abVariant === 'b' ? 'b' : data.abVariant === 'a' ? 'a' : null;
+      const abVariant = bodyVariant ?? cookieVariant;
       console.log('[PDF] Writing submission data to Google Sheets...');
       const { writeToGoogleSheets } = await import('@/utils/google-sheets');
       await writeToGoogleSheets({

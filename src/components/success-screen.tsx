@@ -317,10 +317,13 @@ export function SuccessScreen({ variant = 'a', onBackToServices, calculationResu
       if (urlHash) {
         offerData.poptavkaHash = urlHash;
       }
+
+      offerData.abVariant = variant;
       
       // Generate PDF via API
       const response = await fetch('/api/pdf/offer', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {
           'Content-Type': 'application/json',
         },

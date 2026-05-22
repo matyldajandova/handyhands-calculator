@@ -749,6 +749,7 @@ function PoptavkaContent() {
     
       // Mark as poptavka submission for Google Drive folder
       offerData.isPoptavka = true;
+      offerData.abVariant = getAbVariantClient();
 
       // Step 1: Generate PDF - this takes a while, so simulate progress
       onProgress(1, 30);
@@ -756,6 +757,7 @@ function PoptavkaContent() {
       // Start PDF fetch
       const pdfPromise = fetch('/api/pdf/offer', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {
           'Content-Type': 'application/json',
         },
