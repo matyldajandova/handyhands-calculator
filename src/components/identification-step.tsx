@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Download, FileText } from "lucide-react";
+import type { AbVariant } from "@/utils/ab-variant";
 
 interface IdentificationStepProps {
+  variant?: AbVariant;
   onDownloadPDF: (customerData: { firstName: string; lastName: string; email: string }) => void;
   isDownloading?: boolean;
   initialData?: { firstName?: string; lastName?: string; email?: string };
@@ -16,7 +18,32 @@ interface IdentificationStepProps {
   isDownloaded?: boolean;
 }
 
-export function IdentificationStep({ onDownloadPDF, isDownloading = false, initialData, onDataChange, isDownloaded = false }: IdentificationStepProps) {
+const COPY = {
+  a: {
+    title: 'Stažení kalkulace do PDF',
+    description:
+      's uvedením kompletního rozpisu služeb a data možného zahájení služeb.',
+    buttonIdle: 'Stáhnout kalkulaci v PDF',
+    buttonLoading: 'Generuji PDF...',
+  },
+  b: {
+    title: 'Získejte detailní cenovou kalkulaci v PDF',
+    description:
+      'Vyplňte své údaje a okamžitě stáhnete přesnou cenovou nabídku včetně rozpisu služeb pro váš objekt.',
+    buttonIdle: 'Získat kalkulaci v PDF',
+    buttonLoading: 'Generujeme vaši kalkulaci...',
+  },
+} as const;
+
+export function IdentificationStep({
+  variant = 'a',
+  onDownloadPDF,
+  isDownloading = false,
+  initialData,
+  onDataChange,
+  isDownloaded = false,
+}: IdentificationStepProps) {
+  const copy = COPY[variant];
   const [firstName, setFirstName] = useState(initialData?.firstName || "");
   const [lastName, setLastName] = useState(initialData?.lastName || "");
   const [email, setEmail] = useState(initialData?.email || "");
@@ -135,10 +162,10 @@ export function IdentificationStep({ onDownloadPDF, isDownloading = false, initi
             <CardHeader className="text-center mb-6">
               <CardTitle className="text-xl flex items-center justify-center gap-2">
                 <FileText className="h-5 w-5 text-green-success" />
-                Stažení kalkulace do PDF
+                {copy.title}
               </CardTitle>
               <CardDescription className="text-base">
-                s uvedením kompletního rozpisu služeb a data možného zahájení služeb.
+                {copy.description}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -203,12 +230,12 @@ export function IdentificationStep({ onDownloadPDF, isDownloading = false, initi
                 {isDownloading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Generuji PDF...
+                    {copy.buttonLoading}
                   </>
                 ) : (
                   <>
                     <Download className="h-4 w-4" />
-                    Stáhnout kalkulaci v PDF
+                    {copy.buttonIdle}
                   </>
                 )}
               </Button>

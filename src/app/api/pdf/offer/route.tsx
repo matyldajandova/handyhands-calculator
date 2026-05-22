@@ -7,6 +7,11 @@ import fs from "node:fs/promises";
 import { hashService } from "@/services/hash-service";
 import { buildPoptavkaHashData } from "@/utils/hash-data-builder";
 import path from "node:path";
+import {
+  AB_COOKIE_NAME,
+  parseVariant,
+  variantLabel,
+} from '@/utils/ab-variant';
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -640,6 +645,7 @@ export async function POST(req: NextRequest) {
   
   if (spreadsheetId && hasServiceAccount) {
     try {
+      const abVariant = parseVariant(req.cookies.get(AB_COOKIE_NAME)?.value);
       console.log('[PDF] Writing submission data to Google Sheets...');
       const { writeToGoogleSheets } = await import('@/utils/google-sheets');
       await writeToGoogleSheets({
@@ -647,6 +653,7 @@ export async function POST(req: NextRequest) {
         offerData: data,
         isPoptavka: isPoptavka ?? false,
         contractUrl: contractResult?.url,
+        variant: variantLabel(abVariant),
       });
       console.log('[PDF] Successfully wrote data to Google Sheets');
     } catch (sheetsError) {

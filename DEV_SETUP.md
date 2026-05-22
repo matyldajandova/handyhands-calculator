@@ -111,3 +111,38 @@ npm run start
 ```
 
 This setup ensures you'll never have port conflicts again! 🎉
+
+## A/B test (local)
+
+The PDF funnel A/B test (`/vysledek` → email/PDF → `/poptavka`) assigns variant **A** (control) or **B** (email gate) via middleware. Overrides work only in development.
+
+### Force a variant
+
+| URL | Effect |
+|-----|--------|
+| `/vysledek?hash=…&ab=a` | Control — price visible before PDF |
+| `/vysledek?hash=…&ab=b` | Treatment — email gate before price/PDF |
+| `/vysledek?hash=…&ab=reset` | Clear `ab_pdf_funnel_v1` cookie; next visit re-randomizes |
+
+The query param updates the cookie so `/poptavka` and PDF API calls stay on the same variant.
+
+### Default variant (optional)
+
+Add to `.env.local`:
+
+```bash
+AB_FORCE_VARIANT=b
+```
+
+Used only when there is no `?ab=` param and no cookie yet. Clear with `?ab=reset` first if you need to change an existing assignment.
+
+### Dev badge
+
+On `/vysledek` and `/poptavka`, a small amber pill in the bottom-right shows the active variant and links to `a` / `b` / `reset` (preserves `hash` and other query params).
+
+### Typical flow
+
+1. Complete a calculator → land on `/vysledek?hash=…`
+2. Add `&ab=b` to compare the treatment UX
+3. Submit email → PDF → check price and “Návrh smlouvy” appear
+4. Use `&ab=reset` and reload to simulate a new visitor’s random assignment

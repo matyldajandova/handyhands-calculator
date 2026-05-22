@@ -66,8 +66,9 @@ export async function writeToGoogleSheets(params: {
   offerData: OfferData;
   isPoptavka: boolean;
   contractUrl?: string;
+  variant?: string;
 }): Promise<{ success: boolean }> {
-  const { spreadsheetId, offerData, isPoptavka, contractUrl } = params;
+  const { spreadsheetId, offerData, isPoptavka, contractUrl, variant } = params;
 
   const sheets = getSheetsClient();
 
@@ -211,7 +212,7 @@ export async function writeToGoogleSheets(params: {
   // A: Datum | B: Typ poptávky | C: Typ úklidu | D: Cena úklidu | E: Extra položky | F: Generální úklid | G: Winter maintenance | 
   // H: Jméno | I: Příjmení | J: E-mail | K: Telefon |
   // L: Název společnosti | M: IČO | N: DIČ | O: Ulice a čp (property) | P: Město (property) | Q: PSČ (property) |
-  // R: Ulice a čp (company) | S: Město (company) | T: PSČ (company) | U: Zahájení plnění | V: Fakturační e-mail | W: Poznámka | X: Smlouva
+  // R: Ulice a čp (company) | S: Město (company) | T: PSČ (company) | U: Zahájení plnění | V: Fakturační e-mail | W: Poznámka | X: Smlouva | Y: A/B variant
   const rowData = [
     currentDate,        // A: Datum
     requestType,        // B: Typ poptávky
@@ -237,16 +238,13 @@ export async function writeToGoogleSheets(params: {
     invoiceEmail,       // V: Fakturační e-mail
     notes,              // W: Poznámka
     contractUrl || '',  // X: Smlouva (link to contract document)
+    variant || '',       // Y: A/B variant
   ];
 
-  // Append data to the sheet (will automatically find the next available row)
-  // Using "USER_ENTERED" to preserve number formatting
-  // Try with sheet name first, fallback to range without sheet name
-  // Updated range to A:X (24 columns: A-W + new column X for contract link)
   const sheetName = "Data";
   const rangesToTry = [
-    `${sheetName}!A:X`,  // Try with explicit sheet name first (24 columns now)
-    "A:X",               // Fallback: let API use default sheet
+    `${sheetName}!A:Y`,
+    "A:Y",
   ];
   
   let lastError: Error | null = null;

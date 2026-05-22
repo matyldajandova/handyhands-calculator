@@ -12,9 +12,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { hashService } from "@/services/hash-service";
 import { orderStorage } from "@/services/order-storage";
 import { buildPoptavkaHashData } from "@/utils/hash-data-builder";
+import type { AbVariant } from "@/utils/ab-variant";
+import { trackAbEvent } from "@/utils/ab-variant";
 import Image from "next/image";
 
 interface SuccessScreenProps {
+  variant?: AbVariant;
   onBackToServices: () => void;
   calculationResult: CalculationResult | null;
   formConfig: FormConfig | null;
@@ -140,7 +143,7 @@ async function getIndividualAddons(formData: FormSubmissionData, formConfig: For
   return items;
 }
 
-export function SuccessScreen({ onBackToServices, calculationResult, formConfig, formData }: SuccessScreenProps) {
+export function SuccessScreen({ variant = 'a', onBackToServices, calculationResult, formConfig, formData }: SuccessScreenProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isDownloaded, setIsDownloaded] = useState(false);
   const [customerData, setCustomerData] = useState<{ firstName: string; lastName: string; email: string } | null>(null);
@@ -382,8 +385,11 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
         // Don't show error to user as PDF download was successful
       }
 
-      // Mark as downloaded successfully
       setIsDownloaded(true);
+      trackAbEvent('ab_pdf_download', variant, {
+        serviceType: formConfig.id,
+        price: roundedResults.totalMonthlyPrice,
+      });
 
       // Note: We don't update the URL here anymore to avoid interfering with "Závazná poptávka" navigation
       // The customer data is stored in the component state and will be used when "Závazná poptávka" is clicked
@@ -408,6 +414,8 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
       return `${roundedAmount.toLocaleString('cs-CZ')} Kč`;
     }
   };
+
+  const showFullResult = variant === 'a' || isDownloaded;
 
   if (!calculationResult || !roundedResults) {
     return (
@@ -449,28 +457,46 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
         </motion.div>
 
         <div className="text-center">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-            className="flex justify-center mb-6"
-          >
-            <CheckCircle className="h-14 w-14 md:h-20 md:w-20 text-green-success" />
-          </motion.div>
+          {showFullResult ? (
+            <>
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                className="flex justify-center mb-6"
+              >
+                <CheckCircle className="h-14 w-14 md:h-20 md:w-20 text-green-success" />
+              </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-            className="mb-8"
-          >
-            <h1 className="text-3xl font-bold text-foreground font-heading mb-4">
-              Kalkulace dokončena!
-            </h1>
-            <p className="text-muted-foreground text-lg font-sans">
-              Vaše cena úklidových služeb byla úspěšně vypočítána
-            </p>
-          </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+                className="mb-8"
+              >
+                <h1 className="text-3xl font-bold text-foreground font-heading mb-4">
+                  Kalkulace dokončena!
+                </h1>
+                <p className="text-muted-foreground text-lg font-sans">
+                  Vaše cena úklidových služeb byla úspěšně vypočítána
+                </p>
+              </motion.div>
+            </>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className="mb-8"
+            >
+              <h1 className="text-3xl font-bold text-foreground font-heading mb-4">
+                Vaše detailní kalkulace je připravena
+              </h1>
+              <p className="text-muted-foreground text-lg font-sans">
+                Zadejte e-mail a získejte přesný cenový rozpis včetně služeb pro váš objekt
+              </p>
+            </motion.div>
+          )}
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -478,14 +504,16 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
           transition={{ delay: 0.4, duration: 0.5 }}
         >
           <Card className="bg-card border shadow-lg">
-            <CardHeader className="px-3 md:px-6">
-              <CardTitle className="flex items-center gap-2 justify-center">
-                <Building className="h-5 w-5 text-accent" />
-                Výsledek kalkulace
-              </CardTitle>
-            </CardHeader>
+            {showFullResult && (
+              <CardHeader className="px-3 md:px-6">
+                <CardTitle className="flex items-center gap-2 justify-center">
+                  <Building className="h-5 w-5 text-accent" />
+                  Výsledek kalkulace
+                </CardTitle>
+              </CardHeader>
+            )}
             <CardContent className="space-y-6 px-3 md:px-6">
-              {/* Main Price Display */}
+              {showFullResult && (
               <div className="text-center">
                 {formConfig?.id === "one-time-cleaning" || formConfig?.id === "handyman-services" ? (
                   // Hourly services display
@@ -509,9 +537,9 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
                   </div>
                 )}
               </div>
+              )}
 
-              {/* Hourly Services Extra Items */}
-              {(formConfig?.id === "one-time-cleaning" || formConfig?.id === "handyman-services") && (
+              {showFullResult && (formConfig?.id === "one-time-cleaning" || formConfig?.id === "handyman-services") && (
                 <div className="p-4 bg-card dark:bg-card rounded-lg border border-border relative">
                   {/* Plus Icon */}
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-grey-800 dark:bg-slate-200 rounded-full p-1.5">
@@ -534,8 +562,7 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
                 </div>
               )}
 
-              {/* General Cleaning Price (if applicable) */}
-              {roundedResults.generalCleaningPrice && (
+              {showFullResult && roundedResults.generalCleaningPrice && (
                 <div className="p-4 bg-card dark:bg-card rounded-lg border border-border relative">
                   {/* Plus Icon */}
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-grey-800 dark:bg-slate-200 rounded-full p-1.5">
@@ -557,8 +584,7 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
                 </div>
               )}
 
-              {/* Winter Service Fees (if applicable) */}
-              {calculationResult.winterServiceFee && (
+              {showFullResult && calculationResult.winterServiceFee && (
                 <div className="p-4 bg-card dark:bg-card rounded-lg border border-border relative">
                   {/* Plus Icon */}
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-grey-800 dark:bg-slate-200 rounded-full p-1.5">
@@ -604,8 +630,7 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
                 </div>
               )}
               
-              {/* Conditions */}
-              {formConfig?.conditions && formConfig.conditions.length > 0 && (
+              {showFullResult && formConfig?.conditions && formConfig.conditions.length > 0 && (
                 <div className="p-4 bg-primary-light dark:bg-orange-950/20 rounded-lg border border-primary/30 dark:border-orange-800">
                   <div className="text-left">
                     <h4 className="font-semibold text-grey-900 dark:text-orange-200 mb-2 flex items-center gap-2">
@@ -629,9 +654,9 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
                 </div>
               )}
 
-              {/* PDF Download Section */}
               <div className="pt-2">
                 <IdentificationStep 
+                  variant={variant}
                   onDownloadPDF={handleDownloadPDF}
                   isDownloading={isDownloading}
                   isDownloaded={isDownloaded}
@@ -640,6 +665,7 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
                 />
               </div>
 
+              {showFullResult && (
               <Button 
                 onClick={() => {
                   if (!formConfig) return; // Guard against null formConfig
@@ -715,6 +741,7 @@ export function SuccessScreen({ onBackToServices, calculationResult, formConfig,
                   ? "Závazně objednat" 
                   : "Návrh smlouvy"}
               </Button>
+              )}
             </CardContent>
           </Card>
         </motion.div>

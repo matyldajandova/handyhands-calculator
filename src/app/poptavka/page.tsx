@@ -21,6 +21,8 @@ import { FormConfig, CalculationResult, FormSubmissionData } from "@/types/form-
 import { cn } from "@/lib/utils";
 import { CalculationData } from "@/utils/hash-generator";
 import { PoptavkaSubmittingScreen } from "@/components/poptavka-submitting-screen";
+import { AbVariantDevBadge } from "@/components/ab-variant-dev-badge";
+import { getAbVariantClient, trackAbEvent } from "@/utils/ab-variant";
 
 // Helper function to check if service type is regular cleaning (not hourly)
 function isRegularCleaningType(serviceType: string | undefined): boolean {
@@ -780,6 +782,10 @@ function PoptavkaContent() {
       if (!pdfResponse.ok) {
         throw new Error('Failed to regenerate PDF with final data');
       }
+
+      trackAbEvent('ab_poptavka_submit', getAbVariantClient(), {
+        serviceType: hashData.serviceType || '',
+      });
 
       // Step 2: Contract is being created (happens in PDF route, but we track it here)
       onProgress(2, 55);
@@ -1736,6 +1742,7 @@ function PoptavkaContent() {
           </p>
         </motion.div>
       </div>
+      <AbVariantDevBadge variant={getAbVariantClient()} />
     </div>
   );
 }
