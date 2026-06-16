@@ -649,6 +649,12 @@ export async function POST(req: NextRequest) {
       const bodyVariant =
         data.abVariant === 'b' ? 'b' : data.abVariant === 'a' ? 'a' : null;
       const abVariant = bodyVariant ?? cookieVariant;
+      console.log('[PDF] A/B variant for Sheets:', {
+        body: data.abVariant ?? null,
+        cookie: req.cookies.get(AB_COOKIE_NAME)?.value ?? null,
+        resolved: abVariant,
+        label: variantLabel(abVariant),
+      });
       console.log('[PDF] Writing submission data to Google Sheets...');
       const { writeToGoogleSheets } = await import('@/utils/google-sheets');
       await writeToGoogleSheets({
