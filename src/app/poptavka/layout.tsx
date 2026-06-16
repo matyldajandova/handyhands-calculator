@@ -1,5 +1,7 @@
 import { cookies, headers } from 'next/headers';
 import { AbVariantCookieSync } from '@/components/ab-variant-cookie-sync';
+import { AbVariantAnalyticsSync } from '@/components/ab-variant-analytics-sync';
+import { AbVariantProvider } from '@/contexts/ab-variant-context';
 import {
   AB_COOKIE_NAME,
   AB_HEADER_NAME,
@@ -22,9 +24,10 @@ export default async function PoptavkaLayout({
   });
 
   return (
-    <>
+    <AbVariantProvider variant={variant}>
       <AbVariantCookieSync variant={variant} />
+      <AbVariantAnalyticsSync variant={variant} />
       {children}
-    </>
+    </AbVariantProvider>
   );
 }

@@ -146,3 +146,22 @@ On `/vysledek` and `/poptavka`, a small amber pill in the bottom-right shows the
 2. Add `&ab=b` to compare the treatment UX
 3. Submit email → PDF → check price and “Návrh smlouvy” appear
 4. Use `&ab=reset` and reload to simulate a new visitor’s random assignment
+
+## GA4 / GTM tracking (A/B funnel)
+
+Application code pushes variant-aware events to `dataLayer` for GTM container `GTM-58FFPMBH`. GTM must be configured to forward them to GA4 — see **[docs/GTM_GA4_SETUP.md](docs/GTM_GA4_SETUP.md)** for the full prerequisite audit, tag setup, and verification checklist.
+
+### Quick local verification
+
+1. `npm run dev` (variant overrides only work locally, not on Vercel preview/prod)
+2. Clear `sessionStorage` keys `ab_exposure_sent` and `view_item_sent:*` between tests
+3. Open GTM Preview connected to `localhost:3000`
+4. Complete funnel with `?ab=a` then `?ab=b` on `/vysledek?hash=…`
+5. Confirm `dataLayer` events: `ab_exposure` → `view_item` → `generate_lead` (with `lead_type`)
+6. Check GA4 DebugView for `ab_variant` on each event
+
+Optional env override for GTM container:
+
+```bash
+NEXT_PUBLIC_GTM_ID=GTM-58FFPMBH
+```

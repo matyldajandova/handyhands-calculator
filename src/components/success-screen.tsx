@@ -391,6 +391,7 @@ export function SuccessScreen({ variant = 'a', onBackToServices, calculationResu
       setIsDownloaded(true);
       trackAbEvent('ab_pdf_download', variant, {
         serviceType: formConfig.id,
+        serviceTitle: formConfig.title,
         price: roundedResults.totalMonthlyPrice,
       });
 

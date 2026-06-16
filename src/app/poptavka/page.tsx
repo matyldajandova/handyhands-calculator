@@ -22,7 +22,8 @@ import { cn } from "@/lib/utils";
 import { CalculationData } from "@/utils/hash-generator";
 import { PoptavkaSubmittingScreen } from "@/components/poptavka-submitting-screen";
 import { AbVariantDevBadge } from "@/components/ab-variant-dev-badge";
-import { getAbVariantClient, trackAbEvent } from "@/utils/ab-variant";
+import { useAbVariant } from "@/contexts/ab-variant-context";
+import { trackAbEvent } from "@/utils/ab-variant";
 
 // Helper function to check if service type is regular cleaning (not hourly)
 function isRegularCleaningType(serviceType: string | undefined): boolean {
@@ -221,6 +222,7 @@ interface FormErrors {
 }
 
 function PoptavkaContent() {
+  const variant = useAbVariant();
   const searchParams = useSearchParams();
   const router = useRouter();
   const [formData, setFormData] = useState<FormData>({
@@ -749,7 +751,7 @@ function PoptavkaContent() {
     
       // Mark as poptavka submission for Google Drive folder
       offerData.isPoptavka = true;
-      offerData.abVariant = getAbVariantClient();
+      offerData.abVariant = variant;
 
       // Step 1: Generate PDF - this takes a while, so simulate progress
       onProgress(1, 30);
@@ -785,8 +787,9 @@ function PoptavkaContent() {
         throw new Error('Failed to regenerate PDF with final data');
       }
 
-      trackAbEvent('ab_poptavka_submit', getAbVariantClient(), {
+      trackAbEvent('ab_poptavka_submit', variant, {
         serviceType: hashData.serviceType || '',
+        price: hashData.totalPrice,
       });
 
       // Step 2: Contract is being created (happens in PDF route, but we track it here)
@@ -1744,7 +1747,7 @@ function PoptavkaContent() {
           </p>
         </motion.div>
       </div>
-      <AbVariantDevBadge variant={getAbVariantClient()} />
+      <AbVariantDevBadge variant={variant} />
     </div>
   );
 }

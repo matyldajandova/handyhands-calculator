@@ -58,6 +58,8 @@ export const metadata: Metadata = {
   },
 };
 
+const gtmId = process.env.NEXT_PUBLIC_GTM_ID ?? 'GTM-58FFPMBH';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -68,7 +70,7 @@ export default function RootLayout({
       <head>
       </head>
       <body className={`${openSans.variable} ${raleway.variable} font-sans antialiased`}>
-        <GoogleTagManager gtmId="GTM-58FFPMBH" />
+        {gtmId ? <GoogleTagManager gtmId={gtmId} /> : null}
         {children}
         <Analytics />
         <SpeedInsights />

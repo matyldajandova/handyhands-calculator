@@ -1,4 +1,3 @@
-import { track } from '@vercel/analytics';
 import {
   AB_COOKIE_NAME,
   parseVariant,
@@ -19,6 +18,13 @@ export {
   type AbSetCookie,
 } from '@/lib/ab-variant-core';
 
+export {
+  AB_TEST_NAME,
+  trackAbEvent,
+  type AbTrackEvent,
+  type AbEventExtra,
+} from '@/utils/ab-analytics';
+
 /** Read variant from document.cookie (client-only). */
 export function getAbVariantClient(): AbVariant {
   if (typeof document === 'undefined') return 'a';
@@ -26,12 +32,4 @@ export function getAbVariantClient(): AbVariant {
     new RegExp(`(?:^|; )${AB_COOKIE_NAME}=([^;]*)`),
   );
   return parseVariant(match?.[1] ? decodeURIComponent(match[1]) : null);
-}
-
-export function trackAbEvent(
-  event: 'ab_funnel_view' | 'ab_pdf_download' | 'ab_poptavka_submit',
-  variant: AbVariant,
-  extra?: Record<string, string | number | boolean | null>,
-) {
-  track(event, { variant, ...extra });
 }

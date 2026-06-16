@@ -7,6 +7,7 @@ import { hashSubmissionService } from "@/services/hash-submission-service";
 import { SuccessScreen } from "@/components/success-screen";
 import { AbVariantDevBadge } from "@/components/ab-variant-dev-badge";
 import { AbVariantCookieSync } from "@/components/ab-variant-cookie-sync";
+import { AbVariantAnalyticsSync } from "@/components/ab-variant-analytics-sync";
 import { Button } from "@/components/ui/button";
 import * as Icons from "lucide-react";
 import Image from "next/image";
@@ -105,6 +106,9 @@ function VysledekContentInner({ variant }: VysledekContentProps) {
           funnelViewTracked.current = true;
           trackAbEvent('ab_funnel_view', variant, {
             serviceType: decodedData.serviceType || '',
+            serviceTitle: decodedData.serviceTitle || '',
+            price: decodedData.totalPrice,
+            hash,
           });
         }
         
@@ -203,6 +207,7 @@ function VysledekContentInner({ variant }: VysledekContentProps) {
   return (
     <>
       <AbVariantCookieSync variant={variant} />
+      <AbVariantAnalyticsSync variant={variant} />
       <SuccessScreen
         variant={variant}
         onBackToServices={handleBackToServices}
