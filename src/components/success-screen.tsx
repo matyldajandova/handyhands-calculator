@@ -13,7 +13,7 @@ import { hashService } from "@/services/hash-service";
 import { orderStorage } from "@/services/order-storage";
 import { buildPoptavkaHashData } from "@/utils/hash-data-builder";
 import type { AbVariant } from "@/utils/ab-variant";
-import { trackAbEvent } from "@/utils/ab-variant";
+import { AB_PRODUCTION_VARIANT, trackAbEvent } from "@/utils/ab-variant";
 import Image from "next/image";
 
 interface SuccessScreenProps {
@@ -143,7 +143,7 @@ async function getIndividualAddons(formData: FormSubmissionData, formConfig: For
   return items;
 }
 
-export function SuccessScreen({ variant = 'a', onBackToServices, calculationResult, formConfig, formData }: SuccessScreenProps) {
+export function SuccessScreen({ variant = AB_PRODUCTION_VARIANT, onBackToServices, calculationResult, formConfig, formData }: SuccessScreenProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isDownloaded, setIsDownloaded] = useState(false);
   const [customerData, setCustomerData] = useState<{ firstName: string; lastName: string; email: string } | null>(null);

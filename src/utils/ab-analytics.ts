@@ -3,6 +3,7 @@
 import { track } from '@vercel/analytics';
 import { sendGTMEvent } from '@next/third-parties/google';
 import type { AbVariant } from '@/lib/ab-variant-core';
+import { AB_TEST_ENABLED } from '@/lib/ab-variant-core';
 
 export const AB_TEST_NAME = 'pdf_funnel_v1';
 const CURRENCY = 'CZK';
@@ -41,8 +42,9 @@ function buildViewItemPayload(variant: AbVariant, extra: AbEventExtra) {
 
   return {
     event: 'view_item',
-    ab_variant: variant,
-    ab_test_name: AB_TEST_NAME,
+    ...(AB_TEST_ENABLED
+      ? { ab_variant: variant, ab_test_name: AB_TEST_NAME }
+      : {}),
     currency: CURRENCY,
     value,
     items: [
@@ -62,8 +64,9 @@ function buildGenerateLeadPayload(
 ) {
   return {
     event: 'generate_lead',
-    ab_variant: variant,
-    ab_test_name: AB_TEST_NAME,
+    ...(AB_TEST_ENABLED
+      ? { ab_variant: variant, ab_test_name: AB_TEST_NAME }
+      : {}),
     lead_type: leadType,
     service_type: extra.serviceType || '',
     currency: CURRENCY,
@@ -114,7 +117,7 @@ export function trackAbEvent(
   const normalized = normalizeExtra(extra);
 
   const vercelPayload: Record<string, string | number | boolean | null> = {
-    variant,
+    ...(AB_TEST_ENABLED ? { variant } : {}),
     ...extra,
   };
 

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Download, FileText } from "lucide-react";
 import type { AbVariant } from "@/utils/ab-variant";
+import { AB_PRODUCTION_VARIANT } from "@/utils/ab-variant";
 
 interface IdentificationStepProps {
   variant?: AbVariant;
@@ -36,7 +37,7 @@ const COPY = {
 } as const;
 
 export function IdentificationStep({
-  variant = 'a',
+  variant = AB_PRODUCTION_VARIANT,
   onDownloadPDF,
   isDownloading = false,
   initialData,

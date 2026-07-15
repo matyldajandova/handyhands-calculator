@@ -2,7 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import type { AbVariant } from '@/utils/ab-variant';
-import { variantDisplayName } from '@/utils/ab-variant';
+import { AB_TEST_ENABLED, variantDisplayName } from '@/utils/ab-variant';
 
 interface AbVariantDevBadgeProps {
   variant: AbVariant;
@@ -30,6 +30,7 @@ export function AbVariantDevBadge({ variant }: AbVariantDevBadgeProps) {
     >
       <span className="font-semibold text-amber-900 dark:text-amber-200">
         A/B: {variantDisplayName(variant)}
+        {!AB_TEST_ENABLED ? ' (paused)' : ''}
       </span>
       <span className="mt-1 flex gap-2 text-amber-800 dark:text-amber-300">
         <a

@@ -9,7 +9,7 @@ import { buildPoptavkaHashData } from "@/utils/hash-data-builder";
 import path from "node:path";
 import {
   AB_COOKIE_NAME,
-  parseVariant,
+  resolveEffectiveVariant,
   variantLabel,
 } from '@/utils/ab-variant';
 
@@ -645,10 +645,15 @@ export async function POST(req: NextRequest) {
   
   if (spreadsheetId && hasServiceAccount) {
     try {
-      const cookieVariant = parseVariant(req.cookies.get(AB_COOKIE_NAME)?.value);
+      const cookieVariant = resolveEffectiveVariant(
+        req.cookies.get(AB_COOKIE_NAME)?.value,
+        { isDev: process.env.NODE_ENV !== 'production' },
+      );
       const bodyVariant =
         data.abVariant === 'b' ? 'b' : data.abVariant === 'a' ? 'a' : null;
-      const abVariant = bodyVariant ?? cookieVariant;
+      const abVariant = resolveEffectiveVariant(bodyVariant ?? cookieVariant, {
+        isDev: process.env.NODE_ENV !== 'production',
+      });
       console.log('[PDF] A/B variant for Sheets:', {
         body: data.abVariant ?? null,
         cookie: req.cookies.get(AB_COOKIE_NAME)?.value ?? null,
